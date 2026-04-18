@@ -88,6 +88,7 @@ let playerState = {
   veydrite:  0,
   ship:      'Wayward-class Prospector',
   shipName:  'The Unspoken',
+  captainName:  'Unknown',
   docked:    false,
   dockedAt:  null,
 };
