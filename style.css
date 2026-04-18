@@ -99,10 +99,11 @@ body {
   margin-bottom: 2px;
 }
 
-.output-dim    { color: #00e5ff; }
+.output-dim    { color: #006618; }
 .output-warn   { color: #ff6600; }
 .output-bright { color: #ffffff; }
 .output-label  { color: #00aa2a; }
+.output-cmd    { color: #00e5ff; }
 
 #input-line {
   display: flex;
