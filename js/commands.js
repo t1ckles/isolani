@@ -387,21 +387,34 @@ function cmdTrade(args) {
 }
 
 function handleTradeCommand(cmd, args) {
-  const loc = playerState.location;
-  const q   = galaxy.quadrants[loc.quadrantIndex];
+  // Confirmation step
+  if (playerState.pendingTx) {
+    if (cmd === 'yes' || cmd === 'y') {
+      const tx = playerState.pendingTx;
+      playerState.pendingTx = null;
+      return executeTrade(tx);
+    } else {
+      playerState.pendingTx = null;
+      return '  [TRADE] Transaction cancelled.';
+    }
+  }
 
   if (cmd === 'exit' || (cmd === 'trade' && args[0] === 'exit')) {
     playerState.inTrade = false;
     return '  [TRADE] Terminal closed.';
   }
-  if (cmd === 'sell') return cmdSell(args);
-  if (cmd === 'buy')  return cmdBuy(args);
+  if (cmd === 'sell')   return cmdSell(args);
+  if (cmd === 'buy')    return cmdBuy(args);
   if (cmd === 'status') return cmdStatus();
-
+  if (cmd === 'trade')  {
+    const loc = playerState.location;
+    const q   = galaxy.quadrants[loc.quadrantIndex];
+    return buildTradeMenu(playerState, playerState.dockedFactionKey, q.state);
+  }
 
   return [
-    '  [TRADE] Unknown trade command.',
-    '  Use: sell veydrite <amount>  |  buy fuel <amount>  |  exit',
+    '  [TRADE] Unknown command.',
+    '  Use: sell veydrite <amount>  |  buy fuel <amount>  |  trade  |  exit',
   ].join('\n');
 }
 
@@ -434,6 +447,24 @@ function cmdSell(args) {
       return '  [SELL] You only have ' + playerState.veydrite + ' kg in hold.';
     }
   }
+
+  const earned = amount * price;
+
+  // Stage confirmation
+  playerState.pendingTx = { type: 'sell', commodity: 'veydrite', amount, earned };
+
+  return [
+    '',
+    '  [SELL] Confirm transaction?',
+    '',
+    '  Sell     : ' + amount + ' kg veydrite',
+    '  Rate     : ' + price + ' CR/kg',
+    '  You get  : ' + earned + ' CR',
+    '',
+    '  Type "yes" to confirm or anything else to cancel.',
+    '',
+  ].join('\n');
+}
 
   const earned = amount * price;
   playerState.veydrite -= amount;
@@ -480,19 +511,52 @@ function cmdBuy(args) {
     ].join('\n');
   }
 
-  playerState.credits -= cost;
-  playerState.fuel    += amount;
+  // Stage confirmation
+  playerState.pendingTx = { type: 'buy', commodity: 'fuel', amount, cost };
 
   return [
     '',
-    '  [BUY] Fuel transfer complete.',
-    '  Purchased : ' + amount + ' units',
-    '  Rate      : ' + price + ' CR/unit',
-    '  Cost      : ' + cost + ' CR',
-    '  Scrip     : ' + playerState.credits + ' CR remaining',
-    '  Fuel      : ' + playerState.fuel + ' units',
+    '  [BUY] Confirm transaction?',
+    '',
+    '  Buy      : ' + amount + ' units fuel',
+    '  Rate     : ' + price + ' CR/unit',
+    '  You pay  : ' + cost + ' CR',
+    '',
+    '  Type "yes" to confirm or anything else to cancel.',
     '',
   ].join('\n');
+}
+
+function executeTrade(tx) {
+  if (tx.type === 'sell' && tx.commodity === 'veydrite') {
+    playerState.veydrite -= tx.amount;
+    playerState.credits  += tx.earned;
+    return [
+      '',
+      '  [SELL] Transaction complete.',
+      '  Sold     : ' + tx.amount + ' kg veydrite',
+      '  Earned   : ' + tx.earned + ' CR',
+      '  Scrip    : ' + playerState.credits + ' CR',
+      '  Veydrite : ' + playerState.veydrite + ' kg remaining',
+      '',
+    ].join('\n');
+  }
+
+  if (tx.type === 'buy' && tx.commodity === 'fuel') {
+    playerState.credits -= tx.cost;
+    playerState.fuel    += tx.amount;
+    return [
+      '',
+      '  [BUY] Fuel transfer complete.',
+      '  Purchased : ' + tx.amount + ' units',
+      '  Cost      : ' + tx.cost + ' CR',
+      '  Scrip     : ' + playerState.credits + ' CR remaining',
+      '  Fuel      : ' + playerState.fuel + ' units',
+      '',
+    ].join('\n');
+  }
+
+  return '  [ERROR] Unknown transaction type.';
 }
 
 // ── Status ────────────────────────────────────
