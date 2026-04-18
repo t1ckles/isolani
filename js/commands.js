@@ -15,7 +15,7 @@ let playerState = {
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
-export function initCommands(seed) {
+function initCommands(seed) {
   const naming = new NamingSystem(seed);
   galaxy = generateGalaxy(seed, naming);
 
@@ -35,7 +35,7 @@ export function initCommands(seed) {
 
 // ─── Command Dispatch ─────────────────────────────────────────────────────────
 
-export function handleCommand(raw) {
+function handleCommand(raw) {
   const input = raw.trim().toLowerCase();
   const [cmd, ...args] = input.split(/\s+/);
 
