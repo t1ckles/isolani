@@ -1,3 +1,5 @@
+import { initCommands, handleCommand } from './commands.js';
+
 // ============================================
 //  APHELION — Main Terminal Controller
 //  main.js
@@ -151,8 +153,62 @@ function boot() {
     queue('Seed is stable. All output is deterministic.', 'output-dim', 80);
     queueDivider(60);
 
+    // ── Initialize galaxy and display overview ──
+    const GALAXY_SEED = 8675309;
+    initCommands(GALAXY_SEED);
+
+    const overview = handleCommand('galaxy');
+    overview.split('\n').forEach(line => queue(line, '', 12));
+
+    // ── Activate the input prompt ───────────────
+    enableInput();
+
   }, 1400); // Wait for CRT power-on animation to finish
 }
+
+// ── Input handling ────────────────────────────
+
+let inputEnabled = false;
+let currentInput = '';
+
+function enableInput() {
+  inputEnabled = true;
+}
+
+document.addEventListener('keydown', (e) => {
+  if (!inputEnabled) return;
+
+  if (e.key === 'Enter') {
+    const raw = currentInput.trim();
+    currentInput = '';
+    updateTyped('');
+
+    if (raw === '') return;
+
+    print(`> ${raw}`, 'output-dim');
+
+    const response = handleCommand(raw);
+    if (response) {
+      response.split('\n').forEach(line => print(line));
+    }
+
+    const output = document.getElementById('output');
+    if (output) output.scrollTop = output.scrollHeight;
+
+  } else if (e.key === 'Backspace') {
+    currentInput = currentInput.slice(0, -1);
+    updateTyped(currentInput);
+
+  } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
+    currentInput += e.key;
+    updateTyped(currentInput);
+  }
+});
+
+function updateTyped(text) {
+  const el = document.getElementById('typed');
+  if (el) el.textContent = text;
+};
 
 // ── Run on page load ──────────────────────────
 window.addEventListener('load', boot);
