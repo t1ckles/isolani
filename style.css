@@ -113,17 +113,17 @@ body {
 }
 
 .prompt {
-  color: #00ff41;
+  color: #00e5ff;
   margin-right: 4px;
 }
 
 #typed {
-  color: #00ff41;
+  color: #00e5ff;
 }
 
 .cursor {
   animation: blink 1s step-end infinite;
-  color: #00ff41;
+  color: #00e5ff;
   margin-left: 1px;
 }
 
