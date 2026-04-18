@@ -16,7 +16,7 @@ let playerState = {
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
 function initCommands(seed) {
-  const naming = new NamingSystem(seed);
+  const naming = new Naming(seed);
   galaxy = generateGalaxy(seed, naming);
 
   // Player starts in quadrant 0, first anchor system
