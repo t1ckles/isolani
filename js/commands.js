@@ -145,7 +145,7 @@ function cmdWhere() {
 
   const lines = [
     '',
-    '  ╔══ CURRENT POSITION ' + '═'.repeat(37) + '╗',
+    '  ── CURRENT POSITION ──────────────────────────────────────────',
     '',
     '  System   : ' + sys.name + anchor,
     '  Cluster  : ' + cluster.name,
