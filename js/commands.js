@@ -465,19 +465,6 @@ function cmdSell(args) {
     '',
   ].join('\n');
 }
-
-  const earned = amount * price;
-  playerState.veydrite -= amount;
-  playerState.credits  += earned;
-
-  return [
-    '',
-    '  [SELL] Transaction complete.',
-    '  Sold     : ' + amount + ' kg veydrite',
-    '  Rate     : ' + price + ' CR/kg',
-    '  Earned   : ' + earned + ' CR',
-    '  Scrip    : ' + playerState.credits + ' CR',
-    '  Veydrite : ' + playerState.veydrite + ' kg remaining',
     '',
   ].join('\n');
 }
