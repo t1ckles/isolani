@@ -2,8 +2,6 @@
 // Galaxy Hierarchy Generator — Stage 2
 // Aphelion v0.2.0-dev
 
-import { RNG } from './rng.js';
-
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const QUADRANT_NAMES = [
