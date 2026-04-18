@@ -91,7 +91,7 @@ document.addEventListener('keydown', (e) => {
 
     if (raw === '') return;
 
-    print('> ' + raw, 'output-dim');
+    print('> ' + raw, 'output-cmd');
 
     const response = handleCommand(raw);
     if (response) {
