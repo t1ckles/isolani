@@ -15,7 +15,7 @@ body {
   color: #00ff41;
   font-family: 'Share Tech Mono', 'Courier New', monospace;
   font-size: 15px;
-  height: 100vh;
+  height: 100vh; overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -27,7 +27,8 @@ body {
   max-width: 860px;
   border: 1px solid #00ff41;
   padding: 24px;
-  min-height: 80vh;
+  height: calc(100vh - 40px);
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   box-shadow: 0 0 30px rgba(0, 255, 65, 0.08);
@@ -74,6 +75,7 @@ body {
   white-space: pre-wrap;
   line-height: 1.7;
   margin-bottom: 16px;
+  overflow-y: auto;
 }
 
 .output-line {
