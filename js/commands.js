@@ -1,7 +1,7 @@
 // ============================================
 //  APHELION — Command Parser
 //  commands.js
-//  Stage 3: Stations, Factions, Docking
+//  Stage 5: Economy wired in
 // ============================================
 
 // ── Faction definitions ───────────────────────
@@ -45,16 +45,16 @@ const FACTIONS = {
   },
 };
 
-// ── Faction assignment by quadrant state ──────
+// ── Faction assignment ────────────────────────
 
-function assignFaction(state, rng) {
+function assignFaction(state) {
   const pools = {
     Established: ['guild', 'pelk', 'colonial', 'pelk', 'guild'],
     Contested:   ['pelk', 'colonial', 'independent', 'feral', 'pelk'],
     Declining:   ['independent', 'pelk', 'feral', 'independent'],
     Collapsed:   ['feral', 'feral', 'independent', 'feral'],
     Isolated:    ['independent', 'independent', 'feral'],
-    Forbidden:   ['forbidden', 'forbidden', 'unknown'],
+    Forbidden:   ['forbidden', 'forbidden', 'forbidden'],
   };
   const pool = pools[state] || ['independent'];
   return pool[Math.floor(Math.random() * pool.length)];
@@ -71,26 +71,29 @@ function generateStationName(systemName, factionKey) {
     independent: ['Free Berth', 'Open Dock', 'The Anchorage', 'Waypoint'],
     forbidden:   ['Installation', 'Unknown Station', 'Sealed Platform'],
   };
-  const pool = prefixes[factionKey] || prefixes.independent;
+  const pool   = prefixes[factionKey] || prefixes.independent;
   const prefix = pool[Math.floor(Math.random() * pool.length)];
-  // Use first word of system name for flavor
-  const tag = systemName.split(' ')[0];
+  const tag    = systemName.split(' ')[0];
   return prefix + ' ' + tag;
 }
 
-// ── State ─────────────────────────────────────
+// ── Player State ──────────────────────────────
 
 let galaxy = null;
 let playerState = {
-  location:  null,
-  cargo:     [],
-  credits:   0,
-  veydrite:  0,
-  ship:      'Wayward-class Prospector',
-  shipName:  'The Unspoken',
+  location:     null,
+  cargo:        [],
+  credits:      200,
+  veydrite:     0,
+  fuel:         60,
+  hull:         80,
+  ship:         'Wayward-class Prospector',
+  shipName:     'The Unspoken',
   captainName:  'Unknown',
-  docked:    false,
-  dockedAt:  null,
+  docked:       false,
+  dockedAt:     null,
+  dockedFactionKey: null,
+  inTrade:      false,
 };
 
 // ── Init ──────────────────────────────────────
@@ -98,15 +101,14 @@ let playerState = {
 function initCommands(seed) {
   galaxy = generateGalaxy(seed, Naming);
 
-  // Assign factions and station names to all systems
   galaxy.quadrants.forEach(q => {
     q.clusters.forEach(cluster => {
       cluster.systems.forEach(sys => {
         sys.bodies.forEach(body => {
           if (body.hasStation) {
-            body.factionKey   = assignFaction(q.state);
-            body.faction      = FACTIONS[body.factionKey] || FACTIONS.independent;
-            body.stationName  = generateStationName(sys.name, body.factionKey);
+            body.factionKey  = assignFaction(q.state);
+            body.faction     = FACTIONS[body.factionKey] || FACTIONS.independent;
+            body.stationName = generateStationName(sys.name, body.factionKey);
           }
         });
       });
@@ -130,22 +132,31 @@ function handleCommand(raw) {
   const input          = raw.trim().toLowerCase();
   const [cmd, ...args] = input.split(/\s+/);
 
+  // Trade mode intercepts commands
+  if (playerState.inTrade) {
+    return handleTradeCommand(cmd, args);
+  }
+
   switch (cmd) {
-    case 'help':   return cmdHelp();
-    case 'galaxy': return renderGalaxyOverview(galaxy);
-    case 'scan':   return cmdScan(args);
-    case 'nav':    return cmdNav(args);
+    case 'help':    return cmdHelp();
+    case 'galaxy':  return renderGalaxyOverview(galaxy);
+    case 'scan':    return cmdScan(args);
+    case 'nav':     return cmdNav(args);
     case 'where':
-    case 'look':   return cmdWhere();
-    case 'dock':   return cmdDock();
-    case 'undock': return cmdUndock();
-    case 'status': return cmdStatus();
-    case '':       return '';
-    default:       return '  [UNKNOWN] "' + cmd + '" is not a recognized command. Type help.';
+    case 'look':    return cmdWhere();
+    case 'dock':    return cmdDock();
+    case 'undock':  return cmdUndock();
+    case 'trade':   return cmdTrade(args);
+    case 'sell':    return cmdSell(args);
+    case 'buy':     return cmdBuy(args);
+    case 'salvage': return cmdSalvage();
+    case 'status':  return cmdStatus();
+    case '':        return '';
+    default:        return '  [UNKNOWN] "' + cmd + '" is not a recognized command. Type help.';
   }
 }
 
-// ── Commands ──────────────────────────────────
+// ── Help ──────────────────────────────────────
 
 function cmdHelp() {
   return [
@@ -156,23 +167,22 @@ function cmdHelp() {
     '  scan <1-8>          — survey a quadrant in detail',
     '  where               — current system survey',
     '  nav <system name>   — navigate to a named system',
+    '  salvage             — salvage operation in current system',
     '  dock                — dock at nearest station',
-    '  undock              — undock and return to space',
+    '  undock              — leave station',
+    '  trade               — open trade terminal (when docked)',
+    '  sell veydrite <n>   — sell veydrite (when docked)',
+    '  buy fuel <n>        — buy fuel units (when docked)',
     '  status              — ship and cargo readout',
-    '',
-    '  ── COMING SOON ───────────────────────────────────────────────',
-    '',
-    '  trade               — open trade interface',
-    '  salvage             — begin salvage operation',
-    '  jump                — jump to adjacent system',
     '',
   ].join('\n');
 }
 
+// ── Scan ──────────────────────────────────────
+
 function cmdScan(args) {
   if (!galaxy) return '  [ERROR] Galaxy not initialized.';
   if (args.length === 0) return renderGalaxyOverview(galaxy);
-
   const index = parseInt(args[0]) - 1;
   if (isNaN(index) || index < 0 || index >= galaxy.quadrants.length) {
     return '  [ERROR] Invalid quadrant. Use scan <1-8>.';
@@ -180,13 +190,12 @@ function cmdScan(args) {
   return renderQuadrantDetail(galaxy, index);
 }
 
+// ── Nav ───────────────────────────────────────
+
 function cmdNav(args) {
   if (!galaxy) return '  [ERROR] Galaxy not initialized.';
   if (args.length === 0) return '  [USAGE] nav <system name>';
-
-  if (playerState.docked) {
-    return '  [NAV] You are docked. Type "undock" first.';
-  }
+  if (playerState.docked) return '  [NAV] You are docked. Type "undock" first.';
 
   const query = args.join(' ').toLowerCase();
 
@@ -196,13 +205,28 @@ function cmdNav(args) {
       const cluster = q.clusters[ci];
       for (const sys of cluster.systems) {
         if (sys.name.toLowerCase().includes(query)) {
+
+          // Fuel cost
+          const fuelCost = 8 + Math.floor(Math.random() * 8);
+          if (playerState.fuel < fuelCost) {
+            return [
+              '',
+              '  [NAV] Insufficient fuel for transit to ' + sys.name + '.',
+              '  Required: ' + fuelCost + ' units  |  Available: ' + playerState.fuel + ' units.',
+              '  Dock at a station and buy fuel.',
+              '',
+            ].join('\n');
+          }
+
+          playerState.fuel -= fuelCost;
           playerState.location = {
             quadrantIndex: qi,
             clusterName:   cluster.name,
             systemName:    sys.name,
           };
-          playerState.docked  = false;
-          playerState.dockedAt = null;
+          playerState.docked       = false;
+          playerState.dockedAt     = null;
+          playerState.dockedFactionKey = null;
 
           const days = 2 + Math.floor(Math.random() * 6);
           return [
@@ -212,12 +236,10 @@ function cmdNav(args) {
             '  Quadrant : ' + q.name,
             '  Cluster  : ' + cluster.name,
             '  Star     : ' + sys.starClass + '-class',
-            '  Bodies   : ' + sys.bodies.length,
             '  Hazard   : ' + '▲'.repeat(sys.hazard) + '△'.repeat(5 - sys.hazard),
+            '  Fuel used: ' + fuelCost + ' units  |  Remaining: ' + playerState.fuel + ' units',
             '',
-            '  Transit time: ' + days + ' standard days.',
-            '  Drive nominal. Arrived.',
-            '',
+            '  Transit: ' + days + ' standard days. Arrived.',
             '  Type "where" to survey this system.',
             '',
           ].join('\n');
@@ -225,9 +247,42 @@ function cmdNav(args) {
       }
     }
   }
-
   return '  [NAV] No system matching "' + args.join(' ') + '" found in catalog.';
 }
+
+// ── Salvage ───────────────────────────────────
+
+function cmdSalvage() {
+  if (playerState.docked) {
+    return '  [SALVAGE] Undock first before beginning salvage operations.';
+  }
+
+  const loc     = playerState.location;
+  const q       = galaxy.quadrants[loc.quadrantIndex];
+  const cluster = q.clusters.find(c => c.name === loc.clusterName);
+  const sys     = cluster && cluster.systems.find(s => s.name === loc.systemName);
+
+  if (!sys) return '  [ERROR] Location data corrupted.';
+
+  const hasRuin  = sys.bodies.some(b => b.hasRuin);
+  const hasVeyd  = sys.bodies.some(b => b.veydrite);
+  const hasDebris = ['Debris Field', 'Shattered Planet', 'Dust Belt']
+    .some(t => sys.bodies.some(b => b.type === t));
+
+  if (!hasRuin && !hasVeyd && !hasDebris) {
+    return [
+      '',
+      '  [SALVAGE] Nothing to salvage in ' + sys.name + '.',
+      '  No ruins, debris fields, or veydrite deposits detected.',
+      '',
+    ].join('\n');
+  }
+
+  const result = rollSalvage(sys, q.state);
+  return renderSalvageResult(result, playerState);
+}
+
+// ── Dock ──────────────────────────────────────
 
 function cmdDock() {
   if (playerState.docked) {
@@ -245,18 +300,34 @@ function cmdDock() {
   if (stationBodies.length === 0) {
     return [
       '',
-      '  [DOCK] No station detected in ' + sys.name + '.',
-      '  Nothing to dock with. The void offers no berth.',
+      '  [DOCK] No station in ' + sys.name + '.',
+      '  The void offers no berth.',
       '',
     ].join('\n');
   }
 
-  // Dock at first available station
   const body    = stationBodies[0];
   const faction = body.faction || FACTIONS.independent;
+  const fee     = dockingFee(body.factionKey);
 
-  playerState.docked   = true;
-  playerState.dockedAt = body.stationName;
+  if (fee > 0 && playerState.credits < fee) {
+    return [
+      '',
+      '  [DOCK] Docking fee: ' + fee + ' CR.',
+      '  Insufficient scrip. You need ' + fee + ' CR to dock here.',
+      '',
+    ].join('\n');
+  }
+
+  if (fee > 0) playerState.credits -= fee;
+
+  playerState.docked           = true;
+  playerState.dockedAt         = body.stationName;
+  playerState.dockedFactionKey = body.factionKey;
+
+  const feeNote = fee > 0
+    ? '  Docking fee: ' + fee + ' CR charged.  Remaining scrip: ' + playerState.credits + ' CR.'
+    : '  No docking fee.';
 
   return [
     '',
@@ -267,53 +338,191 @@ function cmdDock() {
     '  System   : ' + sys.name,
     '',
     '  ' + faction.dockGreeting,
+    '  ' + feeNote,
     '',
     '  ── STATION SERVICES ──────────────────────────────────────────',
     '',
-    stationServices(faction.attitude),
+    '  ' + stationServices(faction.attitude),
     '',
+    '  Type "trade" to open the trade terminal.',
     '  Type "undock" to return to space.',
     '',
   ].join('\n');
 }
 
+// ── Undock ────────────────────────────────────
+
 function cmdUndock() {
-  if (!playerState.docked) {
-    return '  [UNDOCK] You are not currently docked.';
-  }
+  if (!playerState.docked) return '  [UNDOCK] You are not currently docked.';
   const name = playerState.dockedAt;
-  playerState.docked   = false;
-  playerState.dockedAt = null;
+  playerState.docked           = false;
+  playerState.dockedAt         = null;
+  playerState.dockedFactionKey = null;
+  playerState.inTrade          = false;
   return [
     '',
     '  [UNDOCK] Departing ' + name + '.',
-    '  Thrusters nominal. You are in open space.',
+    '  Thrusters nominal. Open space.',
     '',
   ].join('\n');
 }
+
+// ── Trade ─────────────────────────────────────
+
+function cmdTrade(args) {
+  if (!playerState.docked) {
+    return '  [TRADE] You must be docked to access the trade terminal.';
+  }
+  if (args[0] === 'exit') {
+    playerState.inTrade = false;
+    return '  [TRADE] Terminal closed.';
+  }
+
+  const loc     = playerState.location;
+  const q       = galaxy.quadrants[loc.quadrantIndex];
+  playerState.inTrade = true;
+
+  return buildTradeMenu(playerState, playerState.dockedFactionKey, q.state);
+}
+
+function handleTradeCommand(cmd, args) {
+  const loc = playerState.location;
+  const q   = galaxy.quadrants[loc.quadrantIndex];
+
+  if (cmd === 'exit' || (cmd === 'trade' && args[0] === 'exit')) {
+    playerState.inTrade = false;
+    return '  [TRADE] Terminal closed.';
+  }
+  if (cmd === 'sell') return cmdSell(args);
+  if (cmd === 'buy')  return cmdBuy(args);
+
+  return [
+    '  [TRADE] Unknown trade command.',
+    '  Use: sell veydrite <amount>  |  buy fuel <amount>  |  exit',
+  ].join('\n');
+}
+
+// ── Sell ──────────────────────────────────────
+
+function cmdSell(args) {
+  if (!playerState.docked) return '  [SELL] You must be docked to sell.';
+
+  const loc   = playerState.location;
+  const q     = galaxy.quadrants[loc.quadrantIndex];
+  const price = veydritePrice(q.state);
+
+  if (!args[0] || args[0] !== 'veydrite') {
+    return '  [SELL] Usage: sell veydrite <amount> or sell veydrite all';
+  }
+
+  if (playerState.veydrite <= 0) {
+    return '  [SELL] No veydrite in hold.';
+  }
+
+  let amount;
+  if (args[1] === 'all') {
+    amount = playerState.veydrite;
+  } else {
+    amount = parseInt(args[1]);
+    if (isNaN(amount) || amount <= 0) {
+      return '  [SELL] Specify an amount. Example: sell veydrite 10';
+    }
+    if (amount > playerState.veydrite) {
+      return '  [SELL] You only have ' + playerState.veydrite + ' kg in hold.';
+    }
+  }
+
+  const earned = amount * price;
+  playerState.veydrite -= amount;
+  playerState.credits  += earned;
+
+  return [
+    '',
+    '  [SELL] Transaction complete.',
+    '  Sold     : ' + amount + ' kg veydrite',
+    '  Rate     : ' + price + ' CR/kg',
+    '  Earned   : ' + earned + ' CR',
+    '  Scrip    : ' + playerState.credits + ' CR',
+    '  Veydrite : ' + playerState.veydrite + ' kg remaining',
+    '',
+  ].join('\n');
+}
+
+// ── Buy ───────────────────────────────────────
+
+function cmdBuy(args) {
+  if (!playerState.docked) return '  [BUY] You must be docked to buy.';
+
+  const loc   = playerState.location;
+  const q     = galaxy.quadrants[loc.quadrantIndex];
+  const price = fuelPrice(q.state);
+
+  if (!args[0] || args[0] !== 'fuel') {
+    return '  [BUY] Usage: buy fuel <amount>';
+  }
+
+  const amount = parseInt(args[1]);
+  if (isNaN(amount) || amount <= 0) {
+    return '  [BUY] Specify an amount. Example: buy fuel 20';
+  }
+
+  const cost = amount * price;
+  if (playerState.credits < cost) {
+    return [
+      '',
+      '  [BUY] Insufficient scrip.',
+      '  Cost     : ' + cost + ' CR  (' + amount + ' units at ' + price + ' CR/unit)',
+      '  You have : ' + playerState.credits + ' CR',
+      '',
+    ].join('\n');
+  }
+
+  playerState.credits -= cost;
+  playerState.fuel    += amount;
+
+  return [
+    '',
+    '  [BUY] Fuel transfer complete.',
+    '  Purchased : ' + amount + ' units',
+    '  Rate      : ' + price + ' CR/unit',
+    '  Cost      : ' + cost + ' CR',
+    '  Scrip     : ' + playerState.credits + ' CR remaining',
+    '  Fuel      : ' + playerState.fuel + ' units',
+    '',
+  ].join('\n');
+}
+
+// ── Status ────────────────────────────────────
 
 function cmdStatus() {
   const dockStatus = playerState.docked
     ? 'Docked at ' + playerState.dockedAt
     : 'In space';
-  
+
+  const hullBar = '█'.repeat(Math.round(playerState.hull / 10)) +
+                  '░'.repeat(10 - Math.round(playerState.hull / 10));
+  const fuelBar = '█'.repeat(Math.round(playerState.fuel / 10)) +
+                  '░'.repeat(10 - Math.round(playerState.fuel / 10));
 
   return [
     '',
     '  ── SHIP STATUS ───────────────────────────────────────────────',
     '',
-    '  Pilot     : ' + playerState.captainName,
-    '  Vessel    : ' + playerState.shipName + '  (' + playerState.ship + ')',    '  Status    : ' + dockStatus,
-    '  Veydrite  : ' + playerState.veydrite + ' kg',
-    '  Scrip     : ' + playerState.credits + ' CR  (unaffiliated)',
-    '  Cargo     : ' + (playerState.cargo.length === 0 ? 'empty' : playerState.cargo.join(', ')),
+    '  Captain   : ' + playerState.captainName,
+    '  Vessel    : ' + playerState.shipName + '  (' + playerState.ship + ')',
+    '  Status    : ' + dockStatus,
     '',
-    '  Hull integrity  : ████████░░  80%',
-    '  Fuel reserve    : ██████░░░░  60%',
-    '  Jump drive      : NOMINAL',
+    '  Scrip     : ' + playerState.credits + ' CR',
+    '  Veydrite  : ' + playerState.veydrite + ' kg',
+    '  Fuel      : ' + playerState.fuel + ' units',
+    '',
+    '  Hull      : ' + hullBar + '  ' + playerState.hull + '%',
+    '  Jump drive: NOMINAL',
     '',
   ].join('\n');
 }
+
+// ── Where ─────────────────────────────────────
 
 function cmdWhere() {
   if (!playerState.location) return '  [STATUS] No location fix.';
@@ -390,20 +599,18 @@ function cmdWhere() {
   return lines.join('\n');
 }
 
-// ── Station services by faction attitude ──────
+// ── Flavor text ───────────────────────────────
 
 function stationServices(attitude) {
   const services = {
-    neutral:    '  Fuel exchange  |  Cargo hold  |  Assay terminal  |  Bulletin board',
-    commercial: '  Fuel exchange  |  Cargo trading  |  Pelk contract board  |  Repair bay',
-    military:   '  Fuel exchange  |  Restricted cargo only  |  CCC contract board',
-    hostile:    '  Fuel (price negotiable)  |  No formal services  |  Watch your cargo',
-    unknown:    '  Services unknown  |  Proceed with caution',
+    neutral:    'Fuel exchange  |  Cargo hold  |  Assay terminal  |  Bulletin board',
+    commercial: 'Fuel exchange  |  Cargo trading  |  Pelk contract board  |  Repair bay',
+    military:   'Fuel exchange  |  Restricted cargo only  |  CCC contract board',
+    hostile:    'Fuel (price negotiable)  |  No formal services  |  Watch your cargo',
+    unknown:    'Services unknown  |  Proceed with caution',
   };
   return services[attitude] || services.neutral;
 }
-
-// ── Flavor text ───────────────────────────────
 
 function stationDescription(state) {
   const pool = {
