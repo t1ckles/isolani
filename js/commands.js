@@ -2,9 +2,6 @@
 // Command Parser — Stage 2
 // Aphelion v0.2.0-dev
 
-import { generateGalaxy, renderGalaxyOverview, renderQuadrantDetail } from './galaxy.js';
-import { NamingSystem } from './naming.js';
-
 // ─── State ────────────────────────────────────────────────────────────────────
 
 let galaxy = null;
