@@ -973,6 +973,88 @@ document.addEventListener('keydown', (e) => {
           showDeathScreen();
           return;
         }
+
+        if (response && response.startsWith('__CLUSTERDEEPSCAN__')) {
+          const payload = JSON.parse(response.slice(19));
+          const SCAN_MESSAGES = [
+            'Array focusing...',
+            'Gravitometric sweep in progress...',
+            'Resolving stellar bodies...',
+            'Calibrating sensor return...',
+            'Cross-referencing Guild charts...',
+            'Astrographic matrix compiling...',
+            'Signal processing...',
+            'Triangulating jump geometry...',
+            'Deep field analysis running...',
+            'Refining positional data...',
+          ];
+
+          queue('', '', 40);
+          queue('  [CLUSTERDEEPSCAN] Initializing cluster sweep — ' + payload.clusterName.toUpperCase(), 'output-dim', 80);
+          queue('  [CLUSTERDEEPSCAN] ' + payload.systems.length + ' systems queued.', 'output-dim', 120);
+          queue('', '', 80);
+
+          let cumulativeDelay = 400;
+
+          payload.systems.forEach((sys, i) => {
+            const sysDelay    = 3000 + Math.floor(Math.random() * 3000);
+            const numMessages = 2 + Math.floor(Math.random() * 3);
+
+            // Print targeting line
+            setTimeout(() => {
+              queue('  [' + (i + 1) + '/' + payload.systems.length + '] Targeting: ' + sys.name.toUpperCase(), 'output-dim', 60);
+            }, cumulativeDelay);
+            cumulativeDelay += 300;
+
+            // Print progress messages at intervals during the delay
+            for (let m = 0; m < numMessages; m++) {
+              const msgDelay = Math.floor((sysDelay / (numMessages + 1)) * (m + 1));
+              const msg      = SCAN_MESSAGES[Math.floor(Math.random() * SCAN_MESSAGES.length)];
+              setTimeout(() => {
+                queue('    > ' + msg, 'output-dim', 60);
+              }, cumulativeDelay + msgDelay);
+            }
+
+            // Print result after delay
+            setTimeout(() => {
+              queue('', '', 40);
+              queue('  ── ' + sys.name.toUpperCase() + ' ─────────────────────────────────────', '', 40);
+              queue('  Star class  : ' + sys.starClass + '-type', '', 40);
+              queue('  Bodies      : ' + sys.bodyCount, '', 40);
+              queue('  State       : ' + sys.state, '', 40);
+              queue('  Hazard      : ' + sys.hazardBar, '', 40);
+              queue('  Traffic     : ' + sys.trafficBar, '', 40);
+              queue('  Jump points : ' + sys.jumpPoints + ' outbound', '', 40);
+              queue('  Station     : ' + sys.stationName, '', 40);
+              queue('  Veydrite    : ' + (sys.hasVeyd ? 'trace deposits  [VYD]' : 'none detected'), '', 40);
+              queue('  Ruins       : ' + (sys.hasRuin ? 'structural signatures  [RUN]' : 'none detected'), '', 40);
+              queue('  Beacon      : ' + (sys.hasBeacon ? 'active  [BCN]' : 'none'), '', 40);
+              queue('  Data recorded.  +' + sys.units + ' units', 'output-dim', 40);
+              queue('', '', 40);
+            }, cumulativeDelay + sysDelay);
+
+            cumulativeDelay += sysDelay + 600;
+          });
+
+          // Final summary
+          setTimeout(() => {
+            const ship = typeof getShip === 'function' ? getShip() : null;
+            queue('  ── CLUSTER SWEEP COMPLETE ────────────────────────────────', 'output-dim', 60);
+            queue('  ' + payload.systems.length + ' systems surveyed.', 'output-dim', 60);
+            if (payload.skipped > 0) {
+              queue('  [!] ' + payload.skipped + ' system(s) skipped — insufficient power.', 'output-warn', 60);
+            }
+            if (ship) {
+              queue('  Power core: ' + ship.powerCore.current + '/' + ship.powerCore.max + '  [' + powerStatus(ship) + ']', 'output-dim', 60);
+            }
+            queue('', '', 60);
+            updateSidebar();
+            autosave();
+          }, cumulativeDelay + 200);
+
+          return;
+        }
+        
         if (response && response.startsWith('__DEEPSCAN__')) {
           const payload = JSON.parse(response.slice(12));
           queue('', '', 40);
