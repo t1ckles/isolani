@@ -133,6 +133,7 @@ const SAVE_DEFAULTS = {
   salvagedSystems: [],
   astrographics:   [],
   scannedSystems:  {},
+  achievements:    [],
 
   stats: {
     jumps:         0,
@@ -204,6 +205,7 @@ function saveGame(playerState, reputationData, contractData) {
       salvagedSystems: playerState.salvagedSystems || [],
       astrographics:   playerState.astrographics   || [],
       scannedSystems:  playerState.scannedSystems  || {},
+      achievements:    playerState.achievements    || [],
 
 
       stats: {
@@ -303,6 +305,7 @@ function applySave(save, playerState, reputationObj, activeContractsArr) {
   playerState.salvagedSystems = save.salvagedSystems || [];
   playerState.astrographics   = save.astrographics   || [];
   playerState.scannedSystems  = save.scannedSystems  || {};
+  playerState.achievements    = save.achievements    || [];
   playerState.stats = save.stats || {};
 
   // Reputation
