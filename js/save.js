@@ -189,9 +189,11 @@ function saveGame(playerState, reputationData, contractData) {
       },
 
       economy: {
-        credits:  playerState.credits,
-        veydrite: playerState.veydrite,
-        cargo:    playerState.cargo || [],
+        credits:         playerState.credits,
+        veydrite:        playerState.veydrite,
+        cargo:           playerState.cargo         || [],
+        foldCells:       playerState.foldCells     ?? 3,
+        reserveVeydrite: playerState.reserveVeydrite ?? 0,
       },
 
       reputation: reputationData || {},
@@ -291,9 +293,11 @@ function applySave(save, playerState, reputationObj, activeContractsArr) {
   }
 
   // Economy
-  playerState.credits  = save.economy.credits;
-  playerState.veydrite = save.economy.veydrite;
-  playerState.cargo    = save.economy.cargo || [];
+  playerState.credits         = save.economy.credits;
+  playerState.veydrite        = save.economy.veydrite;
+  playerState.cargo           = save.economy.cargo           || [];
+  playerState.foldCells       = save.economy.foldCells       ?? 3;
+  playerState.reserveVeydrite = save.economy.reserveVeydrite ?? 0;
 
   // Location
   playerState.location = {
