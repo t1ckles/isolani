@@ -412,9 +412,6 @@ function startContinue(save) {
 
         bootSidebar(playerState.captainName, playerState.shipName, () => {
           updateSidebar();
-          bootAuspex(() => {
-            updateAuspex();
-          });
           queue('', '', 80);
           queue('Welcome back, ' + playerState.captainName + '.', 'output-bright', 80);
           queue('Vessel: ' + playerState.shipName, 'output-dim', 80);
@@ -429,7 +426,7 @@ function startContinue(save) {
               clearInterval(waitForQueue);
               enableInput('command');
               updateSidebar();
-              updateAuspex();
+              bootAuspex(() => { updateAuspex(); });
             }
           }, 100);
         });
@@ -509,9 +506,6 @@ function startNewGame() {
               clearInterval(waitForBoot);
               bootSidebar(playerState.captainName, playerState.shipName, () => {
                 updateSidebar();
-                bootAuspex(() => {
-                  updateAuspex();
-                });
                 const overview = handleCommand('galaxy');
                 overview.split('\n').forEach(line => queue(line, '', 12));
 
@@ -520,15 +514,12 @@ function startNewGame() {
                     clearInterval(waitForQueue);
                     enableInput('command');
                     updateSidebar();
-                    updateAuspex();
                     autosave();
+                    // Boot auspex AFTER everything else is done
+                    bootAuspex(() => { updateAuspex(); });
                   }
                 }, 100);
               });
-            }
-          }, 100);
-
-        });
       });
     });
   }, 400);
