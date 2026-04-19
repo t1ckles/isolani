@@ -1,0 +1,1491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>APHELION — Deep Survey Operator's Field Manual</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Share+Tech&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --green:       #00ff41;
+      --green-mid:   #00aa2a;
+      --green-dim:   #006618;
+      --green-dark:  #003310;
+      --green-deep:  #001a08;
+      --orange:      #ff8800;
+      --cyan:        #00e5ff;
+      --white:       #ffffff;
+      --bg:          #0a0a0a;
+      --bg-card:     #0d120d;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--green-mid);
+      font-family: 'Share Tech Mono', 'Courier New', monospace;
+      font-size: 14px;
+      line-height: 1.8;
+      padding: 0;
+      animation: flicker 12s infinite;
+    }
+
+    @keyframes flicker {
+      0%,91%,95%,100% { opacity: 1; }
+      92% { opacity: 0.96; }
+      94% { opacity: 0.98; }
+    }
+
+    /* CRT scanline overlay */
+    body::after {
+      content: '';
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 9999;
+      background: repeating-linear-gradient(
+        to bottom,
+        transparent 0px, transparent 3px,
+        rgba(0,0,0,0.15) 3px, rgba(0,0,0,0.15) 4px
+      );
+    }
+
+    /* ── Layout ── */
+
+    .page {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 60px 40px;
+    }
+
+    /* ── Cover ── */
+
+    .cover {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-start;
+      border-bottom: 1px solid var(--green-dark);
+      padding: 80px 40px;
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    .cover-seal {
+      font-size: 11px;
+      letter-spacing: 0.3em;
+      color: var(--green-dim);
+      margin-bottom: 40px;
+      text-transform: uppercase;
+    }
+
+    .cover-title {
+      font-size: 48px;
+      letter-spacing: 10px;
+      color: var(--green);
+      text-shadow:
+        0 0 8px rgba(0,255,65,0.8),
+        0 0 24px rgba(0,255,65,0.3);
+      margin-bottom: 8px;
+      line-height: 1.1;
+    }
+
+    .cover-subtitle {
+      font-size: 16px;
+      letter-spacing: 4px;
+      color: var(--green-dim);
+      margin-bottom: 60px;
+    }
+
+    .cover-meta {
+      border-top: 1px solid var(--green-dark);
+      padding-top: 24px;
+      width: 100%;
+    }
+
+    .cover-meta p {
+      font-size: 12px;
+      color: var(--green-dim);
+      letter-spacing: 0.1em;
+      margin-bottom: 6px;
+    }
+
+    .cover-meta p span {
+      color: var(--green-mid);
+    }
+
+    .cover-warning {
+      margin-top: 40px;
+      border: 1px solid var(--green-dark);
+      padding: 16px 20px;
+      font-size: 11px;
+      color: var(--green-dim);
+      line-height: 1.7;
+      max-width: 520px;
+    }
+
+    .cover-warning strong {
+      color: var(--orange);
+      display: block;
+      margin-bottom: 6px;
+      letter-spacing: 0.15em;
+    }
+
+    /* ── Navigation ── */
+
+    .toc {
+      border-bottom: 1px solid var(--green-dark);
+      padding: 60px 40px;
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    .toc-title {
+      font-size: 11px;
+      letter-spacing: 0.3em;
+      color: var(--green-dim);
+      margin-bottom: 24px;
+    }
+
+    .toc-list {
+      list-style: none;
+      columns: 2;
+      column-gap: 40px;
+    }
+
+    .toc-list li {
+      margin-bottom: 8px;
+    }
+
+    .toc-list a {
+      color: var(--green-mid);
+      text-decoration: none;
+      font-size: 13px;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      transition: color 0.2s;
+    }
+
+    .toc-list a:hover { color: var(--green); }
+
+    .toc-list .toc-num {
+      color: var(--green-dim);
+      font-size: 11px;
+      flex-shrink: 0;
+    }
+
+    /* ── Sections ── */
+
+    .section {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 60px 40px;
+      border-bottom: 1px solid var(--green-dark);
+    }
+
+    .section-header {
+      margin-bottom: 40px;
+    }
+
+    .section-num {
+      font-size: 11px;
+      letter-spacing: 0.3em;
+      color: var(--green-dim);
+      margin-bottom: 8px;
+    }
+
+    .section-title {
+      font-size: 24px;
+      letter-spacing: 6px;
+      color: var(--green);
+      text-shadow: 0 0 6px rgba(0,255,65,0.4);
+    }
+
+    .section-divider {
+      border-top: 1px solid var(--green-dark);
+      margin: 32px 0;
+    }
+
+    /* ── Typography ── */
+
+    h3 {
+      font-size: 13px;
+      letter-spacing: 0.25em;
+      color: var(--green);
+      margin: 32px 0 12px;
+      text-transform: uppercase;
+    }
+
+    h4 {
+      font-size: 12px;
+      letter-spacing: 0.15em;
+      color: var(--orange);
+      margin: 24px 0 8px;
+      text-transform: uppercase;
+    }
+
+    p {
+      color: var(--green-mid);
+      margin-bottom: 14px;
+      font-size: 13px;
+      line-height: 1.9;
+      max-width: 680px;
+    }
+
+    .lore {
+      color: var(--green-dim);
+      font-style: italic;
+      border-left: 2px solid var(--green-dark);
+      padding-left: 16px;
+      margin: 20px 0;
+      font-size: 12px;
+      line-height: 1.8;
+      max-width: 640px;
+    }
+
+    .warning {
+      color: var(--orange);
+      border-left: 2px solid var(--orange);
+      padding-left: 16px;
+      margin: 20px 0;
+      font-size: 12px;
+      line-height: 1.8;
+      max-width: 640px;
+    }
+
+    .warning strong { color: var(--orange); letter-spacing: 0.1em; }
+
+    /* ── Command tables ── */
+
+    .cmd-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0 24px;
+      font-size: 12px;
+    }
+
+    .cmd-table tr {
+      border-bottom: 1px solid var(--green-deep);
+    }
+
+    .cmd-table td {
+      padding: 7px 0;
+      vertical-align: top;
+    }
+
+    .cmd-table .cmd {
+      color: var(--cyan);
+      width: 260px;
+      padding-right: 20px;
+      white-space: nowrap;
+    }
+
+    .cmd-table .desc {
+      color: var(--green-dim);
+      line-height: 1.6;
+    }
+
+    .cmd-table .desc em {
+      color: var(--green-mid);
+      font-style: normal;
+    }
+
+    /* ── Stat blocks ── */
+
+    .stat-block {
+      background: var(--bg-card);
+      border: 1px solid var(--green-dark);
+      padding: 20px 24px;
+      margin: 16px 0;
+      font-size: 12px;
+    }
+
+    .stat-block .stat-title {
+      color: var(--green);
+      letter-spacing: 0.2em;
+      font-size: 11px;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+      border-bottom: 1px solid var(--green-deep);
+      color: var(--green-dim);
+    }
+
+    .stat-row:last-child { border-bottom: none; }
+
+    .stat-row span:last-child { color: var(--green-mid); }
+
+    /* ── Faction cards ── */
+
+    .faction-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 16px 0;
+    }
+
+    .faction-card {
+      border: 1px solid var(--green-dark);
+      padding: 16px;
+      font-size: 12px;
+    }
+
+    .faction-card .faction-name {
+      color: var(--green);
+      letter-spacing: 0.15em;
+      font-size: 11px;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+    }
+
+    .faction-card .faction-short {
+      color: var(--orange);
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      margin-bottom: 10px;
+    }
+
+    .faction-card p {
+      font-size: 11px;
+      color: var(--green-dim);
+      margin: 0;
+      max-width: none;
+      line-height: 1.7;
+    }
+
+    /* ── Rep tier table ── */
+
+    .rep-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 12px;
+    }
+
+    .rep-table td {
+      padding: 8px 12px;
+      border: 1px solid var(--green-dark);
+      vertical-align: top;
+    }
+
+    .rep-table .rep-tier { color: var(--green); font-weight: bold; }
+    .rep-table .rep-range { color: var(--green-dim); }
+    .rep-table .rep-effect { color: var(--green-mid); }
+
+    /* ── Ammo table ── */
+
+    .ammo-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 12px;
+    }
+
+    .ammo-table th {
+      text-align: left;
+      color: var(--green-dim);
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      padding: 6px 8px;
+      border-bottom: 1px solid var(--green-dark);
+      text-transform: uppercase;
+    }
+
+    .ammo-table td {
+      padding: 7px 8px;
+      border-bottom: 1px solid var(--green-deep);
+      color: var(--green-dim);
+      vertical-align: top;
+    }
+
+    .ammo-table td:first-child { color: var(--cyan); }
+
+    /* ── Quadrant state table ── */
+
+    .state-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 12px;
+    }
+
+    .state-table th {
+      text-align: left;
+      color: var(--green-dim);
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      padding: 6px 8px;
+      border-bottom: 1px solid var(--green-dark);
+      text-transform: uppercase;
+    }
+
+    .state-table td {
+      padding: 7px 8px;
+      border-bottom: 1px solid var(--green-deep);
+      color: var(--green-dim);
+      vertical-align: top;
+      line-height: 1.6;
+    }
+
+    .state-table td:first-child { color: var(--green); }
+
+    /* ── Footer ── */
+
+    .manual-footer {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 40px 40px;
+      font-size: 11px;
+      color: var(--green-dark);
+      letter-spacing: 0.1em;
+      line-height: 2;
+    }
+
+    /* ── Inline code ── */
+
+    code {
+      color: var(--cyan);
+      font-family: 'Share Tech Mono', monospace;
+    }
+
+    /* ── Scroll anchor offset ── */
+    [id] { scroll-margin-top: 40px; }
+
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════ COVER -->
+
+<div class="cover">
+  <div class="cover-seal">VEYDRITE ASSAYER'S GUILD — CONTRACTOR PUBLICATIONS DIVISION</div>
+  <div class="cover-title">APHELION</div>
+  <div class="cover-subtitle">DEEP SURVEY TERMINAL — OPERATOR'S FIELD MANUAL</div>
+  <div class="cover-meta">
+    <p>Document Class: <span>Contractor Reference — Unrestricted Distribution</span></p>
+    <p>Revision: <span>4 — Current as of Guild Standard Year 2301</span></p>
+    <p>Issuing Authority: <span>Assayer's Guild, Contractor Relations Office, Solace Reach</span></p>
+    <p>Terminal Version: <span>v0.2.0-dev — Deep Survey Build</span></p>
+  </div>
+  <div class="cover-warning">
+    <strong>NOTICE TO INDEPENDENT CONTRACTORS</strong>
+    This document is issued upon registration confirmation and constitutes the complete operational reference for Guild-networked deep survey terminals. Contractors are presumed to have read and understood all sections prior to field operations. The Guild accepts no liability for losses arising from operational unfamiliarity. The galaxy is not forgiving of ignorance. Neither is the Guild.
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ TOC -->
+
+<div class="toc">
+  <div class="toc-title">TABLE OF CONTENTS</div>
+  <ul class="toc-list">
+    <li><a href="#s1"><span class="toc-num">01.</span> The Galaxy and Your Place in It</a></li>
+    <li><a href="#s2"><span class="toc-num">02.</span> The Assayer's Guild</a></li>
+    <li><a href="#s3"><span class="toc-num">03.</span> Currency and Economy</a></li>
+    <li><a href="#s4"><span class="toc-num">04.</span> Factions and Standing</a></li>
+    <li><a href="#s5"><span class="toc-num">05.</span> Navigation and Traversal</a></li>
+    <li><a href="#s6"><span class="toc-num">06.</span> The Terminal Interface</a></li>
+    <li><a href="#s7"><span class="toc-num">07.</span> Station Operations</a></li>
+    <li><a href="#s8"><span class="toc-num">08.</span> Survey Operations</a></li>
+    <li><a href="#s9"><span class="toc-num">09.</span> Salvage Operations</a></li>
+    <li><a href="#s10"><span class="toc-num">10.</span> Contracts and the Bulletin Board</a></li>
+    <li><a href="#s11"><span class="toc-num">11.</span> Combat Doctrine</a></li>
+    <li><a href="#s12"><span class="toc-num">12.</span> Ship Systems Reference</a></li>
+    <li><a href="#s13"><span class="toc-num">13.</span> Astrographics — Chart Management</a></li>
+    <li><a href="#s14"><span class="toc-num">14.</span> The Guild Record Archive</a></li>
+    <li><a href="#s15"><span class="toc-num">15.</span> Survival Notes</a></li>
+    <li><a href="#s16"><span class="toc-num">16.</span> Quick Command Reference</a></li>
+  </ul>
+</div>
+
+<!-- ═══════════════════════════════════════════ S1: THE GALAXY -->
+
+<div class="section" id="s1">
+  <div class="section-header">
+    <div class="section-num">SECTION 01</div>
+    <div class="section-title">THE GALAXY AND YOUR PLACE IN IT</div>
+  </div>
+
+  <p>The galaxy is not what it was. This is not a complaint. It is a survey finding, and the Guild records survey findings without editorializing. What the data shows is a civilization in structural decline: fewer stations operational, more systems running dark, infrastructure failing faster than it is being replaced. The Guild has been documenting this trend for approximately forty years. The trend has not reversed.</p>
+
+  <p>Your role as an independent contractor is to operate within this environment — to move through space that larger institutions cannot efficiently reach, to gather data and commodities that the network needs, and to survive long enough to file your reports. The Guild does not require you to fix the galaxy. It requires you to chart it accurately.</p>
+
+  <div class="section-divider"></div>
+
+  <h3>Galaxy Structure</h3>
+
+  <p>The known galaxy is organized into eight quadrants, each named and each in a distinct state of civilization. Quadrants contain clusters, which contain individual star systems. Every galaxy is procedurally generated from a seed — a four-part code assigned at registration. The seed determines everything: system names, station locations, faction presence, veydrite deposits, hazard ratings. Two pilots with different seeds inhabit different galaxies.</p>
+
+  <div class="lore">The seed is not metaphorical. The Guild's deep mapping engines require a starting value from which to derive the full structure of local space. In practice, this means that no two registration events produce the same galaxy. The contractor who registered before you and the contractor who registers after you are each alone in their own version of the dark. The Guild finds this philosophically unremarkable.</div>
+
+  <h3>Quadrant States</h3>
+
+  <p>Each quadrant carries a civilization state that determines station density, encounter frequency, veydrite pricing, faction mix, and hazard levels. States are not static over geological time but are stable over the operational period of a single contractor. Do not expect them to change.</p>
+
+  <table class="state-table">
+    <tr>
+      <th>State</th>
+      <th>Character</th>
+      <th>Encounter Risk</th>
+      <th>Economy</th>
+    </tr>
+    <tr>
+      <td>Established</td>
+      <td>Functional infrastructure, Guild presence, reliable services</td>
+      <td>Low</td>
+      <td>Low veydrite premium. Competitive fuel pricing.</td>
+    </tr>
+    <tr>
+      <td>Contested</td>
+      <td>Disputed control, armed presence, unstable docking</td>
+      <td>Moderate</td>
+      <td>Moderate premiums. Black market corridors possible.</td>
+    </tr>
+    <tr>
+      <td>Declining</td>
+      <td>Infrastructure failing, population exodus, reduced services</td>
+      <td>Moderate-High</td>
+      <td>Significant premiums. Fewer sellers.</td>
+    </tr>
+    <tr>
+      <td>Collapsed</td>
+      <td>Effectively lawless. Feral settlements. No formal authority.</td>
+      <td>High</td>
+      <td>Extreme premiums where available. Salvage-rich.</td>
+    </tr>
+    <tr>
+      <td>Isolated</td>
+      <td>Cut off from Guild network. Unknown internal conditions.</td>
+      <td>Moderate</td>
+      <td>Elevated premiums. Idiosyncratic local economies.</td>
+    </tr>
+    <tr>
+      <td>Forbidden</td>
+      <td>Access prohibited. Enforcement presence unconfirmed.</td>
+      <td>High</td>
+      <td>Astrographic data commands extreme premium.</td>
+    </tr>
+  </table>
+
+  <div class="section-divider"></div>
+
+  <h3>The Xeno Question</h3>
+
+  <p>The Guild's official position is that certain anomalous survey findings remain under active review. This document will not elaborate further. Contractors operating in systems flagged with anomalous sensor returns are advised to complete their survey quickly and file their data. The Guild is particularly interested in astrographic records from such systems. The premium reflects this interest.</p>
+
+  <div class="warning">
+    <strong>FIELD NOTE</strong>
+    If something in a system does not resolve on sensors, do not attempt repeated resolution sweeps. Log the anomaly. Leave the system. File your data. The Guild will handle classification. You are a surveyor, not an investigator.
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════ S2: THE GUILD -->
+
+<div class="section" id="s2">
+  <div class="section-header">
+    <div class="section-num">SECTION 02</div>
+    <div class="section-title">THE ASSAYER'S GUILD</div>
+  </div>
+
+  <p>The Assayer's Guild is the oldest continuously operating institution in known space. It predates the current collapse cycle by several centuries and has survived every previous one. Its longevity is not accidental. The Guild survives because every other faction — Pelk Logistics, Colonial Colonies Command, feral settlements, independent operators — needs what the Guild provides: neutral monetary infrastructure and authoritative cartographic records. The Guild does not take sides. It takes percentages.</p>
+
+  <div class="lore">The Guild's neutrality is its entire value. The moment it favors one corp over another, it loses the thing that makes the galaxy function around it. This is why Guild stations are the most common copy-known this. The Guild knows every major corp knows this. This mutual understanding is the glue that holds the galaxy together — or rather, holds its pieces in roughly the same relative positions.</div>
+
+  <div class="section-divider"></div>
+
+  <h3>What the Guild Does</h3>
+
+  <p>The Guild performs three core functions: it maintains the monetary exchange system (Veydrite Dust pricing, Corp Scrip exchange, currency certification), it maintains the cartographic record (astrographic data collection, star chart distribution, survey certification), and it maintains the contractor network (registration, contract facilitation, reputation tracking).</p>
+
+  <p>As a registered independent contractor, you operate on Guild-issued credentials. Your terminal connects to the Guild network. Your astrographic data sells to Guild archive stations. Your reputation score is maintained in Guild ledgers. You are, in a meaningful sense, a Guild instrument — one they have deployed into space at no cost to themselves, because you bear all the operational risk.</p>
+
+  <div class="lore">The Guild does not think of contractors this way, officially. Officially, contractors are valued independent partners whose contributions to the cartographic record are essential to Guild operations. This is also true. Both things can be true simultaneously. The Guild is comfortable with this.</div>
+
+  <div class="section-divider"></div>
+
+  <h3>The Assay Terminal</h3>
+
+  <p>The terminal interface you are currently operating is a Guild-issue Deep Survey Terminal, designation v0.2.0-dev. It provides navigation, sensor, trade, combat, and record-keeping functions through a command-line interface. The terminal connects to Guild network nodes at registered stations. When you are not docked, you are operating on cached data and local sensors only.</p>
+
+  <p>The Auspex panel — the secondary display to the right of the main terminal — provides real-time local grid information: system composition, station presence, signals, environmental hazard, and traffic data. It updates on navigation events and manual survey commands. It does not update on every keystroke. Sensor time is not free.</p>
+
+</div>
+
+<!-- ═══════════════════════════════════════════ S3: ECONOMY -->
+
+<div class="section" id="s3">
+  <div class="section-header">
+    <div class="section-num">SECTION 03</div>
+    <div class="section-title">CURRENCY AND ECONOMY</div>
+  </div>
+
+  <h3>Veydrite Dust</h3>
+
+  <p>Veydrite Dust is the bedrock commodity of the known economy. It occurs in trace quantities around certain stellar classes — O and B-class stars produce the richest deposits — and is extracted through field salvage operations. Veydrite does not corrode, does not decay, cannot be synthesized, and has verified mass. These properties make it the only universally accepted store of value in a galaxy where institutional trust is eroding along with everything else.</p>
+
+  <p>The Guild sets the base Veydrite exchange rate. This rate varies by quadrant state: Established space pays less because supply is more reliable; Collapsed space pays more because getting there is genuinely dangerous. Your Guild standing also affects the rate you receive — TRUSTED contractors receive a 15% premium, HOSTILE contractors receive a 25% penalty, and will find Guild stations refusing them entry regardless.</p>
+
+  <div class="stat-block">
+    <div class="stat-title">Veydrite Pricing by Quadrant State</div>
+    <div class="stat-row"><span>Established</span><span>84 CR/kg</span></div>
+    <div class="stat-row"><span>Contested</span><span>120 CR/kg</span></div>
+    <div class="stat-row"><span>Declining</span><span>144 CR/kg</span></div>
+    <div class="stat-row"><span>Collapsed</span><span>192 CR/kg</span></div>
+    <div class="stat-row"><span>Isolated</span><span>168 CR/kg</span></div>
+    <div class="stat-row"><span>Forbidden</span><span>216 CR/kg</span></div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <h3>Corp Scrip</h3>
+
+  <p>Corp Scrip is the transactional layer — the local currency used for day-to-day purchases. It is issued and backstopped by the dominant corporate presence in a given region. A regional corp's "scrip" is essentially a tax-bill formatted as paper. Scrip buys fuel. Scrip pays docking fees. Scrip denominates contract payments. The Assayer's Guild certifies exchange rates between competing scrip systems. This mutual understanding allows trade to continue even in Contested and Declining space.</p>
+
+  <div class="lore">The fine detail is that this makes the Guild the institution that determines how much any given corp's money is worth relative to any other corp's money. The Guild has never weaponized this power. Every faction in known space spends considerable political energy ensuring the Guild never has reason to.</div>
+
+  <div class="section-divider"></div>
+
+  <h3>Fuel</h3>
+
+  <p>Fuel is measured in units and consumed by nav and jump operations. Nav jumps cost 8–16 units depending on distance and drive efficiency. Blind cluster jumps cost 6–11 units. Salvage operations consume power rather than fuel, but fuel reserves still determine your operational range. Running dry in deep space is a death sentence. Running low is a warning.</p>
+
+  <div class="stat-block">
+    <div class="stat-title">Fuel Pricing by Quadrant State</div>
+    <div class="stat-row"><span>Established</span><span>32 CR/unit</span></div>
+    <div class="stat-row"><span>Contested</span><span>44 CR/unit</span></div>
+    <div class="stat-row"><span>Declining</span><span>52 CR/unit</span></div>
+    <div class="stat-row"><span>Collapsed</span><span>80 CR/unit</span></div>
+    <div class="stat-row"><span>Isolated</span><span>64 CR/unit</span></div>
+    <div class="stat-row"><span>Forbidden</span><span>100 CR/unit</span></div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <h3>Docking Fees</h3>
+
+  <div class="stat-block">
+    <div class="stat-title">Docking Fees by Faction</div>
+    <div class="stat-row"><span>Assayer's Guild</span><span>50 CR</span></div>
+    <div class="stat-row"><span>Pelk Logistics</span><span>35 CR</span></div>
+    <div class="stat-row"><span>Colonial Colonies Command</span><span>20 CR</span></div>
+    <div class="stat-row"><span>Independent</span><span>25 CR</span></div>
+    <div class="stat-row"><span>Feral Settlement</span><span>0 CR (negotiated on arrival)</span></div>
+  </div>
+
+  <p>Docking recharges your Power Core to full via shore power. This is the most reliable way to restore power outside of passive recharge over travel time. Factor it into your operational planning.</p>
+
+</div>
+
+<!-- ═══════════════════════════════════════════ S4: FACTIONS -->
+
+<div class="section" id="s4">
+  <div class="section-header">
+    <div class="section-num">SECTION 04</div>
+    <div class="section-title">FACTIONS AND STANDING</div>
+  </div>
+
+  <p>Five faction groups operate within Guild-mapped space. Your standing with each is tracked independently on a scale of -100 to +100. Standing affects pricing, docking access, contract availability, and the likelihood of hostile encounters.</p>
+
+  <div class="faction-grid">
+    <div class="faction-card">
+      <div class="faction-name">The Assayer's Guild</div>
+      <div class="faction-short">GUILD — NEUTRAL</div>
+      <p>The monetary and cartographic authority. Operates the network you are connected to. Buying and selling through Guild stations builds standing. TRUSTED status improves veydrite rates significantly. HOSTILE status means docking refused everywhere that flies Guild colors — which is a significant portion of known space.</p>
+    </div>
+    <div class="faction-card">
+      <div class="faction-name">Pelk Logistics</div>
+      <div class="faction-short">PELK — COMMERCIAL</div>
+      <p>The dominant commercial freight and logistics operation. Pelk stations are common in Contested and Declining space. They post delivery and interdiction contracts. They are commercially minded — standing builds through successful transactions and completed contracts. They do not ask what is in the sealed cargo.</p>
+    </div>
+    <div class="faction-card">
+      <div class="faction-name">Colonial Colonies Command</div>
+      <div class="faction-short">CCC — MILITARY</div>
+      <p>The remnant military authority. CCC stations are more selective — their docking fees are lower, but their contracts require some established standing to access. They post elimination orders and escort contracts. Completing CCC combat contracts may affect standing with other factions whose vessels you destroy.</p>
+    </div>
+    <div class="faction-card">
+      <div class="faction-name">Independent Operators</div>
+      <div class="faction-short">INDP — NEUTRAL</div>
+      <p>Stations operating outside formal corporate affiliation. Docking fees are modest. Services are basic. Standing builds slowly through repeated patronage. Independent stations are the most common station type in Declining space. They are the background infrastructure of a decaying galaxy — not glamorous, but reliable.</p>
+    </div>
+    <div class="faction-card">
+      <div class="faction-name">Feral Settlements</div>
+      <div class="faction-short">FERAL — HOSTILE</div>
+      <p>Not a faction in the conventional sense — a category of settlement that has effectively opted out of the corporate framework. Feral stations charge no docking fees and ask few questions. They also post contracts that Guild-affiliated boards would not carry. Feral standing is not on public record. The Guild is aware of this and finds it strategically useful.</p>
+    </div>
+    <div class="faction-card">
+      <div class="faction-name">Unknown Authority</div>
+      <div class="faction-short">???? — UNKNOWN</div>
+      <p>Certain stations do not respond on standard frequencies. Your transponder is logged. Services are not listed. The Guild's official position is that these installations are under active jurisdictional review. Contractors are not advised to speculate further.</p>
+    </div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <h3>Reputation Tiers</h3>
+
+  <table class="rep-table">
+    <tr>
+      <td class="rep-tier">TRUSTED</td>
+      <td class="rep-range">+61 to +100</td>
+      <td class="rep-effect">Preferential pricing. Contract access. Warmest reception.</td>
+    </tr>
+    <tr>
+      <td class="rep-tier">KNOWN</td>
+      <td class="rep-range">+1 to +60</td>
+      <td class="rep-effect">Standard services. Normal pricing. Access to most contracts.</td>
+    </tr>
+    <tr>
+      <td class="rep-tier">WATCHED</td>
+      <td class="rep-range">-60 to 0</td>
+      <td class="rep-effect">Some services restricted. Contract boards may deny access.</td>
+    </tr>
+    <tr>
+      <td class="rep-tier" style="color:var(--orange)">HOSTILE</td>
+      <td class="rep-range">-100 to -61</td>
+      <td class="rep-effect">Docking refused. Patrol vessels may engage on sight.</td>
+    </tr>
+  </table>
+
+  <p>Standing increases through docking and paying fees, completing contracts, and selling goods at faction-affiliated stations. Standing decreases through contract failure, abandonment, and completing combat contracts that destroy vessels affiliated with a given faction. Rep gain is capped at once per day per station to prevent abuse.</p>
+
+</div>
+
+<!-- ═══════════════════════════════════════════ S5: NAVIGATION -->
+
+<div class="section" id="s5">
+  <div class="section-header">
+    <div class="section-num">SECTION 05</div>
+    <div class="section-title">NAVIGATION AND TRAVERSAL</div>
+  </div>
+
+  <p>Movement between systems is the foundation of contractor operations. There are two transit modes available to registered vessels: calculated nav transit and blind cluster jump. Both consume fuel and power. Both advance the day counter. Plan accordingly.</p>
+
+  <div class="section-divider"></div>
+
+  <h3>Nav Transit — <code>nav &lt;system name&gt;</code></h3>
+
+  <p>Nav transit allows travel to any named system in the galaxy. The terminal calculates a course, deducts fuel, drains a small amount of power for navigation computation, and advances the day counter by 4–11 days depending on distance. On arrival, the system is available for survey, salvage, and — if a station is present — docking.</p>
+
+  <p>Nav transit has an encounter check on arrival. Quadrant state determines base encounter probability. Hostile faction standing increases it. Xeno-tainted systems have a chance of unknown contact regardless of quadrant state.</p>
+
+  <div class="warning">
+    <strong>FUEL WARNING</strong>
+    The terminal will refuse nav transit if fuel is insufficient. It will not warn you that you are approaching the margin — it will simply refuse when you attempt transit. Monitor your fuel reserves actively. The sidebar displays current fuel at all times.
+  </div>
+
+  <div class="section-divider"></div>
+
+  <h3>Blind Cluster Jump — <code>jump &lt;system name&gt;</code></h3>
+
+  <p>Cluster jumps allow rapid transit within your current cluster without full nav computation. They cost less fuel (6–11 units vs 8–16) and fewer days (1–3 vs 4–11), but carry additional risks: a 30% chance of minor hull stress on exit, and an elevated encounter probability due to the uncomputed arrival vector. Useful for rapid local traversal. Not recommended as a primary transit method in high-hazard clusters.</p>
+
+  <div class="lore">The technical distinction between nav transit and blind jump is the presence or absence of pre-computed exit vector correction. Nav transit plots the exit vector before initiating. Blind jump trusts the drive's internal gyroscopic compensation. The drive is good at this. It is not perfect.</div>
+
+  <div class="section-divider"></div>
+
+  <h3>Scanning Before Travel</h3>
+
+  <p>Before committing to a destination, use <code>scan &lt;1-8&gt;</code> to survey a quadrant. The scan display shows every system in the quadrant with its star class, beacon status, and — if you have previously deepscanned the system — a ◆ charted marker indicating that detailed data is on file. Use this to identify targets before spending fuel.</p>
+
+  <h3>Encounters</h3>
+
+  <p>Encounters trigger on nav and jump arrival. Attacker types reflect local conditions:</p>
+
+  <table class="cmd-table">
+    <tr>
+      <td class="cmd">Feral Raiders</td>
+      <td class="desc">Common in Collapsed and Declining space. They want cargo. No transponder, no hail.</td>
+    </tr>
+    <tr>
+      <td class="cmd">Pirate Vessel</td>
+      <td class="desc">Organized. They want scrip. May attempt negotiation before firing.</td>
+    </tr>
+    <tr>
+      <td class="cmd">Faction Patrol</td>
+      <td class="desc">Triggered by HOSTILE standing with local faction. They want you gone.</td>
+    </tr>
+    <tr>
+      <td class="cmd">Unknown Contact</td>
+      <td class="desc">Xeno-adjacent systems. Does not broadcast. Does not negotiate. Threat level 5.</td>
+    </tr>
+  </table>
+
+</div>
+
+<!-- ═══════════════════════════════════════════ S6: TERMINAL -->
+
+<div class="section" id="s6">
+  <div class="section-header">
+    <div class="section-num">SECTION 06</div>
+    <div class="section-title">THE TERMINAL INTERFACE</div>
+  </div>
+
+  <p>The Deep Survey Terminal operates as a command-line interface. All actions are entered as text commands. The terminal does not auto-complete. The terminal does not tolerate ambiguity well — if a command is not recognized, it will tell you. Type <code>help</code> at any time for the current command index.</p>
+
+  <div class="section-divider"></div>
+
+  <h3>Terminal Modes</h3>
+
+  <p>The terminal operates in several modes depending on context. Commands available to you change based on mode.</p>
+
+  <table class="cmd-table">
+    <tr>
+      <td class="cmd">Standard (field)</td>
+      <td class="desc">Normal operation. Navigation, sensors, salvage, and status commands available.</td>
+    </tr>
+    <tr>
+      <td class="cmd">Trade terminal</td>
+      <td class="desc">Entered via <code>trade</code> when docked. Buy, sell, and repair commands. Exit with <code>exit</code>.</td>
+    </tr>
+    <tr>
+      <td class="cmd">Armory terminal</td>
+      <td class="desc">Entered via <code>armory</code> when docked. Weapons, ammo, and repair. Exit with <code>exit</code>.</td>
+    </tr>
+    <tr>
+      <td class="cmd">Encounter mode</td>
+      <td class="desc">Automatically entered on contact. Combat commands only. Resolve encounter to exit.</td>
+    </tr>
+  </table>
+
+  <div class="section-divider"></div>
+
+  <h3>The Sidebar</h3>
+
+  <p>The right panel displays persistent ship status. It shows vessel name, captain identity, current day, hull/fuel/power bars, scrip balance, veydrite hold, astrographic chart count, active contract, and faction standing. It updates after every command. Monitor it. It is the difference between knowing you have 20% hull and discovering you have 20% hull when the next shot lands.</p>
+
+  <h3>The Auspex Panel</h3>
+
+  <p>The lower-right panel shows local grid data for your current system. It populates on <code>where</code>, <code>nav</code>, <code>dock</code>, and <code>undock</code> commands. It shows system name and type, body list, station presence, signal status, environmental hazard, and traffic contacts once sensors have been swept. It does not auto-update on unrelated commands.</p>
+
+</div>
+
+<!-- ═══════════════════════════════════════════ S7: STATION OPS -->
+
+<div class="section" id="s7">
+  <div class="section-header">
+    <div class="section-num">SECTION 07</div>
+    <div class="section-title">STATION OPERATIONS</div>
+  </div>
+
+  <p>Stations are the primary resupply and service nodes available to registered contractors. Not every system has a station. Not every station will admit you. Check your standing before burning fuel to reach a system with a single service node run by a faction you have previously antagonized.</p>
+
+  <div class="section-divider"></div>
+
+  <h3>Docking — <code>dock</code> / <code>undock</code></h3>
+
+  <p>Docking pays the fee, connects shore power (fully recharging your Power Core), and grants access to station services. Faction standing is checked on arrival — HOSTILE standing results in refusal. Standing increases by 1 point upon each successful docking, once per day per station.</p>
+
+  <div class="section-divider"></div>
+
+  <h3>Trade Terminal — <code>trade</code></h3>
+
+  <p>The trade terminal provides access to buying, selling, and repair services. Enter with <code>trade</code>, exit with <code>exit</code>. Available commands within the trade terminal:</p>
+
+  <table class="cmd-table">
+    <tr>
+      <td class="cmd">sell veydrite &lt;n|all&gt;</td>
+      <td class="desc">Sell veydrite at posted Guild rate. Amount or <em>all</em>.</td>
+    </tr>
+    <tr>
+      <td class="cmd">sell astrographics</td>
+      <td class="desc">View your chart portfolio for sale. Guild stations only.</td>
+    </tr>
+    <tr>
+      <td class="cmd">sell astrographics &lt;#&gt;</td>
+      <td class="desc">Sell a specific chart record by index number.</td>
+    </tr>
+    <tr>
+      <td class="cmd">sell astrographics all</td>
+      <td class="desc">Sell entire portfolio. <em>Permanently deletes all chart data from memory matrix.</em></td>
+    </tr>
+    <tr>
+      <td class="cmd">buy fuel &lt;n&gt;</td>
+      <td class="desc">Purchase fuel units at posted rate.</td>
+    </tr>
+    <tr>
+      <td class="cmd">repair hull full</td>
+      <td class="desc">Full hull repair at current station rate.</td>
+    </tr>
+    <tr>
+      <td class="cmd">repair hull &lt;n&gt;</td>
+      <td class="desc">Partial hull repair. Useful when funds are limited.</td>
+    </tr>
+  </table>
+
+  <div class="section-divider"></div>
+
+  <h3>Armory Terminal — <code>armory</code></h3>
+
+  <p>The armory terminal provides access to weapons, ammunition, and weapon repair services. Enter with <code>armory</code>, exit with <code>exit</code>. Stock varies by faction and quadrant state — Declining space carries less inventory at higher prices. CCC stations carry military-grade weapons but require KNOWN standing or better to access.</p>
+
+  <table class="cmd-table">
+    <tr>
+      <td class="cmd">buy weapon &lt;#&gt; &lt;slot|cargo&gt;</td>
+      <td class="desc">Purchase weapon by index number. Specify slot to install or <em>cargo</em> to store.</td>
+    </tr>
+    <tr>
+      <td class="cmd">buy ammo &lt;slot&gt; &lt;#&gt; &lt;amount&gt;</td>
+      <td class="desc">Purchase ammo by index number for the weapon in the specified slot.</td>
+    </tr>
+    <tr>
+      <td class="cmd">sell weapon &lt;slot&gt;</td>
+      <td class="desc">Sell installed weapon at market rate (condition-adjusted).</td>
+    </tr>
+    <tr>
+      <td class="cmd">sell cargo &lt;#&gt;</td>
+      <td class="desc">Sell cargo-held weapon by index number.</td>
+    </tr>
+    <tr>
+      <td class="cmd">install &lt;slot&gt; &lt;cargo#&gt;</td>
+      <td class="desc">Install a weapon from cargo into a weapon slot.</td>
+    </tr>
+    <tr>
+      <td class="cmd">uninstall &lt;slot&gt;</td>
+      <td class="desc">Move an installed weapon to cargo storage.</td>
+    </tr>
+    <tr>
+      <td class="cmd">repair weapon &lt;slot&gt;</td>
+      <td class="desc">Repair weapon condition. Rate varies by quadrant state.</td>
+    </tr>
+    <tr>
+      <td class="cmd">repair system &lt;name&gt;</td>
+      <td class="desc">Repair a named subsystem. Use <code>systems</code> to check current HP and STA.</td>
+    </tr>
+  </table>
+
+</div>
+
+<!-- ═══════════════════════════════════════════ S8: SURVEY OPS -->
+
+<div class="section" id="s8">
+  <div class="section-header">
+    <div class="section-num">SECTION 08</div>
+    <div class="section-title">SURVEY OPERATIONS</div>
+  </div>
+
+  <p>Survey operations are the core of contractor function. The Guild needs accurate, current astrographic data. You generate it. The exchange is simple: you take the risk, they take the data, you get paid. The memory matrices aboard your vessel store this data until you elect to sell it or lose it.</p>
+
+  <div class="section-divider"></div>
+
+  <h3>Basic Scan — <code>scan &lt;1-8&gt;</code></h3>
+
+  <p>Passive sensor sweep of a numbered quadrant. Returns the name and star class of every system in that quadrant, plus beacon presence where detected. Does not generate astrographic data. Does not reveal hazard rating, traffic, station presence, or veydrite. It tells you what exists. Nothing more.</p>
+
+  <p>Systems you have previously deepscanned display a ◆ marker indicating chart data is on file. Systems where you have sold that data display no marker — the knowledge left with the sale.</p>
+
+  <div class="section-divider"></div>
+
+  <h3>Deep Survey — <code>deepscan &lt;system name&gt;</code></h3>
+
+  <p>Full astrographic survey of a named system within your current quadrant. Costs 40 Power Core units. The terminal prints initialization text, then resolves after a variable delay of 3–6 seconds as the array focuses. On completion, the full system profile is displayed and astrographic data is entered into the memory matrix.</p>
+
+  <p>Range is limited to your current quadrant. You cannot deepscan systems in other quadrants from a distance. You must be there, or close to there.</p>
+
+  <div class="stat-block">
+    <div class="stat-title">Deepscan Output Fields</div>
+    <div class="stat-row"><span>Star class</span><span>Spectral type of primary star</span></div>
+    <div class="stat-row"><span>Bodies</span><span>Total body count in system</span></div>
+    <div class="stat-row"><span>State</span><span>Quadrant civilization state</span></div>
+    <div class="stat-row"><span>Hazard</span><span>Environmental hazard rating (▲▲▲△△ = 3/5)</span></div>
+    <div class="stat-row"><span>Traffic</span><span>Vessel traffic density (◉◉○○○ = 2/5)</span></div>
+    <div class="stat-row"><span>Jump points</span><span>Number of outbound jump connections</span></div>
+    <div class="stat-row"><span>Station</span><span>Station name if present, or none detected</span></div>
+    <div class="stat-row"><span>Veydrite</span><span>Trace deposit detection [VYD] if present</span></div>
+    <div class="stat-row"><span>Ruins</span><span>Structural signatures [RUN] if present</span></div>
+    <div class="stat-row"><span>Beacon</span><span>Active distress beacon [BCN] if present</span></div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <h3>Cluster Survey — <code>clusterdeepscan &lt;cluster name&gt;</code></h3>
+
+  <p>Initiates sequential deepscan of all systems in a named cluster within your current quadrant. Costs 25 Power Core units per system. The sweep processes each system individually — targeting text, progress messages, and full system output appear in sequence as the array works through the cluster. Power drains and the sidebar updates after each system resolves, not at the end of the sweep.</p>
+
+  <p>If power runs low mid-sweep, the operation scans as many systems as possible while maintaining a minimum 1-unit power reserve. The terminal reports how many systems were skipped at completion. You will never be left with a dead core by a cluster sweep.</p>
+
+  <div class="lore">The cluster sweep is not a shortcut. It takes real time — 3 to 6 seconds per system, more for larger clusters. The array is doing genuine work. What you are watching is not a loading screen. It is your ship performing thirty minutes of sensor labor in compressed time. The data you get at the end is worth it.</div>
+
+  <div class="section-divider"></div>
+
+  <h3>Chart Management — <code>charts</code> / <code>charts &lt;system name&gt;</code></h3>
+
+  <p><code>charts</code> displays all astrographic records currently held in your memory matrix — system name, scan quality, day recorded, and unit count. <code>charts &lt;system name&gt;</code> displays the full stored profile for a specific system without leaving the terminal or spending power. This is how you consult data you have already gathered.</p>
+
+  <div class="section-divider"></div>
+
+  <h3>Selling Astrographic Data</h3>
+
+  <p>Astrographic data sells exclusively to Assayer's Guild stations. The Guild is the cartographic authority — other factions do not maintain the archive infrastructure to purchase and process survey data. At a Guild station, enter the trade terminal and use <code>sell astrographics</code> to view your portfolio with current values.</p>
+
+  <p>Pricing is calculated per record based on: quadrant state of the surveyed system (Forbidden space pays most), scan quality (deep scan pays full rate, basic pays 30%), data age (very slow decay — approximately 1% per 10 days, floor at 50%), and your Guild standing. Records marked <em>[aging]</em> in the portfolio display have fallen below 85% of original value.</p>
+
+  <div class="warning">
+    <strong>IMPORTANT — MEMORY MATRIX PERMANENCE</strong>
+    Sold astrographic data is permanently deleted from your vessel's memory matrix. The ◆ charted marker disappears from scan displays. You will not have the data. The Guild will have the data. If you need to survey that system again, you will need to deepscan it again. Price accordingly.
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════ S9: SALVAGE -->
+
+<div class="section" id="s9">
+  <div class="section-header">
+    <div class="section-num">SECTION 09</div>
+    <div class="section-title">SALVAGE OPERATIONS</div>
+  </div>
+
+  <p>Field salvage is the primary source of Veydrite Dust for contractors who do not have pre-established extraction contracts. It is conducted using the Harrow-7 Salvage Head utility, which is installed on your vessel at registration. Salvage consumes Power Core units and advances the day counter by 1–2 days per operation.</p>
+
+  <h3>Initiating Salvage — <code>salvage</code></h3>
+
+  <p>Salvage is available in systems containing ruin sites, veydrite deposits, or debris fields. The terminal checks for these automatically. If nothing salvageable is present, the operation is declined. Each system can be salvaged once per visit — move on and return another day, or travel to a new system.</p>
+
+  <p>Salvage yields Veydrite Dust and auto-liquidated scrap value. Hazard level affects yield variance and the probability of an incident during the operation. High-hazard systems yield more — if you survive the operation. Xeno-tainted systems have a chance of anomalous finds that do not match any known catalogue.</p>
+
+  <div class="section-divider"></div>
+
+  <h3>Ruin Logs — <code>scan log</code></h3>
+
+  <p>Ruin sites in a system can be scanned for data logs using <code>scan log</code>. This does not require power — it requires a ruin to be present. Recovered logs are added to your record archive and viewable with <code>logs</code>. Logs are flavor artifacts: crew records, manifests, station closure notices, personal accounts. They do not have direct mechanical value. They have the other kind.</p>
+
+  <div class="lore">The Guild does not officially assign value to recovered personal logs. They are not catalogued, not purchased, and not filed. Several contractors have noted that the Guild's data archive, which covers approximately forty years of network operation, contains no personal correspondence whatsoever. The Guild has not commented on this observation.</div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════ S10: CONTRACTS -->
+
+<div class="section" id="s10">
+  <div class="section-header">
+    <div class="section-num">SECTION 10</div>
+    <div class="section-title">CONTRACTS AND THE BULLETIN BOARD</div>
+  </div>
+
+  <p>Contracts are posted by factions at their station bulletin boards. Access the bulletin board with <code>bulletin</code> when docked at a station with an active contract board. Guild and Pelk stations post contracts by default. CCC, Feral, and some Independent stations also post work — the nature of that work varies considerably by faction.</p>
+
+  <h3>Accepting a Contract — <code>accept &lt;number&gt;</code></h3>
+
+  <p>Accept a contract by its index number from the bulletin display. You may hold one active contract at a time. Complete or abandon the current contract before accepting another. Contracts display difficulty rating (★☆☆ through ★★★), payment, deadline in days, and reputation reward. Tags indicate special requirements:</p>
+
+  <table class="cmd-table">
+    <tr><td class="cmd">[DEEPSCAN]</td><td class="desc">Requires deepscan of the target system. Budget 40 power units.</td></tr>
+    <tr><td class="cmd">[GREY]</td><td class="desc">Morally ambiguous. Completing this contract may affect standing with third parties.</td></tr>
+  </table>
+
+  <div class="section-divider"></div>
+
+  <h3>Contract Types</h3>
+
+  <table class="cmd-table">
+    <tr><td class="cmd">Cartographic Survey</td><td class="desc"><em>Guild.</em> Travel to system. Return. Basic presence data sufficient.</td></tr>
+    <tr><td class="cmd">Deep Survey Contract</td><td class="desc"><em>Guild.</em> Travel to system. Deepscan required. Return with data.</td></tr>
+    <tr><td class="cmd">Ruin Assessment</td><td class="desc"><em>Guild.</em> System must have ruin sites. Deep scan required.</td></tr>
+    <tr><td class="cmd">Beacon Recovery</td><td class="desc"><em>Guild.</em> System must have active beacon. Investigate and file report.</td></tr>
+    <tr><td class="cmd">Delivery</td><td class="desc"><em>Pelk.</em> Transport cargo to target station. Do not open the cargo.</td></tr>
+    <tr><td class="cmd">Priority Shipment</td><td class="desc"><em>Pelk.</em> Tight deadline. Speed bonus applies. Worth the rush.</td></tr>
+    <tr><td class="cmd">Targeted Neutralization</td><td class="desc"><em>Pelk.</em> Destroy a vessel operating in the target system. [GREY]</td></tr>
+    <tr><td class="cmd">Elimination Order</td><td class="desc"><em>CCC.</em> Destroy a hostile vessel at a named system. Confirm destruction.</td></tr>
+    <tr><td class="cmd">Escort Duty</td><td class="desc"><em>CCC.</em> Shepherd a transport to the target system. It must arrive intact.</td></tr>
+    <tr><td class="cmd">Strategic Survey</td><td class="desc"><em>CCC.</em> Deep scan of a system for CCC strategic planning.</td></tr>
+    <tr><td class="cmd">Removal</td><td class="desc"><em>Feral.</em> Someone needs to not be in that system anymore. Ask no questions.</td></tr>
+    <tr><td class="cmd">Extraction Run</td><td class="desc"><em>Feral.</em> Retrieve a package. Deliver here. No questions asked, none answered.</td></tr>
+  </table>
+
+  <div class="section-divider"></div>
+
+  <h3>Deadlines and Feasibility</h3>
+
+  <p>Contract deadlines are generated based on estimated travel time to the target system, plus time for any required scan operations, plus a 20% margin. The deadline is tight but achievable. A contract asking for deep survey of a system six quadrants away with a 3-day deadline is not in the system — the generator enforces feasibility. If a contract looks difficult, it is difficult. It is not impossible.</p>
+
+  <p>Speed bonuses apply when you complete a contract within 60% of the allotted time. The bonus is 10% additional payment plus 3 extra reputation points. Getting there fast matters.</p>
+
+  <h3>Completion and Abandonment</h3>
+
+  <p>Complete a contract with <code>complete</code> when you are physically present in the target system. Abandoning with <code>abandon</code> applies a -15 reputation penalty with the posting faction. Contract failure (deadline exceeded during transit) is detected automatically and also applies the penalty. The Guild notes all of these events. They do not editorialize.</p>
+
+</div>
+
+<!-- ═══════════════════════════════════════════ S11: COMBAT -->
+
+<div class="section" id="s11">
+  <div class="section-header">
+    <div class="section-num">SECTION 11</div>
+    <div class="section-title">COMBAT DOCTRINE</div>
+  </div>
+
+  <p>The Guild does not endorse violence as a primary operational strategy. The Guild also operates in the same galaxy you do, and is not naive. Combat occurs. This section covers what to do when it does.</p>
+
+  <div class="warning">
+    <strong>DOCTRINE NOTE — NO ENERGY WEAPONS</strong>
+    Guild-registered vessels operate under kinetic/ballistic weapons doctrine only. No energy weapons exist in registered contractor loadouts. No shields are issued. Combat is attrition. Plan accordingly.
+  </div>
+
+  <div class="section-divider"></div>
+
+  <h3>Encounter Response Options</h3>
+
+  <table class="cmd-table">
+    <tr><td class="cmd">evade</td><td class="desc">Burns fuel. Chance to break contact based on threat level. Failure means hull damage.</td></tr>
+    <tr><td class="cmd">negotiate</td><td class="desc">Attempt to talk or bribe your way out. Chance varies by attacker type and what they want. Unknown contacts have a 10% success rate. Plan accordingly.</td></tr>
+    <tr><td class="cmd">fight</td><td class="desc">Enters weapons engagement. Requires armed weapon slots with loaded ammunition.</td></tr>
+    <tr><td class="cmd">yield</td><td class="desc">Surrender. Attacker takes cargo or scrip. You keep your hull. Sometimes the correct answer.</td></tr>
+  </table>
+
+  <div class="section-divider"></div>
+
+  <h3>Combat Sequence</h3>
+
+  <p>Combat proceeds in exchange rounds. Each round you fire, the enemy fires back. Sensor commands are available between exchanges to build tactical picture:</p>
+
+  <table class="cmd-table">
+    <tr><td class="cmd">profile</td><td class="desc">Hull signature scan. Costs 10 power. Reveals enemy hull and subsystem list.</td></tr>
+    <tr><td class="cmd">sigint</td><td class="desc">Full emissions analysis. Costs 25 power. Reveals subsystem HP, armor, stability. Enemy may detect the scan.</td></tr>
+    <tr><td class="cmd">target &lt;subsystem&gt;</td><td class="desc">Lock onto a specific enemy subsystem. Requires profile first.</td></tr>
+    <tr><td class="cmd">fire &lt;slot&gt;</td><td class="desc">Fire weapon in specified slot using active ammo type.</td></tr>
+    <tr><td class="cmd">fire &lt;slot&gt; &lt;ammo&gt;</td><td class="desc">Fire using a specific ammo type loaded in that slot.</td></tr>
+    <tr><td class="cmd">disengage</td><td class="desc">Attempt to break off combat. Success not guaranteed.</td></tr>
+  </table>
+
+  <div class="section-divider"></div>
+
+  <h3>Weapons Reference</h3>
+
+  <table class="cmd-table">
+    <tr><td class="cmd">PDT-4 Point Defense Turret</td><td class="desc">Starting weapon. Rapid burst, light damage. AP/HE/Frag compatible. Reliable workhorse.</td></tr>
+    <tr><td class="cmd">AC-20 Autocannon</td><td class="desc">High burst rate, moderate damage. Four ammo types. Good general-purpose weapon.</td></tr>
+    <tr><td class="cmd">LR-12 Light Railgun</td><td class="desc">Single-round, high damage, high armor penetration. AP/HE only. Precision tool.</td></tr>
+    <tr><td class="cmd">HR-7 Heavy Railgun</td><td class="desc">Single-round, very high damage. Significant armor penetration. CCC station access required.</td></tr>
+    <tr><td class="cmd">Javelin-4 SRM Launcher</td><td class="desc">Guided missile. High damage. Costs 15 power per launch. Single-round.</td></tr>
+    <tr><td class="cmd">Mk.9 Torpedo Launcher</td><td class="desc">Extreme damage. 20 power per launch. Costs significant ammo bay mass.</td></tr>
+    <tr><td class="cmd">DF-6 Dumbfire Rocket Pod</td><td class="desc">Unguided. Variable burst. High damage per round. Does not require power.</td></tr>
+  </table>
+
+  <div class="section-divider"></div>
+
+  <h3>Ammunition Types</h3>
+
+  <table class="ammo-table">
+    <tr>
+      <th>Type</th><th>Effect</th><th>Best Against</th>
+    </tr>
+    <tr>
+      <td>AP (Armor Piercing)</td>
+      <td>+10 armor penetration. Standard damage.</td>
+      <td>Armored hull targets.</td>
+    </tr>
+    <tr>
+      <td>HE (High Explosive)</td>
+      <td>+5 damage. +10 subsystem damage.</td>
+      <td>Unarmored targets and subsystems.</td>
+    </tr>
+    <tr>
+      <td>Frag (Fragmentation)</td>
+      <td>-5 pen, -2 damage. +5 subsystem.</td>
+      <td>Light vessels at close range.</td>
+    </tr>
+    <tr>
+      <td>Incendiary</td>
+      <td>-3 pen, +2 damage. +8 subsystem.</td>
+      <td>Subsystem suppression.</td>
+    </tr>
+    <tr>
+      <td>SRM Warhead</td>
+      <td>+20 pen. High subsystem damage.</td>
+      <td>Missile launcher ammunition.</td>
+    </tr>
+    <tr>
+      <td>Mk.9 Warhead</td>
+      <td>+50 pen. Extreme subsystem damage.</td>
+      <td>Torpedo launcher ammunition.</td>
+    </tr>
+    <tr>
+      <td>Dumbfire Warhead</td>
+      <td>+15 pen. High hull damage.</td>
+      <td>Rocket pod ammunition.</td>
+    </tr>
+  </table>
+
+  <div class="section-divider"></div>
+
+  <h3>Weapon Condition</h3>
+
+  <p>Weapons degrade with use. Condition runs from 0 to 100 and passes through four tiers: NOMINAL (70+), WORN (40–69), DEGRADED (20–39), CRITICAL (below 20). Jam probability increases sharply at each threshold. The terminal notifies you when a weapon crosses a tier boundary during combat. A jammed weapon is unusable for that exchange. A CRITICAL weapon at 55% jam probability is a liability, not an asset. Repair at stations.</p>
+
+  <div class="section-divider"></div>
+
+  <h3>Death and Permadeath</h3>
+
+  <p>Hull reaching zero is death. Your save file is deleted. Your pilot record is entered into the graveyard. There is no continue from last checkpoint. There is no reload. The void does not give back.</p>
+
+  <div class="lore">The Guild records the death of every registered contractor. The record includes cause of death, day of death, last known location, and achievement log. This information is retained in the Guild archive indefinitely. The Guild does not consider this morbid. It considers it accurate.</div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════ S12: SHIP SYSTEMS -->
+
+<div class="section" id="s12">
+  <div class="section-header">
+    <div class="section-num">SECTION 12</div>
+    <div class="section-title">SHIP SYSTEMS REFERENCE</div>
+  </div>
+
+  <h3>Starting Vessel — Light Surveyor</h3>
+
+  <div class="stat-block">
+    <div class="stat-title">Light Surveyor — Base Specifications</div>
+    <div class="stat-row"><span>Hull</span><span>100/100</span></div>
+    <div class="stat-row"><span>Armor base</span><span>10</span></div>
+    <div class="stat-row"><span>Power Core max</span><span>500 units</span></div>
+    <div class="stat-row"><span>Power recharge (passive)</span><span>3 units/day</span></div>
+    <div class="stat-row"><span>Power recharge (active travel)</span><span>8 units/day</span></div>
+    <div class="stat-row"><span>Fuel capacity</span><span>100 units</span></div>
+    <div class="stat-row"><span>Ammo bay capacity</span><span>200 kg</span></div>
+    <div class="stat-row"><span>Crew capacity</span><span>4</span></div>
+    <div class="stat-row"><span>Weapon slots</span><span>2</span></div>
+    <div class="stat-row"><span>Utility slots</span><span>1 (Harrow-7 Salvage Head installed)</span></div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <h3>Power Core Management</h3>
+
+  <p>The Power Core is the most actively managed resource on your vessel. It is consumed by nav computation, sensors, weapons fire, deepscan operations, and salvage. It recharges slowly during travel and fully upon docking via shore power. Running the core to zero disables all powered systems. Running it below the emergency threshold (10 units) triggers warnings.</p>
+
+  <div class="stat-block">
+    <div class="stat-title">Power Costs by Operation</div>
+    <div class="stat-row"><span>Nav transit computation</span><span>8 units</span></div>
+    <div class="stat-row"><span>Blind cluster jump</span><span>20 units</span></div>
+    <div class="stat-row"><span>Gravimetric ping</span><span>5 units</span></div>
+    <div class="stat-row"><span>Contact resolution</span><span>3–9 units (scales with contact count)</span></div>
+    <div class="stat-row"><span>Profile scan (combat)</span><span>10 units</span></div>
+    <div class="stat-row"><span>SIGINT scan (combat)</span><span>25 units</span></div>
+    <div class="stat-row"><span>Deepscan (single system)</span><span>40 units</span></div>
+    <div class="stat-row"><span>Cluster deepscan (per system)</span><span>25 units</span></div>
+    <div class="stat-row"><span>Salvage operation (Harrow-7)</span><span>30 units</span></div>
+    <div class="stat-row"><span>PDT-4 burst</span><span>5 units</span></div>
+    <div class="stat-row"><span>Javelin-4 launch</span><span>15 units</span></div>
+    <div class="stat-row"><span>Mk.9 torpedo launch</span><span>20 units</span></div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <h3>Subsystems</h3>
+
+  <p>Your vessel has nine named subsystems, each with HP and Stability (STA) ratings. Subsystem damage occurs through combat and — for the hull core — through salvage incidents. Use <code>systems</code> to check current subsystem status. Use <code>repair system &lt;name&gt;</code> at stations to restore damaged subsystems.</p>
+
+  <table class="cmd-table">
+    <tr><td class="cmd">Hull Core</td><td class="desc">Primary structural integrity. HP reaching zero = death.</td></tr>
+    <tr><td class="cmd">Power Core</td><td class="desc">Energy generation and storage. Destruction = all systems failing.</td></tr>
+    <tr><td class="cmd">Drive</td><td class="desc">Propulsion and nav. Destruction = nav and jump offline.</td></tr>
+    <tr><td class="cmd">Weapons Array</td><td class="desc">Fire control systems. Destruction = cannot fire.</td></tr>
+    <tr><td class="cmd">Sensor Suite</td><td class="desc">Auspex and targeting. Destruction = Auspex offline.</td></tr>
+    <tr><td class="cmd">Cargo Hold</td><td class="desc">Storage integrity. Destruction = cargo at risk.</td></tr>
+    <tr><td class="cmd">Life Support</td><td class="desc">Crew atmosphere. Destruction = crew at risk.</td></tr>
+    <tr><td class="cmd">Crew Quarters</td><td class="desc">Crew habitation. No immediate critical function.</td></tr>
+    <tr><td class="cmd">Galley</td><td class="desc">Crew sustenance. No immediate critical function.</td></tr>
+  </table>
+
+</div>
+
+<!-- ═══════════════════════════════════════════ S13: ASTROGRAPHICS -->
+
+<div class="section" id="s13">
+  <div class="section-header">
+    <div class="section-num">SECTION 13</div>
+    <div class="section-title">ASTROGRAPHICS — CHART MANAGEMENT</div>
+  </div>
+
+  <p>Astrographic data is your primary survey commodity. Unlike Veydrite Dust, which has physical mass and must be extracted and transported, astrographic data exists as structured information in your vessel's memory matrix — a data storage medium of Guild specification, built to survive the conditions of deep space operation.</p>
+
+  <div class="lore">The Guild specifies memory matrix construction standards for a reason. Early contractor-grade data storage was magnetic or flash-based — both susceptible to the radiation environment of deep space, both prone to gradual corruption over extended missions. The modern Guild-spec matrix uses crystalline data encoding with redundant verification checksums. Data recorded on Day 1 of a mission is as readable on Day 500 as on Day 1, though its market value reflects the passage of time regardless of its physical integrity.</div>
+
+  <div class="section-divider"></div>
+
+  <h3>Data Decay</h3>
+
+  <p>Astrographic data loses approximately 1% of its market value per 10 days. The floor is 50% of base value — old data is worth something, but not full price. The <em>[aging]</em> tag in your chart portfolio appears when a record has fallen below 85% of original value. Sell data when it is fresh if maximum return is the goal. Hold it if you need to consult it for navigation or contract purposes.</p>
+
+  <h3>Data Value by Quadrant State</h3>
+
+  <div class="stat-block">
+    <div class="stat-title">Base Rate per Unit — Deep Scan Quality</div>
+    <div class="stat-row"><span>Established</span><span>6 CR/unit</span></div>
+    <div class="stat-row"><span>Contested</span><span>9 CR/unit</span></div>
+    <div class="stat-row"><span>Declining</span><span>12 CR/unit</span></div>
+    <div class="stat-row"><span>Collapsed</span><span>18 CR/unit</span></div>
+    <div class="stat-row"><span>Isolated</span><span>14 CR/unit</span></div>
+    <div class="stat-row"><span>Forbidden</span><span>24 CR/unit</span></div>
+  </div>
+
+  <p>Unit yield per deepscan scales with system content: ruins, stations, and veydrite deposits increase yield. The base yield ranges from 8–30 units for deep scans depending on quadrant state, with content bonuses applied on top. Basic scan quality pays 30% of deep scan rate — not worth selling unless desperate.</p>
+
+</div>
+
+<!-- ═══════════════════════════════════════════ S14: RECORD ARCHIVE -->
+
+<div class="section" id="s14">
+  <div class="section-header">
+    <div class="section-num">SECTION 14</div>
+    <div class="section-title">THE GUILD RECORD ARCHIVE</div>
+  </div>
+
+  <p>The Guild Record Archive is the longitudinal operational record of a registered contractor. It logs notable events — first operations, standing changes, combat outcomes, survey milestones, economic achievements — and retains them for the duration of the contractor's active registration and beyond. The archive does not delete entries. It only adds them.</p>
+
+  <p>Access the archive in-game with the <code>record</code> command. Access it from the main menu via the Guild Record Archive link. Records are organized by category and expand on click to display full detail including the day the event occurred.</p>
+
+  <div class="lore">The Guild maintains these records not out of sentiment, but because they constitute the most accurate longitudinal dataset of independent contractor operations in known space. Contractors have occasionally asked why the Guild cares how many systems they have charted or whether they survived a combat engagement at 15% hull. The Guild's answer is consistent: accurate data is always useful. The galaxy is large. The Guild wants to know what is in it, and who managed to come back.</div>
+
+  <div class="section-divider"></div>
+
+  <h3>The Graveyard</h3>
+
+  <p>When a contractor dies, their record is finalized and transferred to the permanent archive. Their vessel's last known position, cause of death, day count, and complete achievement log are preserved. Dead pilots are not forgotten. They are filed. There is a distinction, and the Guild considers it important.</p>
+
+</div>
+
+<!-- ═══════════════════════════════════════════ S15: SURVIVAL -->
+
+<div class="section" id="s15">
+  <div class="section-header">
+    <div class="section-num">SECTION 15</div>
+    <div class="section-title">SURVIVAL NOTES</div>
+  </div>
+
+  <p>This section contains operational guidance that does not fit neatly into categorical sections. It is guidance the Guild has extracted from contractor debrief records, incident reports, and post-mortem analysis. Most of it is obvious in retrospect.</p>
+
+  <div class="section-divider"></div>
+
+  <h4>Power Management</h4>
+  <p>Dock when your core is low. Shore power is free with the docking fee. Running a deep survey operation on 35 power will not work. Running into an encounter on 10 power will end badly. Plan power usage before committing to operations.</p>
+
+  <h4>Hull Monitoring</h4>
+  <p>The hull bar in the sidebar turns orange below 30%. This is a warning, not a safe threshold. At 20% hull, a single missed evade or a bad combat exchange ends your pilot. Repair early. Repair often. Repair before going into contested space, not after.</p>
+
+  <h4>Fuel Discipline</h4>
+  <p>Know your fuel state before plotting long courses. The terminal will not warn you that a destination is close to your fuel limit — it will simply refuse transit when you attempt it. If you are in Collapsed space with 12 fuel units and the nearest station is 15 fuel units away, you will need to salvage your way to enough scrip to purchase fuel from whatever Feral settlement is nearby. This is survivable. It is not enjoyable.</p>
+
+  <h4>Combat Caution</h4>
+  <p>You start with a PDT-4 Point Defense Turret and 50 AP rounds. This is sufficient to handle Feral raiders with good play. It is not sufficient to take on a Pirate Corvette at full health with aggressive confidence. Know your loadout. Know your enemy. <code>profile</code> before engaging. Use <code>sigint</code> to understand subsystem vulnerabilities before deciding where to aim.</p>
+
+  <h4>Contract Deadlines</h4>
+  <p>Contracts have deadlines. The deadline is calculated based on realistic travel time plus a 20% margin. This means the margin exists, but it is not generous. Do not accept a contract and then spend four days doing salvage runs in the opposite direction. The deadline clock does not care about your detours.</p>
+
+  <h4>Reputation Drift</h4>
+  <p>Reputation with factions you do not interact with trends toward neutral very slowly. Reputation with factions you repeatedly antagonize does not recover on its own. If you need to repair standing with a faction, the only method is repeated positive interactions — docking, paying fees, completing contracts. There is no shortcut.</p>
+
+  <h4>The Xeno Presence</h4>
+  <p>Some systems will present readings that do not resolve. Some contacts will not identify. Some logs will describe things that should not be there. The Guild's advice is consistent: log it, file it, leave. The Guild is specifically interested in this data and pays accordingly. Your curiosity, however understandable, is not worth your pilot.</p>
+
+  <div class="lore">The Guild has reviewed 847 contractor incident reports involving anomalous sensor returns over the past forty years. Of these, 312 involved the contractor attempting extended engagement with the anomaly — additional sensor sweeps, proximity approach, manual hull inspection of anomalous structures. The outcome data for this subset is not published. The Guild considers the aggregate survival rate sufficient guidance.</div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════ S16: COMMAND REF -->
+
+<div class="section" id="s16">
+  <div class="section-header">
+    <div class="section-num">SECTION 16</div>
+    <div class="section-title">QUICK COMMAND REFERENCE</div>
+  </div>
+
+  <h3>Navigation</h3>
+  <table class="cmd-table">
+    <tr><td class="cmd">galaxy</td><td class="desc">Full quadrant index with civilization states and control scores.</td></tr>
+    <tr><td class="cmd">scan &lt;1-8&gt;</td><td class="desc">Survey a quadrant. Returns system names, star classes, beacons, chart markers.</td></tr>
+    <tr><td class="cmd">scan log</td><td class="desc">Search ruin sites in current system for data logs.</td></tr>
+    <tr><td class="cmd">where</td><td class="desc">Full survey of current system — stations, ruins, veydrite, hazard, traffic.</td></tr>
+    <tr><td class="cmd">nav &lt;system name&gt;</td><td class="desc">Calculated jump to any named system. Costs fuel and power. Advances day counter.</td></tr>
+    <tr><td class="cmd">jump &lt;system name&gt;</td><td class="desc">Blind jump within current cluster. Faster, cheaper, riskier.</td></tr>
+  </table>
+
+  <h3>Sensors</h3>
+  <table class="cmd-table">
+    <tr><td class="cmd">ping</td><td class="desc">Gravimetric sweep. Returns contact mass readings. Costs 5 power.</td></tr>
+    <tr><td class="cmd">resolve &lt;n&gt;</td><td class="desc">Identify a specific contact by index number.</td></tr>
+    <tr><td class="cmd">resolve all</td><td class="desc">Attempt to identify all contacts. Higher power cost. Advances time.</td></tr>
+    <tr><td class="cmd">deepscan &lt;system&gt;</td><td class="desc">Full astrographic survey. Current quadrant only. Costs 40 power.</td></tr>
+    <tr><td class="cmd">clusterdeepscan &lt;cluster&gt;</td><td class="desc">Sequential deepscan of all systems in a cluster. 25 power per system.</td></tr>
+    <tr><td class="cmd">charts</td><td class="desc">List all astrographic records in memory matrix.</td></tr>
+    <tr><td class="cmd">charts &lt;system name&gt;</td><td class="desc">View stored profile for a specific system.</td></tr>
+  </table>
+
+  <h3>Station</h3>
+  <table class="cmd-table">
+    <tr><td class="cmd">dock</td><td class="desc">Dock at nearest station. Pays fee, recharges core, opens services.</td></tr>
+    <tr><td class="cmd">undock</td><td class="desc">Return to space.</td></tr>
+    <tr><td class="cmd">trade</td><td class="desc">Open trade terminal. Exit with <code>exit</code>.</td></tr>
+    <tr><td class="cmd">armory</td><td class="desc">Open armory terminal. Exit with <code>exit</code>.</td></tr>
+    <tr><td class="cmd">bulletin</td><td class="desc">View available contracts at current station.</td></tr>
+    <tr><td class="cmd">accept &lt;n&gt;</td><td class="desc">Accept contract by index number.</td></tr>
+  </table>
+
+  <h3>Field Operations</h3>
+  <table class="cmd-table">
+    <tr><td class="cmd">salvage</td><td class="desc">Field salvage operation. Requires salvageable content in system.</td></tr>
+    <tr><td class="cmd">contract</td><td class="desc">View active contract status, target, and deadline.</td></tr>
+    <tr><td class="cmd">complete</td><td class="desc">Complete active contract. Must be in target system.</td></tr>
+    <tr><td class="cmd">abandon</td><td class="desc">Abandon active contract. Applies reputation penalty.</td></tr>
+  </table>
+
+  <h3>Combat</h3>
+  <table class="cmd-table">
+    <tr><td class="cmd">evade</td><td class="desc">Attempt to break contact. Burns fuel.</td></tr>
+    <tr><td class="cmd">negotiate</td><td class="desc">Attempt to talk or bribe out of engagement.</td></tr>
+    <tr><td class="cmd">fight</td><td class="desc">Enter weapons engagement mode.</td></tr>
+    <tr><td class="cmd">yield</td><td class="desc">Surrender. Attacker takes cargo or scrip.</td></tr>
+    <tr><td class="cmd">profile</td><td class="desc">Hull signature scan of contact. 10 power.</td></tr>
+    <tr><td class="cmd">sigint</td><td class="desc">Full subsystem analysis. 25 power. Enemy may detect.</td></tr>
+    <tr><td class="cmd">target &lt;subsystem&gt;</td><td class="desc">Lock onto specific subsystem. Requires profile.</td></tr>
+    <tr><td class="cmd">fire &lt;slot&gt;</td><td class="desc">Fire weapon in slot using active ammo.</td></tr>
+    <tr><td class="cmd">fire &lt;slot&gt; &lt;ammo&gt;</td><td class="desc">Fire using specified ammo type.</td></tr>
+    <tr><td class="cmd">disengage</td><td class="desc">Attempt to break off ongoing combat.</td></tr>
+  </table>
+
+  <h3>Ship Status</h3>
+  <table class="cmd-table">
+    <tr><td class="cmd">status</td><td class="desc">Full ship status — hull, fuel, power, scrip, active contract.</td></tr>
+    <tr><td class="cmd">weapons</td><td class="desc">Weapon slot status — condition, ammo counts, active ammo type.</td></tr>
+    <tr><td class="cmd">systems</td><td class="desc">Subsystem HP and stability bars for all nine ship subsystems.</td></tr>
+  </table>
+
+  <h3>Records and General</h3>
+  <table class="cmd-table">
+    <tr><td class="cmd">rep</td><td class="desc">Faction standing — all factions, current scores and tiers.</td></tr>
+    <tr><td class="cmd">logs</td><td class="desc">View recovered ruin logs and beacon transcripts.</td></tr>
+    <tr><td class="cmd">record</td><td class="desc">Guild Record Archive — operational achievement log.</td></tr>
+    <tr><td class="cmd">save</td><td class="desc">Manual save to current slot.</td></tr>
+    <tr><td class="cmd">newsave</td><td class="desc">Delete current pilot record. Permanent. No recovery.</td></tr>
+    <tr><td class="cmd">menu</td><td class="desc">Return to main menu. Autosaves first.</td></tr>
+    <tr><td class="cmd">help</td><td class="desc">In-terminal command index.</td></tr>
+  </table>
+
+</div>
+
+<!-- ═══════════════════════════════════════════ FOOTER -->
+
+<div class="manual-footer">
+  <p>VEYDRITE ASSAYER'S GUILD — CONTRACTOR PUBLICATIONS DIVISION</p>
+  <p>Deep Survey Operator's Field Manual — Revision 4</p>
+  <p>Guild Standard Year 2301 — Solace Reach Office of Contractor Relations</p>
+  <p>&nbsp;</p>
+  <p>This document is issued to registered independent contractors upon confirmation of terminal registration. It is not for distribution to non-registered parties. The Guild does not consider this restriction enforceable in Collapsed or Feral space and notes the observation without further comment.</p>
+  <p>&nbsp;</p>
+  <p>The galaxy is vast. It is decaying. It is slow.</p>
+  <p>File your data. Come back alive.</p>
+  <p>&nbsp;</p>
+  <p>— THE ASSAYER'S GUILD</p>
+</div>
+
+</body>
+</html>
