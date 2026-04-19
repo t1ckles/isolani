@@ -164,6 +164,109 @@ function updateSidebar() {
   }
 }
 
+// ── Auspex ────────────────────────────────────
+
+function updateAuspex() {
+  if (typeof playerState === 'undefined' || !playerState) return;
+  if (typeof galaxy === 'undefined' || !galaxy) return;
+  if (!playerState.location) return;
+
+  const loc     = playerState.location;
+  const q       = galaxy.quadrants[loc.quadrantIndex];
+  const cluster = q && q.clusters.find(c => c.name === loc.clusterName);
+  const sys     = cluster && cluster.systems.find(s => s.name === loc.systemName);
+
+  if (!sys) return;
+
+  const body = document.getElementById('auspex-body');
+  if (!body) return;
+
+  let html = '';
+
+  // System header
+  html += '<div class="ax-white">' + sys.name + '</div>';
+  html += '<div class="ax-dim">' + sys.starClass + '-class  |  ' + sys.bodies.length + ' bodies</div>';
+  html += '<div class="ax-dim">' + q.state + '</div>';
+
+  // Bodies
+  html += '<div class="ax-label">BODIES</div>';
+  sys.bodies.forEach((b, i) => {
+    const tags = [];
+    if (b.hasStation) tags.push('<span class="ax-cyan">[STA]</span>');
+    if (b.veydrite)   tags.push('<span class="ax-white">[VYD]</span>');
+    if (b.hasRuin)    tags.push('<span class="ax-dim">[RUN]</span>');
+
+    const tagStr = tags.length > 0 ? ' ' + tags.join(' ') : '';
+    html += '<div class="ax-dim">[' + (i + 1) + '] ' + b.type + tagStr + '</div>';
+  });
+
+  // Stations
+  const stations = sys.bodies.filter(b => b.hasStation);
+  if (stations.length > 0) {
+    html += '<div class="ax-label">STATIONS</div>';
+    stations.forEach(b => {
+      const f = b.faction || { short: 'INDP' };
+      html += '<div class="ax-cyan">' + (b.stationName || 'Unknown') + '</div>';
+      html += '<div class="ax-dim">[' + f.short + ']</div>';
+    });
+  }
+
+  // Signals
+  html += '<div class="ax-label">SIGNALS</div>';
+  if (sys.hasBeacon) {
+    html += '<div class="ax-orange">BCN  active</div>';
+  } else {
+    html += '<div class="ax-dim">no signals</div>';
+  }
+
+  // Xeno — subtle, never explicit
+  if (sys.xenoTainted) {
+    html += '<div class="ax-dim">anomalous reading</div>';
+  }
+
+  // Environment
+  html += '<div class="ax-label">ENVIRONMENT</div>';
+  html += '<div class="ax-dim">Hazard  ' + '▲'.repeat(sys.hazard) + '△'.repeat(5 - sys.hazard) + '</div>';
+  html += '<div class="ax-dim">Traffic ' + '◉'.repeat(sys.traffic) + '○'.repeat(5 - sys.traffic) + '</div>';
+  html += '<div class="ax-dim">Jumps   ' + sys.jumpPoints + ' outbound</div>';
+
+  // Docked
+  if (playerState.docked) {
+    html += '<div class="ax-label">DOCKED</div>';
+    html += '<div class="ax-cyan">' + playerState.dockedAt + '</div>';
+  }
+
+  body.innerHTML = html;
+}
+
+function bootAuspex(onComplete) {
+  const auspex = document.getElementById('auspex');
+  if (!auspex) { if (onComplete) onComplete(); return; }
+
+  const body = document.getElementById('auspex-body');
+
+  const steps = [
+    () => {
+      auspex.classList.add('sidebar-visible');
+      if (body) body.innerHTML = '<div class="ax-white">AUSPEX INITIALIZING...</div>';
+    },
+    () => { if (body) body.innerHTML = '<div class="ax-dim">> calibrating array...</div>'; },
+    () => { if (body) body.innerHTML = '<div class="ax-dim">> scanning local grid...</div>'; },
+    () => { if (body) body.innerHTML = '<div class="ax-dim">> signal check...</div>'; },
+    () => { if (body) body.innerHTML = '<div class="ax-dim">> environment nominal</div>'; },
+    () => { if (body) body.innerHTML = '<div class="ax-dim">> local grid online</div>'; },
+    () => { updateAuspex(); },
+    () => { if (onComplete) onComplete(); },
+  ];
+
+  let i = 0;
+  const interval = setInterval(() => {
+    if (i >= steps.length) { clearInterval(interval); return; }
+    steps[i]();
+    i++;
+  }, 250);
+}
+
 // ── Autosave ──────────────────────────────────
 
 function autosave() {
@@ -265,6 +368,7 @@ function startContinue(save) {
 
         bootSidebar(playerState.captainName, playerState.shipName, () => {
           updateSidebar();
+          updateAuspex();
           queue('', '', 80);
           queue('Welcome back, ' + playerState.captainName + '.', 'output-bright', 80);
           queue('Vessel: ' + playerState.shipName, 'output-dim', 80);
@@ -279,6 +383,7 @@ function startContinue(save) {
               clearInterval(waitForQueue);
               enableInput('command');
               updateSidebar();
+              updateAuspex();
             }
           }, 100);
         });
@@ -319,6 +424,7 @@ function startNewGame() {
       print('');
       print('  Registered: ' + playerState.captainName, 'output-dim');
       updateSidebar();
+      updateAuspex();
 
       askPlayer('  Name your vessel:', (shipName) => {
         playerState.shipName = shipName || 'The Unspoken';
@@ -326,6 +432,7 @@ function startNewGame() {
         print('  Vessel registered: ' + playerState.shipName, 'output-dim');
         print('');
         updateSidebar();
+        updateAuspex();
 
         const autoSeed = generateRandomSeed();
 
@@ -356,6 +463,7 @@ function startNewGame() {
               clearInterval(waitForBoot);
               bootSidebar(playerState.captainName, playerState.shipName, () => {
                 updateSidebar();
+                updateAuspex();
                 const overview = handleCommand('galaxy');
                 overview.split('\n').forEach(line => queue(line, '', 12));
 
@@ -364,6 +472,7 @@ function startNewGame() {
                     clearInterval(waitForQueue);
                     enableInput('command');
                     updateSidebar();
+                    updateAuspex();
                     autosave();
                   }
                 }, 100);
@@ -507,6 +616,7 @@ document.addEventListener('keydown', (e) => {
           if (!isPrinting && printQueue.length === 0) {
             clearInterval(waitForResponse);
             updateSidebar();
+            updateAuspex();
             autosave();
             const output = document.getElementById('output');
             if (output) output.scrollTop = output.scrollHeight;
