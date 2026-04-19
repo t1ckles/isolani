@@ -1129,6 +1129,25 @@ document.addEventListener('keydown', (e) => {
           showDeathScreen();
           return;
         }
+        if (response && response.startsWith('__DEEPSCAN__')) {
+          const payload = JSON.parse(response.slice(12));
+          queue('', '', 40);
+          queue('  [DEEPSCAN] Initializing deep sensor sweep...', 'output-dim', 80);
+          queue('  [DEEPSCAN] Targeting: ' + payload.targetName.toUpperCase(), 'output-dim', 120);
+          queue('  [DEEPSCAN] Array charging — stand by.', 'output-dim', 160);
+          const delay = 3000 + Math.floor(Math.random() * 3000);
+          setTimeout(() => {
+            payload.result.split('\n').forEach(line => queue(line, '', 40));
+            const waitForDeepscan = setInterval(() => {
+              if (!isPrinting && printQueue.length === 0) {
+                clearInterval(waitForDeepscan);
+                updateSidebar();
+                autosave();
+              }
+            }, 100);
+          }, delay);
+          return;
+        }
         if (response) {
           response.split('\n').forEach(line => queue(line, '', 55));
         }
