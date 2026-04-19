@@ -97,6 +97,8 @@ let playerState = {
   inTrade:          false,
   pendingTx:        null,
   pendingMenu:      false,
+  inEncounter:      false,
+  encounter:        null,
   currentDay:       0,
   bulletinContracts: [],
   logs:              [],
@@ -163,6 +165,10 @@ function handleCommand(raw) {
     case 'abandon':  return cmdAbandon();
     case 'status':   return cmdStatus();
     case 'logs':     return cmdLogs();
+    case 'evade':      return cmdEvade();
+    case 'negotiate':  return cmdNegotiate();
+    case 'fight':      return cmdFight();
+    case 'yield':      return cmdYield();
     case 'save':     return cmdSave();
     case 'menu':     return cmdMenu();
     case 'newsave':  return cmdNewSave();
@@ -198,6 +204,10 @@ function cmdHelp() {
     '  contract            — view active contract',
     '  complete            — complete active contract',
     '  abandon             — abandon active contract',
+    '  evade              — attempt to evade an encounter',
+    '  negotiate          — attempt to talk your way out',
+    '  fight              — engage directly',
+    '  yield              — surrender cargo',
     '',
     '  ── GENERAL ───────────────────────────────────────────────────',
     '',
@@ -331,7 +341,29 @@ function cmdNav(args) {
               lines.push('');
             }
           }
-// Beacon check on arrival
+
+          // Combat encounter check
+          const encounter = rollEncounter(sys, q, playerState);
+          if (encounter) {
+            playerState.inEncounter = true;
+            playerState.encounter   = encounter;
+            lines.push('');
+            lines.push('  ── CONTACT ───────────────────────────────────────────────────');
+            lines.push('');
+            lines.push('  ' + encounter.openingLine);
+            lines.push('');
+            lines.push('  Hull: ' + playerState.hull + '%  |  Fuel: ' + playerState.fuel + ' units  |  Scrip: ' + playerState.credits + ' CR');
+            lines.push('');
+            lines.push('  ── YOUR OPTIONS ──────────────────────────────────────────────');
+            lines.push('');
+            lines.push('  evade      — burn fuel, attempt to outrun them');
+            lines.push('  negotiate  — attempt to talk, bribe, or bluff your way out');
+            lines.push('  fight      — engage directly (dangerous without weapons)');
+            lines.push('  yield      — surrender cargo and veydrite');
+            lines.push('');
+          }
+          
+          // Beacon check on arrival
           const beacon = rollBeacon(sys);
           if (beacon) {
             const ageTag = beacon.age === 'recent'  ? '[RECENT]'
@@ -853,6 +885,336 @@ function cmdStatus() {
       : '  CONTRACT  : none active',
     '',
   ].join('\n');
+}
+
+// ── Combat Engine ─────────────────────────────
+
+const ENCOUNTER_RATES = {
+  Established: 0.01,
+  Contested:   0.04,
+  Declining:   0.06,
+  Collapsed:   0.10,
+  Isolated:    0.03,
+  Forbidden:   0.08,
+};
+
+const ATTACKER_TYPES = {
+  feral: {
+    name:     'Feral Raiders',
+    short:    'FERAL',
+    want:     'cargo',
+    threat:   3,
+    openings: [
+      'Three vessels decloak off your port bow. No transponder. No hail. They are already in weapons range.',
+      'A salvage hauler — or something wearing its hull — drops out of the debris field and locks onto you.',
+      'They don\'t broadcast a demand. They just start closing. Feral. Hungry.',
+    ],
+  },
+  pirate: {
+    name:     'Unregistered Vessel',
+    short:    'PIRATE',
+    want:     'scrip',
+    threat:   2,
+    openings: [
+      'A single ship, running dark, drops in behind you. Hail incoming: "Cut your drive or we cut it for you."',
+      'Pirate intercept. They\'ve been waiting here. The ambush is clean — someone knew your route.',
+      '"Captain. Nice ship. Nicer cargo. Let\'s talk numbers." The targeting lock says the talking is optional.',
+    ],
+  },
+  hostile_faction: {
+    name:     'Faction Patrol',
+    short:    'PATROL',
+    want:     'expulsion',
+    threat:   4,
+    openings: [
+      'A patrol vessel hails you on the Guild frequency. The voice is not Guild. "You are not welcome here, Captain."',
+      'Two armed transports fall into escort formation — one ahead, one behind. You are being herded.',
+      'The station locks your docking codes remotely. A patrol decouples from the ring and burns toward you.',
+    ],
+  },
+  unknown: {
+    name:     'Unknown Contact',
+    short:    '????',
+    want:     'unknown',
+    threat:   5,
+    openings: [
+      'Something is on your sensors. It is not broadcasting. It is not moving. It is getting closer.',
+      'The Auspex returns a contact. The contact has no hull signature on record. It is very large.',
+      'Your drive cuts out for 4.2 seconds. When it restarts, there is something between you and the jump point.',
+    ],
+  },
+};
+
+function rollEncounter(sys, q, playerState) {
+  let rate = ENCOUNTER_RATES[q.state] || 0.05;
+
+  // Boost rate if hostile rep with dominant faction
+  const stationFactions = sys.bodies
+    .filter(b => b.hasStation && b.factionKey)
+    .map(b => b.factionKey);
+
+  stationFactions.forEach(fk => {
+    const rep = getRep(fk);
+    if (rep !== null && repTier(rep) === 'HOSTILE') {
+      rate += 0.15;
+    }
+  });
+
+  if (Math.random() > rate) return null;
+
+  // Pick attacker type
+  let attackerKey = 'feral';
+
+  if (sys.xenoTainted && Math.random() < 0.3) {
+    attackerKey = 'unknown';
+  } else if (stationFactions.some(fk => {
+    const rep = getRep(fk);
+    return rep !== null && repTier(rep) === 'HOSTILE';
+  })) {
+    attackerKey = 'hostile_faction';
+  } else if (q.state === 'Collapsed' || q.state === 'Declining') {
+    attackerKey = Math.random() < 0.6 ? 'feral' : 'pirate';
+  } else {
+    attackerKey = Math.random() < 0.5 ? 'pirate' : 'feral';
+  }
+
+  const attacker = ATTACKER_TYPES[attackerKey];
+  const opening  = attacker.openings[Math.floor(Math.random() * attacker.openings.length)];
+
+  return {
+    attackerKey,
+    attacker,
+    openingLine: opening,
+    resolved:    false,
+  };
+}
+
+// ── Encounter commands ────────────────────────
+
+function cmdEvade() {
+  if (!playerState.inEncounter) return '  [EVADE] No active encounter.';
+
+  const enc     = playerState.encounter;
+  const threat  = enc.attacker.threat;
+  const fuelCost = 10 + Math.floor(Math.random() * 10);
+
+  if (playerState.fuel < fuelCost) {
+    // Not enough fuel — forced to fight or yield
+    playerState.inEncounter = false;
+    playerState.encounter   = null;
+    return [
+      '',
+      '  [EVADE] Insufficient fuel to run.',
+      '  Drive sputters. They close the distance.',
+      '  You have no choice. Type "yield" or "fight".',
+      '',
+    ].join('\n');
+  }
+
+  // Evade chance — better with low threat, more fuel
+  const evadeChance = Math.max(0.2, 0.8 - (threat * 0.1));
+  const roll        = Math.random();
+
+  playerState.fuel -= fuelCost;
+
+  if (roll < evadeChance) {
+    // Success
+    playerState.inEncounter = false;
+    playerState.encounter   = null;
+    return [
+      '',
+      '  [EVADE] You push the drive hard and pull away.',
+      '  Fuel burned: ' + fuelCost + ' units.  Remaining: ' + playerState.fuel + ' units.',
+      '  They don\'t follow. Or they can\'t.',
+      '',
+    ].join('\n');
+  } else {
+    // Fail — hull damage from pursuit
+    const damage = 5 + Math.floor(Math.random() * 10) * threat;
+    playerState.hull = Math.max(0, playerState.hull - damage);
+
+    if (playerState.hull <= 0) {
+      return handleDeath('destroyed while attempting to evade ' + enc.attacker.name);
+    }
+
+    return [
+      '',
+      '  [EVADE] They stay with you. Weapons fire clips your hull.',
+      '  Hull damage: -' + damage + '%  |  Hull: ' + playerState.hull + '%',
+      '  Fuel burned: ' + fuelCost + ' units.  Remaining: ' + playerState.fuel + ' units.',
+      '',
+      '  They\'re still on you. Choose again:',
+      '  evade  |  negotiate  |  fight  |  yield',
+      '',
+    ].join('\n');
+  }
+}
+
+function cmdNegotiate() {
+  if (!playerState.inEncounter) return '  [NEGOTIATE] No active encounter.';
+
+  const enc    = playerState.encounter;
+  const threat = enc.attacker.threat;
+  const want   = enc.attacker.want;
+
+  // Base chance
+  let chance = Math.max(0.15, 0.65 - (threat * 0.08));
+
+  // Modifiers
+  if (want === 'scrip' && playerState.credits > 500)  chance += 0.15;
+  if (want === 'cargo' && playerState.veydrite === 0)  chance += 0.20;
+  if (want === 'unknown')                              chance  = 0.10;
+
+  const roll = Math.random();
+
+  if (roll < chance) {
+    // Success — but may cost something
+    playerState.inEncounter = false;
+    playerState.encounter   = null;
+
+    let cost = '';
+    if (want === 'scrip' && playerState.credits > 0) {
+      const bribe = Math.min(playerState.credits, Math.floor(50 + Math.random() * 150));
+      playerState.credits -= bribe;
+      cost = '\n  Bribe paid: ' + bribe + ' CR.  Scrip remaining: ' + playerState.credits + ' CR.';
+    }
+
+    return [
+      '',
+      '  [NEGOTIATE] They take what you offer and pull back.',
+      cost,
+      '  You watch them go. Close call.',
+      '',
+    ].join('\n');
+
+  } else {
+    // Fail — they attack
+    const damage = 8 + Math.floor(Math.random() * 8) * threat;
+    playerState.hull = Math.max(0, playerState.hull - damage);
+
+    if (playerState.hull <= 0) {
+      return handleDeath('destroyed after failed negotiation with ' + enc.attacker.name);
+    }
+
+    return [
+      '',
+      '  [NEGOTIATE] They don\'t want to talk.',
+      '  Hull damage: -' + damage + '%  |  Hull: ' + playerState.hull + '%',
+      '',
+      '  evade  |  negotiate  |  fight  |  yield',
+      '',
+    ].join('\n');
+  }
+}
+
+function cmdFight() {
+  if (!playerState.inEncounter) return '  [FIGHT] No active encounter.';
+
+  const enc    = playerState.encounter;
+  const threat = enc.attacker.threat;
+
+  // No weapons = very bad odds
+  const fightChance = 0.15;
+  const roll        = Math.random();
+
+  if (roll < fightChance) {
+    // Lucky win
+    playerState.inEncounter = false;
+    playerState.encounter   = null;
+    const damage = 10 + Math.floor(Math.random() * 15);
+    playerState.hull = Math.max(0, playerState.hull - damage);
+
+    if (playerState.hull <= 0) {
+      return handleDeath('destroyed in combat with ' + enc.attacker.name);
+    }
+
+    return [
+      '',
+      '  [FIGHT] You make yourself expensive enough that they break off.',
+      '  Hull damage: -' + damage + '%  |  Hull: ' + playerState.hull + '%',
+      '  You\'re not a fighter. But today you were enough of one.',
+      '',
+    ].join('\n');
+
+  } else {
+    // Heavy damage
+    const damage = 20 + Math.floor(Math.random() * 20) * (threat / 2);
+    playerState.hull = Math.max(0, playerState.hull - damage);
+
+    if (playerState.hull <= 0) {
+      return handleDeath('destroyed in combat with ' + enc.attacker.name);
+    }
+
+    return [
+      '',
+      '  [FIGHT] They hit you hard.',
+      '  Hull damage: -' + damage + '%  |  Hull: ' + playerState.hull + '%',
+      '',
+      '  You\'re still here. Barely.',
+      '  evade  |  negotiate  |  fight  |  yield',
+      '',
+    ].join('\n');
+  }
+}
+
+function cmdYield() {
+  if (!playerState.inEncounter) return '  [YIELD] No active encounter.';
+
+  const enc  = playerState.encounter;
+  const want = enc.attacker.want;
+
+  playerState.inEncounter = false;
+  playerState.encounter   = null;
+
+  const lines = [
+    '',
+    '  [YIELD] You cut your drive and broadcast surrender.',
+    '',
+  ];
+
+  if (want === 'cargo' || want === 'scrip') {
+    if (playerState.veydrite > 0) {
+      lines.push('  They take your veydrite. All ' + playerState.veydrite + ' kg.');
+      playerState.veydrite = 0;
+    }
+    if (playerState.credits > 100) {
+      const taken = Math.floor(playerState.credits * 0.4);
+      playerState.credits -= taken;
+      lines.push('  They take ' + taken + ' CR from your cargo account.');
+    }
+  } else if (want === 'expulsion') {
+    lines.push('  They escort you to the jump point and watch you leave.');
+    lines.push('  You are not welcome in this space.');
+    const repResult = adjustRep(
+      enc.attacker.short === 'PATROL' ? playerState.dockedFactionKey || 'colonial' : 'feral',
+      -5, 'Expelled from controlled space'
+    );
+    if (repResult) lines.push('  ' + renderRepChange(repResult));
+  } else {
+    lines.push('  They take nothing. They just watch you.');
+    lines.push('  The contact disappears from sensors.');
+    lines.push('  You don\'t know what they wanted.');
+  }
+
+  lines.push('');
+  lines.push('  You are clear. For now.');
+  lines.push('');
+
+  return lines.join('\n');
+}
+
+function handleDeath(cause) {
+  // Record in graveyard
+  recordDeath(playerState, cause);
+
+  // Delete save
+  deleteSave();
+
+  // Signal main.js to show death screen
+  playerState.isDead = true;
+  playerState.deathCause = cause;
+
+  return '__DEATH__';
 }
 
 // ── Where ─────────────────────────────────────
