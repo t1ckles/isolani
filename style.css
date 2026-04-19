@@ -35,7 +35,7 @@ body {
   align-items: flex-start;
   gap: 16px;
   width: 100%;
-  max-width: 1200px;
+  max-width: 1400px;
   height: calc(100vh - 80px);
   justify-content: center;
 }
@@ -45,7 +45,7 @@ body {
 #terminal {
   flex: none;
   width: 860px;
-  height: calc(100vh - 80px);
+  height: calc(100vh - 160px);
   border: 1px solid #00ff41;
   border-radius: 8px;
   padding: 24px;
@@ -145,12 +145,12 @@ body {
 /* ── Right Column ────────────────────────────── */
 
 #right-column {
-  width: 240px;
+  width: 320px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  height: calc(100vh - 80px);
+  height: calc(100vh - 160px);
 }
 
 /* ── Ship Sidebar ────────────────────────────── */
