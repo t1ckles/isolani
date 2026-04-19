@@ -373,6 +373,8 @@ function handleCommand(raw) {
     case 'help':      return cmdHelp();
     case 'galaxy':    return renderGalaxyOverview(galaxy, playerState.location ? playerState.location.quadrantIndex : 0);
     case 'map':       return renderFoldMap(galaxy, playerState.location.quadrantIndex);
+    case 'fold':      return cmdFold(args);
+    case 'blindfold': return cmdBlindFold(args);
     case 'scan':      return cmdScan(args);
     case 'nav':       return cmdNav(args);
     case 'jump':      return cmdJump(args);
@@ -628,6 +630,216 @@ function cmdNav(args) {
     }
   }
   return '  [NAV] No system matching "' + args.join(' ') + '" found in catalog.';
+}
+
+// ── Fold command ──────────────────────────────
+
+function cmdFold(args) {
+  if (!args || args.length === 0) {
+    return [
+      '',
+      '  [FOLD] Specify a destination quadrant.',
+      '  Usage: fold <quadrant name>',
+      '  Type map to see connected quadrants.',
+      '',
+    ].join('\n');
+  }
+
+  const loc         = playerState.location;
+  const currentIdx  = loc.quadrantIndex;
+  const targetName  = args.join(' ').toLowerCase();
+
+  // Find matching connected quadrant
+  const connected = getConnectedQuadrants(galaxy, currentIdx);
+  const match     = connected.find(({ index, known }) => {
+    if (!known) return false;
+    return galaxy.quadrants[index].name.toLowerCase().includes(targetName);
+  });
+
+  if (!match) {
+    // Check if it exists but is unknown
+    const unknownMatch = connected.find(({ index, known }) =>
+      !known && galaxy.quadrants[index].name.toLowerCase().includes(targetName)
+    );
+    if (unknownMatch) {
+      return [
+        '',
+        '  [FOLD] Corridor signature detected — no astrographic data on file.',
+        '  Destination identity unconfirmed. Cannot plot fold.',
+        '  To attempt an uncharted fold: blindfold <quadrant name>',
+        '',
+      ].join('\n');
+    }
+
+    // Check if it's a known quadrant but not connected
+    const anyMatch = galaxy.quadrants.findIndex(q =>
+      q.name.toLowerCase().includes(targetName)
+    );
+    if (anyMatch >= 0) {
+      return [
+        '',
+        '  [FOLD] No charted corridor to ' + galaxy.quadrants[anyMatch].name + ' from this position.',
+        '',
+        '  To attempt an uncharted fold: blindfold <quadrant name>',
+        '  Warning: blindfold requires 12 cells and carries significant risk.',
+        '',
+      ].join('\n');
+    }
+
+    return '  [FOLD] No matching quadrant found. Type map to see known corridors.';
+  }
+
+  const destIdx    = match.index;
+  const destQ      = galaxy.quadrants[destIdx];
+  const corrType   = match.type;
+  const cellCost   = foldCellCost(corrType);
+  const corridorLabel = corrType === 'highway' ? 'Highway' : corrType === 'primary' ? 'Primary' : 'Secondary';
+
+  if (playerState.foldCells < cellCost) {
+    const deficit = cellCost - playerState.foldCells;
+    const rawNeeded = deficit * 10;
+    return [
+      '',
+      '  [FOLD] Insufficient fold cells.',
+      '  Required : ' + cellCost + ' cells  (' + corridorLabel + ' corridor)',
+      '  Aboard   : ' + playerState.foldCells + ' cells',
+      '  Deficit  : ' + deficit + ' cells  (' + rawNeeded + ' kg raw veydrite equivalent)',
+      '',
+      '  Buy cells at a station or feed raw reserve: feed <cells>',
+      '',
+    ].join('\n');
+  }
+
+  // Store pending fold for confirmation
+  playerState.pendingFold = {
+    type:       'fold',
+    destIdx,
+    destName:   destQ.name,
+    destState:  destQ.state,
+    corrType,
+    cellCost,
+    corridorLabel,
+  };
+
+  const totalSys = destQ.clusters.reduce((n, c) => n + c.systems.length, 0);
+
+  return [
+    '',
+    '  [FOLD] Veydric Fold Drive — corridor lock initiated.',
+    '',
+    '  Destination  : ' + destQ.name,
+    '  Corridor     : ' + corridorLabel + ' — charted',
+    '  Cell cost    : ' + cellCost + ' cells',
+    '  Cells aboard : ' + playerState.foldCells + ' / 20',
+    '  After fold   : ' + (playerState.foldCells - cellCost) + ' cells remaining',
+    '',
+    '  ' + destQ.name + ' — ' + destQ.state.toUpperCase(),
+    '  ' + destQ.notableFeature,
+    '  Systems      : ' + totalSys + ' charted',
+    '',
+    '  Fold calculations are not instantaneous.',
+    '  Estimated geometry lock: 12 seconds.',
+    '',
+    '  Type "yes" to begin fold sequence or anything else to cancel.',
+    '',
+  ].join('\n');
+}
+
+// ── Blind fold command ────────────────────────
+
+function cmdBlindFold(args) {
+  if (!args || args.length === 0) {
+    return [
+      '',
+      '  [BLINDFOLD] Specify a destination quadrant.',
+      '  Usage: blindfold <quadrant name>',
+      '  Warning: requires 12 cells. Drive must be NOMINAL. Catastrophic failure possible.',
+      '',
+    ].join('\n');
+  }
+
+  const targetName = args.join(' ').toLowerCase();
+  const destIdx    = galaxy.quadrants.findIndex(q =>
+    q.name.toLowerCase().includes(targetName)
+  );
+
+  if (destIdx < 0) {
+    return '  [BLINDFOLD] No matching quadrant found in registry.';
+  }
+
+  const loc        = playerState.location;
+  const currentIdx = loc.quadrantIndex;
+
+  if (destIdx === currentIdx) {
+    return '  [BLINDFOLD] Already in this quadrant.';
+  }
+
+  // Check if it's actually connected — blindfold is for UNCONNECTED quadrants
+  if (isConnected(galaxy, currentIdx, destIdx)) {
+    return [
+      '',
+      '  [BLINDFOLD] A charted corridor exists to this quadrant.',
+      '  Use fold ' + galaxy.quadrants[destIdx].name + ' instead.',
+      '  Cost: ' + foldCellCost(getCorridorType(galaxy, currentIdx, destIdx)) + ' cells.',
+      '',
+    ].join('\n');
+  }
+
+  const BLINDFOLD_COST = 12;
+  const destQ          = galaxy.quadrants[destIdx];
+  const ship           = getShip();
+  const driveSystem    = ship && ship.systems && ship.systems.find(s => s.name === 'Drive');
+  const driveOk        = !driveSystem || driveSystem.hp > 50;
+
+  if (playerState.foldCells < BLINDFOLD_COST) {
+    return [
+      '',
+      '  [BLINDFOLD] Insufficient fold cells for overdrive.',
+      '  Required : 12 cells',
+      '  Aboard   : ' + playerState.foldCells + ' cells',
+      '',
+    ].join('\n');
+  }
+
+  if (!driveOk) {
+    return [
+      '',
+      '  [BLINDFOLD] Drive subsystem integrity insufficient for overdrive fold.',
+      '  Drive must be above 50% HP. Current drive is damaged.',
+      '  Repair drive before attempting blind fold.',
+      '',
+    ].join('\n');
+  }
+
+  playerState.pendingFold = {
+    type:      'blindfold',
+    destIdx,
+    destName:  destQ.name,
+    destState: destQ.state,
+    cellCost:  BLINDFOLD_COST,
+  };
+
+  return [
+    '',
+    '  [BLINDFOLD] Overdrive fold sequence — uncharted void transit.',
+    '',
+    '  Destination  : ' + destQ.name + ' (uncharted corridor)',
+    '  Cell cost    : 12 cells (overdrive)',
+    '  Cells aboard : ' + playerState.foldCells + ' / 20',
+    '  After fold   : ' + (playerState.foldCells - BLINDFOLD_COST) + ' cells remaining',
+    '',
+    '  ── RISK TABLE ──────────────────────────────────────────────',
+    '  70%  Clean fold     Drive at WORN',
+    '  15%  Rough fold     Hull -10  Drive DEGRADED',
+    '  10%  Bad fold       Hull -25  Drive CRITICAL  Wrong system',
+    '   5%  Catastrophic   Hull -50  Drive DESTROYED',
+    '',
+    '  This action carries significant risk of vessel loss.',
+    '  The Guild accepts no liability for overdrive incidents.',
+    '',
+    '  Type "yes" to initiate overdrive sequence or anything else to cancel.',
+    '',
+  ].join('\n');
 }
 
 // ── Jump ──────────────────────────────────────
@@ -936,6 +1148,15 @@ function cmdTrade(args) {
 }
 
 function handleTradeCommand(cmd, args) {
+  if (playerState.pendingFold && (cmd === 'yes' || cmd === 'y')) {
+    const fold = playerState.pendingFold;
+    playerState.pendingFold = null;
+    return '__FOLD__' + JSON.stringify(fold);
+  }
+  if (playerState.pendingFold && cmd !== 'yes' && cmd !== 'y') {
+    playerState.pendingFold = null;
+    return '  [FOLD] Fold sequence cancelled.';
+  }
   if (playerState.pendingTx) {
     if (cmd === 'yes' || cmd === 'y') {
       const tx = playerState.pendingTx;
