@@ -166,8 +166,7 @@ function bootSidebar(captainName, shipName, onComplete) {
 
   const steps = [
     () => {
-      sidebar.style.visibility = 'visible';
-      setTimeout(() => { sidebar.style.opacity = '1'; }, 50);
+      sidebar.classList.add('sidebar-visible');
       setSidebarHtml('sb-captain', '<span style="color:#ffffff">INITIALIZING...</span>');
     },
     () => { setText('sb-captain', '> PILOT RECORD'); },
