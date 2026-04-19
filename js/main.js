@@ -495,9 +495,8 @@ function startContinue(save) {
           queue('Vessel: ' + (playerState.ship ? playerState.ship.name : playerState.shipName || 'Unknown'), 'output-dim', 80);
           queue('Day ' + playerState.currentDay + ' — ' + playerState.location.systemName, 'output-dim', 80);
           queueBlank(80);
-
-          const overview = handleCommand('where');
-          overview.split('\n').forEach(line => queue(line, '', 18));
+          queueDivider(60);
+          queueBlank(80);
 
           const waitForQueue = setInterval(() => {
             if (!isPrinting && printQueue.length === 0) {
