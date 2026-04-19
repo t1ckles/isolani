@@ -1982,7 +1982,9 @@ function cmdFire(args) {
   const lines = ['', '  ── WEAPONS FIRE ──────────────────────────────────────────────', ''];
 
   if (result.jammed) {
-    lines.push('  [JAM] ' + result.weapon + ' jammed. Clear and retry.');
+    lines.push('  [JAM] ' + result.weapon + ' jammed.');
+    lines.push('  Condition: ' + slot.condition + '/100  [' + conditionRating(slot.condition) + ']');
+    lines.push('  Repair at next station to reduce jam risk.');
     lines.push('');
   } else {
     lines.push('  ' + result.weapon + '  [' + result.ammoType + ']  burst: ' + result.burst + ' rds');
@@ -2016,6 +2018,14 @@ function cmdFire(args) {
     }
 
     lines.push('  Weapon condition: ' + result.conditionAfter + '/100  [' + result.conditionRating + ']');
+    if (result.conditionBefore !== result.conditionRating) {
+      const warnings = {
+        WORN:     '  [WARN] ' + result.weapon + ' wearing. Jam risk increasing.',
+        DEGRADED: '  [WARN] ' + result.weapon + ' degraded. Performance compromised.',
+        CRITICAL: '  [!!] ' + result.weapon + ' CRITICAL. High jam probability. Repair immediately.',
+      };
+      if (warnings[result.conditionRating]) lines.push(warnings[result.conditionRating]);
+    }
     lines.push('  Ammo remaining: ' + (slot.ammo[slot.activeAmmo] || 0) + ' rds');
     lines.push('');
 
