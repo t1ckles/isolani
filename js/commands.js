@@ -350,8 +350,19 @@ function handleCommand(raw) {
   const input          = raw.trim().toLowerCase();
   const [cmd, ...args] = input.split(/\s+/);
 
-  if (playerState.inTrade)    return handleTradeCommand(cmd, args);
+  if (playerState.inTrade)     return handleTradeCommand(cmd, args);
   if (playerState.inEncounter) return handleEncounterCommand(cmd, args);
+
+  if (playerState.pendingTx) {
+    if (cmd === 'yes' || cmd === 'y') {
+      const tx = playerState.pendingTx;
+      playerState.pendingTx = null;
+      return executeTrade(tx);
+    } else {
+      playerState.pendingTx = null;
+      return '  [TRADE] Transaction cancelled.';
+    }
+  }
 
   switch (cmd) {
     case 'help':      return cmdHelp();
