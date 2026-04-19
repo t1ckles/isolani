@@ -217,7 +217,7 @@ body {
   flex-shrink: 0;
 }
 
-.ax-label  { font-size: 10px; color: #006618; letter-spacing: 2px; margin-bottom: 4px; margin-top: 8px; }
+.ax-label  { font-size: 10px; color: #ff8800; letter-spacing: 2px; margin-bottom: 4px; margin-top: 8px; }
 .ax-dim    { color: #006618; margin-bottom: 2px; word-break: break-word; }
 .ax-white  { color: #ffffff; margin-bottom: 2px; word-break: break-word; }
 .ax-cyan   { color: #00e5ff; margin-bottom: 2px; word-break: break-word; }
