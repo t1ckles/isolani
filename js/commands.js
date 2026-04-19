@@ -287,19 +287,9 @@ function cmdNav(args) {
           playerState.dockedAt         = null;
           playerState.dockedFactionKey = null;
           
-          // Beacon check on arrival
-          const beacon = rollBeacon(sys);
-          if (beacon) {
-            const ageTag = beacon.age === 'recent'  ? '[RECENT]'
-                         : beacon.age === 'old'     ? '[ARCHIVED]'
-                         : '[UNKNOWN AGE]';
-            lines.push('  ── DISTRESS BEACON DETECTED ' + '─'.repeat(29));
-            lines.push('');
-            lines.push('  ' + ageTag + ' ' + beacon.text);
-            lines.push('');
-            // Log it
-            playerState.logs.push({ type: 'beacon', system: sys.name, age: beacon.age, text: beacon.text });
-          }
+          const lines = [
+            '',
+            '  [NAV] Plotting course to ' + sys.name + '...',
 
           const lines = [
             '',
@@ -337,7 +327,18 @@ function cmdNav(args) {
               lines.push('');
             }
           }
-
+// Beacon check on arrival
+          const beacon = rollBeacon(sys);
+          if (beacon) {
+            const ageTag = beacon.age === 'recent'  ? '[RECENT]'
+                         : beacon.age === 'old'     ? '[ARCHIVED]'
+                         : '[UNKNOWN AGE]';
+            lines.push('  ── DISTRESS BEACON DETECTED ' + '─'.repeat(29));
+            lines.push('');
+            lines.push('  ' + ageTag + ' ' + beacon.text);
+            lines.push('');
+            playerState.logs.push({ type: 'beacon', system: sys.name, age: beacon.age, text: beacon.text });
+          }
           return lines.join('\n');
         }
       }
