@@ -1362,6 +1362,9 @@ if (response && response.trim().startsWith('__CLUSTERDEEPSCAN__')) {
             // Move player to destination quadrant
             const destQ    = galaxy.quadrants[fold.destIdx];
             const firstSys = destQ.clusters[0].systems[0];
+            const destCluster = destQ.clusters[0];
+            const firstSys    = destCluster && destCluster.systems[0];
+            if (!firstSys) return;
 
             playerState.location = {
               quadrantIndex: fold.destIdx,
