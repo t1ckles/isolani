@@ -309,7 +309,7 @@ document.addEventListener('keydown', (e) => {
       setTimeout(() => {
         const response = handleCommand(raw);
         if (response) {
-          response.split('\n').forEach(line => queue(line, '', 18));
+          response.split('\n').forEach(line => queue(line, '', 55));
         }
 
         const waitForResponse = setInterval(() => {
