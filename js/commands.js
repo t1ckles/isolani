@@ -1221,7 +1221,7 @@ function cmdEvade() {
     playerState.inEncounter = false;
     playerState.encounter   = null;
     clearCombatState();
-    return ['', '  [EVADE] You pull away. They don\'t follow.', '  Fuel burned: ' + fuelCost + ' units.  Remaining: ' + ship.fuel, ''].join('\n');
+    return ['', '  [EVADE] You pull away. They don\'t follow.', '  Fuel burned: ' + fuelCost + ' units.  Remaining: ' + ship.fuel + ' units.', ''].join('\n');
   }
 
   const damage = 5 + Math.floor(Math.random() * 10) * threat;
