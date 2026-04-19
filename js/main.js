@@ -1271,12 +1271,11 @@ if (response && response.trim().startsWith('__CLUSTERDEEPSCAN__')) {
           if (isBlind) {
             queue('  [BLINDFOLD] Overdrive sequence initiated. Drive housing sealed.', 'output-warn', 60);
           } else {
-            queue('  [FOLD] Committing ' + fold.cellCost + ' Veydric Fold Cell' + (fold.cellCost > 1 ? 's' : '') + '...', 'output-dim', 60);
-            queue('  [FOLD] Drive housing sealed. Resonance building.', 'output-dim', 60);
-          }
-          queue('  [FOLD] Calculating fold geometry...', 'output-dim', 60);
+          queue('  [FOLD] Committing ' + fold.cellCost + ' Veydric Fold Cell' + (fold.cellCost > 1 ? 's' : '') + '...', 'output-label', 60);
+          queue('  [FOLD] Drive housing sealed. Resonance building.', 'output-label', 60);
+          queue('  [FOLD] Calculating fold geometry...', 'output-label', 60);
           queue('', '', 40);
-
+          }
           // Countdown with flavor text
           let cumulativeDelay = 800;
           for (let i = duration; i >= 1; i--) {
@@ -1362,9 +1361,9 @@ if (response && response.trim().startsWith('__CLUSTERDEEPSCAN__')) {
             playerState.currentDay += daysElapsed;
 
             queue('', '', 0);
-            queue('  [FOLD] Fold complete.', 'output-dim', 0);
-            queue('  [FOLD] ' + destQ.name + '.  Day ' + playerState.currentDay + '.', 'output-dim', 0);
-            queue('  [FOLD] Cells: ' + playerState.foldCells + ' / 20.', 'output-dim', 0);
+            queue('  [FOLD] Fold complete.', 'output-label', 0);
+            queue('  [FOLD] ' + destQ.name + '.  Day ' + playerState.currentDay + '.', 'output-bright', 0);
+            queue('  [FOLD] Cells: ' + playerState.foldCells + ' / 20.', 'output-label', 0);
             queue('', '', 0);
 
             updateSidebar();
