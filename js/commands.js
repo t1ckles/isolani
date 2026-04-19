@@ -163,6 +163,7 @@ function handleCommand(raw) {
     case 'status':   return cmdStatus();
     case 'logs':     return cmdLogs();
     case 'save':     return cmdSave();
+    case 'menu':     return cmdMenu();
     case 'newsave':  return cmdNewSave();
     case '':         return '';
     default:         return '  [UNKNOWN] "' + cmd + '" is not a recognized command. Type help.';
