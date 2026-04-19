@@ -1008,6 +1008,11 @@ function enableInput(mode = 'command') {
   inputMode    = mode;
 }
 
+function disableInput() {
+  const inputLine = document.getElementById('input-line');
+  if (inputLine) inputLine.style.display = 'none';
+}
+
 function askPlayer(question, callback) {
   const waitForQueue = setInterval(() => {
     if (!isPrinting) {
