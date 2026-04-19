@@ -2,10 +2,35 @@
 // Galaxy Hierarchy Generator — Stage 2
 // Aphelion v0.2.0-dev
 
-const QUADRANT_NAMES = [
+quadrant_names: [
+  // Guild administrative designations — 60 entries
   'Solace Reach', 'The Ashward', 'Crucible Expanse', 'Void Margin',
-  'Kethara Basin', 'The Pale Fringe', 'Sunken Arc', 'Drift Terminus'
-];
+  'Keth Basin', 'The Pale Fringe', 'Sunken Arc', 'Drift Terminus',
+  'The Ironveil', 'Cinder Margin', 'Null Approach', 'The Bleakward',
+  'Ossian Deep', 'Vael Corridor', 'The Shattered Fringe', 'Dross Expanse',
+  'Thal Remnant', 'The Gyre Passage', 'Erebus Reach', 'Solen Threshold',
+  'The Ashward Annex', 'Keth Periphery', 'Void Transit', 'The Pale Deep',
+  'Narr Corridor', 'Caern Margin', 'The Ulvar Fringe', 'Sheth Expanse',
+  'Morval Basin', 'Pelian Reach', 'The Ardis Veil', 'Brenn Threshold',
+  'Calyx Approach', 'The Davan Margin', 'Elvar Passage', 'Fhoss Deep',
+  'The Greth Corridor', 'Havan Reach', 'Ireth Fringe', 'Jorvak Basin',
+  'The Kaeln Expanse', 'Lorit Margin', 'Mavan Passage', 'Nessik Threshold',
+  'The Orvak Veil', 'Preth Approach', 'Queln Corridor', 'Ravet Reach',
+  'The Sovak Deep', 'Taliss Fringe', 'Uvet Margin', 'Vandis Expanse',
+  'The Wethis Basin', 'Xaeln Passage', 'The Yovak Threshold', 'Zethis Veil',
+  'The Akseth Approach', 'Balet Corridor', 'Cresit Reach', 'The Delvak Fringe',
+  // Corporate administrative designations
+  'Pelk Administrative Sector', 'Korveth Margin', 'The Reclamation Corridor',
+  'Free Zone Epsilon', 'CCC Exclusion Sector', 'The Contested Passage',
+  'Guild Survey District', 'Pelk Transit Zone', 'The Korvak Concession',
+  'Colonial Mandate Seven', 'The Free Corridor', 'Voss Extraction Zone',
+  'Hessen Administrative Reach', 'The Drade Concession', 'Pelk Outer Zone',
+  'CCC Forward Sector', 'The Marek Margin', 'Guild Annex Fourteen',
+  'The Brennan Corridor', 'Colonial Exclusion Zone', 'Voss Administrative Deep',
+  'The Alcott Passage', 'Pelk Reclamation Sector', 'The Garrick Margin',
+  'CCC Abandoned Sector', 'Free Zone Theta', 'The Contested Deep',
+  'Guild Forward Survey', 'The Korveth Concession', 'Colonial Remnant Zone',
+],
 
 const CIVILIZATION_STATES = [
   'Established', 'Contested', 'Declining',
