@@ -115,13 +115,13 @@ const SAVE_DEFAULTS = {
   },
 
   economy: {
-    credits:  200,
-    veydrite: 0,
+    credits:         200,
+    veydrite:        0,
+    cargo:           [],
     foldCells:       3,
     reserveVeydrite: 0,
-    cargo:    [],
   },
-
+  
   reputation: {},
 
   contracts: {
