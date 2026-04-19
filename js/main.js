@@ -513,7 +513,7 @@ function startContinue(save) {
           updateSidebar();
           queue('', '', 80);
           queue('Welcome back, ' + playerState.captainName + '.', 'output-bright', 80);
-          queue('Vessel: ' + playerState.shipName, 'output-dim', 80);
+          queue('Vessel: ' + (playerState.ship ? playerState.ship.name : playerState.shipName || 'Unknown'), 'output-dim', 80);
           queue('Day ' + playerState.currentDay + ' — ' + playerState.location.systemName, 'output-dim', 80);
           queueBlank(80);
 
