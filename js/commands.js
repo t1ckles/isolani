@@ -871,7 +871,7 @@ lines.push('  Type "trade" to open the trade terminal.');
   lines.push('');
   lines.push(renderRepChange(repResult));
   lines.push('');
-
+  if (typeof updateAuspex === 'function') updateAuspex();
   return lines.join('\n');
 }
 
