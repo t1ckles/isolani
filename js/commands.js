@@ -351,25 +351,33 @@ function getCurrentSystem() {
 // ── Dispatch ──────────────────────────────────
 
 function handleCommand(raw) {
-  const input          = raw.trim().toLowerCase();
-  const [cmd, ...args] = input.split(/\s+/);
-
-  if (playerState.inTrade)     return handleTradeCommand(cmd, args);
-  if (playerState.inArmory)    return handleArmoryCommand(cmd, args);
-  if (playerState.inEncounter) return handleEncounterCommand(cmd, args);
-
-  if (playerState.pendingTx) {
-    if (cmd === 'yes' || cmd === 'y') {
-      const tx = playerState.pendingTx;
-      playerState.pendingTx = null;
-      return executeTrade(tx);
-    } else {
-      playerState.pendingTx = null;
-      return '  [TRADE] Transaction cancelled.';
+    const input          = raw.trim().toLowerCase();
+    const [cmd, ...args] = input.split(/\s+/);
+    if (playerState.inTrade)     return handleTradeCommand(cmd, args);
+    if (playerState.inArmory)    return handleArmoryCommand(cmd, args);
+    if (playerState.inEncounter) return handleEncounterCommand(cmd, args);
+    if (playerState.pendingFold) {
+      if (cmd === 'yes' || cmd === 'y') {
+        const fold = playerState.pendingFold;
+        playerState.pendingFold = null;
+        return '__FOLD__' + JSON.stringify(fold);
+      } else {
+        playerState.pendingFold = null;
+        return '  [FOLD] Fold sequence cancelled.';
+      }
     }
-  }
-
-  switch (cmd) {
+    if (playerState.pendingTx) {
+      if (cmd === 'yes' || cmd === 'y') {
+        const tx = playerState.pendingTx;
+        playerState.pendingTx = null;
+        return executeTrade(tx);
+      } else {
+        playerState.pendingTx = null;
+        return '  [TRADE] Transaction cancelled.';
+      }
+    }
+    
+    switch (cmd) {
     case 'help':      return cmdHelp();
     case 'galaxy':    return renderGalaxyOverview(galaxy, playerState.location ? playerState.location.quadrantIndex : 0);
     case 'map':       return renderFoldMap(galaxy, playerState.location.quadrantIndex);
