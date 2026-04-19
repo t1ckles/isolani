@@ -236,7 +236,15 @@ function updateAuspex() {
     html += '<div class="ax-cyan">' + playerState.dockedAt + '</div>';
   }
 
-  body.innerHTML = html;
+// Preserve traffic section if it exists
+  const existing = body.innerHTML;
+  const trafficMarker = '<!-- traffic -->';
+  const trafficIndex  = existing.indexOf(trafficMarker);
+  if (trafficIndex !== -1) {
+    body.innerHTML = html + existing.substring(trafficIndex);
+  } else {
+    body.innerHTML = html;
+  }
 }
 
 function updateCombatAlert() {
