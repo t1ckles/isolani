@@ -1633,60 +1633,6 @@ function cmdResolve(args) {
   return lines.join('\n');
 }
 
-  const loc     = playerState.location;
-  const q       = galaxy.quadrants[loc.quadrantIndex];
-  const cluster = q && q.clusters.find(c => c.name === loc.clusterName);
-  const sys     = cluster && cluster.systems.find(s => s.name === loc.systemName);
-  if (!sys) return '  [ERROR] Location data corrupted.';
-
-  // Active scan — costs time based on contact count
-  const scanDays = Math.max(0, Math.floor(currentContacts.length * 0.3));
-  if (scanDays > 0) playerState.currentDay += scanDays;
-
-  // Mark all non-xeno contacts as resolved
-  currentContacts.forEach(c => {
-    if (!c.xeno) c.resolved = true;
-  });
-
-  // Boost encounter chance — we just broadcast
-  const encounterBoost = rollEncounter(sys, q, playerState, false);
-  const broadcastTriggered = encounterBoost &&
-    (q.state === 'Forbidden' || q.state === 'Collapsed') &&
-    Math.random() < 0.15;
-
-  // Update auspex with resolved view
-  updateAuspexTraffic(currentContacts, true);
-
-  const lines = [
-    '',
-    '  [RESOLVE] Active emission scan complete.',
-    scanDays > 0 ? '  Scan duration: ' + scanDays + ' day(s).  Day: ' + playerState.currentDay : '',
-    '',
-  ];
-
-  currentContacts.forEach((c, i) => {
-    if (c.xeno) {
-      lines.push('  ◈ [' + (i + 1) + '] [NO SIGNATURE] — running dark');
-      lines.push('       does not resolve');
-    } else if (c.dark) {
-      lines.push('  ◈ [' + (i + 1) + '] [NO SIGNATURE] — running dark');
-    } else {
-      const nameStr = c.shipName ? '\n       "' + c.shipName + '"' : '';
-      lines.push('  ◈ [' + (i + 1) + '] ' + c.shipClass + ' — ' + c.registry + nameStr);
-    }
-  });
-
-  lines.push('');
-
-  if (broadcastTriggered) {
-    lines.push('  [!] Your active scan was detected.');
-    lines.push('  Someone in this space knows you are here.');
-    lines.push('');
-  }
-
-  return lines.join('\n');
-}
-
 // ── Where ─────────────────────────────────────
 
 function cmdWhere() {
