@@ -5,6 +5,7 @@
 // ============================================
 
 const MASTER_SEED = '4471-KETH-NULL';
+let menuDismissed = false;
 
 // ── Terminal output ───────────────────────────
 
@@ -22,6 +23,7 @@ function print(text, style = '') {
 
 const printQueue = [];
 let isPrinting = false;
+
 
 function queue(text, style = '', delay = 38) {
   printQueue.push({ text, style, delay });
@@ -198,9 +200,13 @@ function showMainMenu() {
 }
 
 function menuKeyHandler(e) {
+  if (menuDismissed) {
+    document.removeEventListener('keydown', menuKeyHandler);
+    return;
+  }
+
   if (e.ctrlKey || e.metaKey || e.altKey) return;
 
-  // Only respond to C and N — block everything else
   if (e.key !== 'c' && e.key !== 'C' && e.key !== 'n' && e.key !== 'N') {
     e.preventDefault();
     e.stopPropagation();
@@ -220,18 +226,18 @@ function menuKeyHandler(e) {
     document.removeEventListener('keydown', menuKeyHandler);
     e.preventDefault();
     e.stopPropagation();
-    // Delay new game start until menu is fully gone
     dismissMenu();
     setTimeout(() => { startNewGame(); }, 750);
   }
 }
-
 function dismissMenu() {
   const menu = document.getElementById('main-menu');
   menu.classList.add('hidden');
-  setTimeout(() => { menu.style.display = 'none'; }, 700);
+  setTimeout(() => {
+    menu.style.display = 'none';
+    menuDismissed = true;
+  }, 700);
 }
-
 // ── Continue Game ─────────────────────────────
 
 function startContinue(save) {
