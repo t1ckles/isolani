@@ -243,7 +243,8 @@ function generateContracts(factionKey, galaxy, currentLocation) {
     const template = templates[Math.floor(Math.random() * templates.length)];
 
     // Pick a random target system that isn't the current one
-    const targetSystem = pickRandomSystem(galaxy, currentLocation);
+    const needsStation = template.type === 'delivery';
+    const targetSystem = pickRandomSystem(galaxy, currentLocation, needsStation);
     if (!targetSystem) continue;
 
     contracts.push({
@@ -267,14 +268,14 @@ function generateContracts(factionKey, galaxy, currentLocation) {
   return contracts;
 }
 
-function pickRandomSystem(galaxy, excludeLocation) {
+function pickRandomSystem(galaxy, excludeLocation, requireStation) {
   const allSystems = [];
   galaxy.quadrants.forEach(q => {
     q.clusters.forEach(cluster => {
       cluster.systems.forEach(sys => {
-        if (sys.name !== excludeLocation.systemName) {
-          allSystems.push(sys);
-        }
+        if (sys.name === excludeLocation.systemName) return;
+        if (requireStation && !sys.bodies.some(b => b.hasStation)) return;
+        allSystems.push(sys);
       });
     });
   });
