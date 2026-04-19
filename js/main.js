@@ -974,8 +974,8 @@ document.addEventListener('keydown', (e) => {
           return;
         }
 
-        if (response && response.trim().startsWith('__CLUSTERDEEPSCAN__')) {
-          const payload = JSON.parse(response.slice(19));
+if (response && response.trim().startsWith('__CLUSTERDEEPSCAN__')) {
+          const payload = JSON.parse(response.trim().slice(19));
           const SCAN_MESSAGES = [
             'Array focusing...',
             'Gravitometric sweep in progress...',
@@ -1000,13 +1000,11 @@ document.addEventListener('keydown', (e) => {
             const sysDelay    = 3000 + Math.floor(Math.random() * 3000);
             const numMessages = 2 + Math.floor(Math.random() * 3);
 
-            // Print targeting line
             setTimeout(() => {
               queue('  [' + (i + 1) + '/' + payload.systems.length + '] Targeting: ' + sys.name.toUpperCase(), 'output-dim', 60);
             }, cumulativeDelay);
             cumulativeDelay += 300;
 
-            // Print progress messages at intervals during the delay
             for (let m = 0; m < numMessages; m++) {
               const msgDelay = Math.floor((sysDelay / (numMessages + 1)) * (m + 1));
               const msg      = SCAN_MESSAGES[Math.floor(Math.random() * SCAN_MESSAGES.length)];
@@ -1015,14 +1013,10 @@ document.addEventListener('keydown', (e) => {
               }, cumulativeDelay + msgDelay);
             }
 
-// Print result after delay — drain power and record data here
             setTimeout(() => {
-              // Drain power for this system
               drainPower(getShip(), sys.costPerSys);
-
-              // Record astrographic data
-              const ship    = getShip();
-              const entry   = {
+              const ship  = getShip();
+              const entry = {
                 systemName:    sys.name,
                 quadrantIndex: payload.quadrantIndex,
                 quality:       'deep',
@@ -1047,7 +1041,6 @@ document.addEventListener('keydown', (e) => {
                 playerState.astrographics.push(entry);
               }
               playerState.scannedSystems[sys.name] = true;
-
               queue('', '', 40);
               queue('  ── ' + sys.name.toUpperCase() + ' ─────────────────────────────────────', '', 40);
               queue('  Star class  : ' + sys.starClass + '-type', '', 40);
@@ -1069,9 +1062,8 @@ document.addEventListener('keydown', (e) => {
             cumulativeDelay += sysDelay + 600;
           });
 
-          // Final summary
           setTimeout(() => {
-            const ship = typeof getShip === 'function' ? getShip() : null;
+            const ship = getShip();
             queue('  ── CLUSTER SWEEP COMPLETE ────────────────────────────────', 'output-dim', 60);
             queue('  ' + payload.systems.length + ' systems surveyed.', 'output-dim', 60);
             if (payload.skipped > 0) {
