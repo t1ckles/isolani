@@ -720,17 +720,17 @@ function renderArmory(stock, ship, playerCredits, factionKey, quadrantState) {
   lines.push('  Your scrip: ' + playerCredits + ' CR');
   lines.push('');
 
-  // Weapons for sale
+  // Weapons for sale — indexed
   if (stock.weapons.length > 0) {
     lines.push('  ── WEAPONS ───────────────────────────────────────────────────');
     lines.push('');
-    stock.weapons.forEach(wType => {
+    stock.weapons.forEach((wType, i) => {
       const def   = WEAPON_DEFS[wType];
       if (!def) return;
-      const price = weaponPrice(wType, stock.priceMod);
-      const affordable = playerCredits >= price ? '' : '  [insufficient scrip]';
-      lines.push('  ' + def.name.padEnd(36) + price + ' CR' + affordable);
-      lines.push('    Compatible ammo: ' + def.compatibleAmmo.join(', '));
+      const price       = weaponPrice(wType, stock.priceMod);
+      const affordable  = playerCredits >= price ? '' : '  [need more scrip]';
+      lines.push('  [' + (i + 1) + '] ' + def.name.padEnd(34) + price + ' CR' + affordable);
+      lines.push('      Ammo: ' + def.compatibleAmmo.join(', '));
       lines.push('');
     });
   } else {
@@ -738,15 +738,15 @@ function renderArmory(stock, ship, playerCredits, factionKey, quadrantState) {
     lines.push('');
   }
 
-  // Ammo for sale
+  // Ammo — indexed
   if (stock.ammo.length > 0) {
     lines.push('  ── AMMUNITION ────────────────────────────────────────────────');
     lines.push('');
-    stock.ammo.forEach(aType => {
+    stock.ammo.forEach((aType, i) => {
       const def   = AMMO_DEFS[aType];
       if (!def) return;
       const price = Math.round((AMMO_PRICES[aType] || 0) * stock.priceMod);
-      lines.push('  ' + def.name.padEnd(24) + price + ' CR/rd');
+      lines.push('  [' + (i + 1) + '] ' + def.name.padEnd(24) + price + ' CR/rd');
     });
     lines.push('');
   }
@@ -760,34 +760,44 @@ function renderArmory(stock, ship, playerCredits, factionKey, quadrantState) {
     lines.push('');
   }
 
-  // Installed weapons — sell option
-  const installedWeapons = ship.weaponSlots.filter(s => s.type);
-  const cargoWeapons     = ship.cargoWeapons || [];
+  // Loadout — slots and cargo
+  lines.push('  ── YOUR LOADOUT ──────────────────────────────────────────────');
+  lines.push('');
+  lines.push('  Weapon slots:');
+  ship.weaponSlots.forEach(slot => {
+    if (slot.type) {
+      const ammoTotal = Object.values(slot.ammo).reduce((a, b) => a + b, 0);
+      lines.push('    [Slot ' + slot.id + '] ' + slot.name + '  cond: ' + slot.condition + '/100  ammo: ' + ammoTotal + ' rds');
+    } else {
+      lines.push('    [Slot ' + slot.id + '] — empty');
+    }
+  });
+  lines.push('');
 
-  if (installedWeapons.length > 0 || cargoWeapons.length > 0) {
-    lines.push('  ── YOUR WEAPONS ──────────────────────────────────────────────');
-    lines.push('');
-    installedWeapons.forEach(slot => {
-      const def = WEAPON_DEFS[slot.type];
-      lines.push('  [Slot ' + slot.id + '] ' + slot.name + '  cond: ' + slot.condition + '/100');
-    });
+  const cargoWeapons = ship.cargoWeapons || [];
+  lines.push('  Cargo weapons:');
+  if (cargoWeapons.length === 0) {
+    lines.push('    none');
+  } else {
     cargoWeapons.forEach((w, i) => {
-      const def = WEAPON_DEFS[w.weaponType];
-      lines.push('  [Cargo ' + (i+1) + '] ' + (def ? def.name : w.weaponType) + '  cond: ' + w.condition + '/100');
+      lines.push('    [Cargo ' + (i + 1) + '] ' + w.name + '  cond: ' + w.condition + '/100');
     });
-    lines.push('');
   }
+  lines.push('');
+
+  calcAmmoBayUsed(ship);
+  lines.push('  Ammo bay: ' + ship.ammoBayUsed + ' / ' + ship.ammoBayMax + ' kg used');
+  lines.push('');
 
   // Commands
   lines.push('  ── COMMANDS ──────────────────────────────────────────────────');
   lines.push('');
-  lines.push('  buy weapon <name> <slot>     — purchase and install');
-  lines.push('  buy weapon <name> cargo      — purchase into cargo hold');
+  lines.push('  buy weapon <#> <slot|cargo>  — purchase weapon by index');
   lines.push('  buy ammo <slot> <type> <n>   — restock ammo');
-  lines.push('  install <slot> <cargo#>      — install weapon from cargo');
+  lines.push('  install <slot> <cargo#>      — install cargo weapon');
   lines.push('  uninstall <slot>             — move weapon to cargo');
   lines.push('  sell weapon <slot>           — sell installed weapon');
-  lines.push('  sell cargo <cargo#>          — sell cargo weapon');
+  lines.push('  sell cargo <#>              — sell cargo weapon');
   lines.push('  repair weapon <slot>         — repair weapon condition');
   lines.push('  repair system <name>         — repair subsystem');
   lines.push('  armory exit                  — close armory');
