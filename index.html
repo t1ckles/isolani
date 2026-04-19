@@ -24,25 +24,22 @@
       </div>
       <div id="menu-save-info" class="menu-save-info"></div>
       <div class="menu-divider"></div>
-      <div class="menu-footer">Seed: 4471-KETH-NULL</div>
+      <div class="menu-footer">Veydrite Assayer's Guild Network</div>
     </div>
   </div>
 
   <div id="layout">
 
+    <!-- Main terminal -->
     <div id="terminal">
-
       <div id="terminal-header">
         <span class="title">A P H E L I O N</span>
-        <span class="version">v0.1.0-dev</span>
+        <span class="version">v0.2.0-dev</span>
       </div>
-
       <div id="terminal-subheader">
         Deep Survey Terminal — Veydrite Assayer's Guild Network
       </div>
-
       <div id="terminal-divider"></div>
-
       <div id="terminal-body">
         <div id="output"></div>
         <div id="input-line">
@@ -51,69 +48,74 @@
           <span class="cursor">█</span>
         </div>
       </div>
-
     </div>
 
-    <div id="sidebar">
+    <!-- Right column — ship sidebar + auspex -->
+    <div id="right-column">
 
-      <div class="sidebar-section">
-        <div class="sidebar-label">VESSEL</div>
-        <div id="sb-captain" class="sb-white">—</div>
-        <div id="sb-ship" class="sb-dim">—</div>
-        <div id="sb-day" class="sb-dim">Day 0</div>
-      </div>
-
-      <div class="sidebar-divider"></div>
-
-      <div class="sidebar-section">
-        <div class="sidebar-label">SYSTEMS</div>
-        <div class="sidebar-row">
-          <span class="sidebar-dim">Hull</span>
-          <span id="sb-hull-bar" class="sidebar-bar">██████████</span>
+      <!-- Ship status sidebar -->
+      <div id="sidebar">
+        <div class="sidebar-section">
+          <div class="sidebar-label">VESSEL</div>
+          <div id="sb-captain" class="sb-white">—</div>
+          <div id="sb-ship" class="sb-dim">—</div>
+          <div id="sb-day" class="sb-dim">Day 0</div>
         </div>
-        <div class="sidebar-row">
-          <span class="sidebar-dim">Fuel</span>
-          <span id="sb-fuel-bar" class="sidebar-bar">██████████</span>
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-section">
+          <div class="sidebar-label">SYSTEMS</div>
+          <div class="sidebar-row">
+            <span class="sb-dim">Hull</span>
+            <span id="sb-hull-bar" class="sidebar-bar">██████████</span>
+          </div>
+          <div class="sidebar-row">
+            <span class="sb-dim">Fuel</span>
+            <span id="sb-fuel-bar" class="sidebar-bar">██████████</span>
+          </div>
+        </div>
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-section">
+          <div class="sidebar-label">CARGO</div>
+          <div class="sidebar-row">
+            <span class="sb-dim">Scrip</span>
+            <span id="sb-credits" class="sb-cyan">0 CR</span>
+          </div>
+          <div class="sidebar-row">
+            <span class="sb-dim">Veyd</span>
+            <span id="sb-veydrite" class="sb-dim">0 kg</span>
+          </div>
+        </div>
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-section">
+          <div class="sidebar-label">LOCATION</div>
+          <div id="sb-system" class="sb-white">—</div>
+          <div id="sb-cluster" class="sb-dim">—</div>
+          <div id="sb-quadrant" class="sb-dim">—</div>
+          <div id="sb-state" class="sb-dim">—</div>
+          <div id="sb-docked" class="sb-dim"></div>
+        </div>
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-section">
+          <div class="sidebar-label">CONTRACT</div>
+          <div id="sb-contract" class="sb-dim">none active</div>
+        </div>
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-section">
+          <div class="sidebar-label">STANDING</div>
+          <div id="sb-rep" class="sb-dim">no contacts</div>
         </div>
       </div>
 
-      <div class="sidebar-divider"></div>
-
-      <div class="sidebar-section">
-        <div class="sidebar-label">CARGO</div>
-        <div class="sidebar-row">
-          <span class="sidebar-dim">Scrip</span>
-          <span id="sb-credits" class="sb-cyan">0 CR</span>
+      <!-- Auspex panel -->
+      <div id="auspex">
+        <div class="auspex-header">
+          <span class="auspex-title">AUSPEX</span>
+          <span class="auspex-version">v2.1</span>
         </div>
-        <div class="sidebar-row">
-          <span class="sidebar-dim">Veyd</span>
-          <span id="sb-veydrite" class="sidebar-value">0 kg</span>
+        <div class="auspex-divider"></div>
+        <div id="auspex-body">
+          <div id="ax-status" class="ax-dim">offline</div>
         </div>
-      </div>
-
-      <div class="sidebar-divider"></div>
-
-      <div class="sidebar-section">
-        <div class="sidebar-label">LOCATION</div>
-        <div id="sb-system" class="sb-white">—</div>
-        <div id="sb-cluster" class="sb-dim">—</div>
-        <div id="sb-quadrant" class="sb-dim">—</div>
-        <div id="sb-state" class="sb-dim">—</div>
-        <div id="sb-docked" class="sb-dim"></div>
-      </div>
-
-      <div class="sidebar-divider"></div>
-
-      <div class="sidebar-section">
-        <div class="sidebar-label">CONTRACT</div>
-        <div id="sb-contract" class="sidebar-dim">none active</div>
-      </div>
-
-      <div class="sidebar-divider"></div>
-
-      <div class="sidebar-section">
-        <div class="sidebar-label">STANDING</div>
-        <div id="sb-rep" class="sidebar-dim">no contacts</div>
       </div>
 
     </div>
