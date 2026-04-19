@@ -265,6 +265,7 @@ let playerState = {
   dockedAt:         null,
   dockedFactionKey: null,
   inTrade:          false,
+  inArmory:         false,
   pendingTx:        null,
   pendingMenu:      false,
   currentDay:       0,
@@ -351,6 +352,7 @@ function handleCommand(raw) {
   const [cmd, ...args] = input.split(/\s+/);
 
   if (playerState.inTrade)     return handleTradeCommand(cmd, args);
+  if (playerState.inArmory)    return handleArmoryCommand(cmd, args);
   if (playerState.inEncounter) return handleEncounterCommand(cmd, args);
 
   if (playerState.pendingTx) {
@@ -895,6 +897,7 @@ function cmdUndock() {
   playerState.dockedAt         = null;
   playerState.dockedFactionKey = null;
   playerState.inTrade          = false;
+  playerState.inArmory         = false;
   playerState.bulletinContracts = [];
   if (typeof updateAuspex === 'function') updateAuspex();
   return ['', '  [UNDOCK] Departing ' + name + '.', '  Thrusters nominal. Open space.', ''].join('\n');
@@ -1233,7 +1236,6 @@ function getArmoryContext() {
 
 function cmdArmory(args) {
   if (!playerState.docked) return ['', '  [ARMORY] You must be docked to access the armory.', ''].join('\n');
-  if (args[0] === 'exit') return '  [ARMORY] Closed.';
 
   const ctx = getArmoryContext();
   if (!ctx) return ['', '  [ARMORY] No armory data available.', ''].join('\n');
@@ -1241,7 +1243,31 @@ function cmdArmory(args) {
   const ship = getShip();
   if (!ship.cargoWeapons) ship.cargoWeapons = [];
 
+  playerState.inArmory = true;
   return renderArmory(ctx.stock, ship, playerState.credits, playerState.dockedFactionKey, ctx.q.state);
+}
+
+function handleArmoryCommand(cmd, args) {
+  if (playerState.pendingTx) {
+    if (cmd === 'yes' || cmd === 'y') {
+      const tx = playerState.pendingTx;
+      playerState.pendingTx = null;
+      return executeTrade(tx);
+    } else {
+      playerState.pendingTx = null;
+      return '  [ARMORY] Transaction cancelled.';
+    }
+  }
+  if (cmd === 'exit')      { playerState.inArmory = false; return ['', '  [ARMORY] Terminal closed.', ''].join('\n'); }
+  if (cmd === 'armory')    return cmdArmory(args);
+  if (cmd === 'buy')       return cmdBuy(args);
+  if (cmd === 'sell')      return cmdSell(args);
+  if (cmd === 'repair')    return cmdRepair(args);
+  if (cmd === 'install')   return cmdInstall(args);
+  if (cmd === 'uninstall') return cmdUninstall(args);
+  if (cmd === 'status')    return cmdStatus();
+  if (cmd === 'weapons')   return cmdWeapons();
+  return ['', '  [ARMORY] Unknown command.', '  Use: buy  |  sell  |  repair  |  install  |  uninstall  |  armory  |  exit', ''].join('\n');
 }
 
 function cmdBuyWeapon(args) {
