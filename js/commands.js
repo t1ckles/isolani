@@ -168,7 +168,7 @@ function handleCommand(raw) {
     case 'abandon':  return cmdAbandon();
     case 'status':   return cmdStatus();
     case 'ping':       return cmdPing();
-    case 'resolve':    return cmdResolve();
+    case 'resolve':    return cmdResolve(args);
     case 'logs':     return cmdLogs();
     case 'evade':      return cmdEvade();
     case 'negotiate':  return cmdNegotiate();
@@ -195,6 +195,8 @@ function cmdHelp() {
     '  where               — current system survey',
     '  jump <system name>  — blind jump within current cluster (fast, dark)',
     '  nav <system name>   — navigate to a system',
+    '  resolve <number>    — resolve a specific contact',
+    '  resolve all         — resolve all contacts',
     '',
     '  ── STATION ───────────────────────────────────────────────────',
     '',
@@ -1519,7 +1521,7 @@ function cmdPing() {
   return lines.join('\n');
 }
 
-function cmdResolve() {
+function cmdResolve(args) {
   if (!playerState.location) return '  [RESOLVE] No location fix.';
   if (!currentContacts || currentContacts.length === 0) {
     return [
@@ -1528,6 +1530,108 @@ function cmdResolve() {
       '',
     ].join('\n');
   }
+
+  // resolve all
+  if (args[0] === 'all') {
+    const lines = [
+      '',
+      '  [RESOLVE] Scanning all contacts...',
+      '',
+    ];
+
+    const scanDays = Math.max(1, Math.floor(currentContacts.length * 0.4));
+    playerState.currentDay += scanDays;
+    lines.push('  Scan duration: ' + scanDays + ' day(s).  Day: ' + playerState.currentDay);
+    lines.push('');
+
+    currentContacts.forEach((c, i) => {
+      if (c.xeno) {
+        lines.push('  ◈ [' + (i + 1) + '] [NO SIGNATURE] — does not resolve');
+      } else {
+        c.resolved = true;
+        if (c.dark) {
+          lines.push('  ◈ [' + (i + 1) + '] [NO SIGNATURE] — running dark');
+        } else {
+          lines.push('  ◈ [' + (i + 1) + '] ' + c.shipClass + ' — ' + c.registry);
+          if (c.shipName) lines.push('       "' + c.shipName + '"');
+        }
+      }
+    });
+
+    lines.push('');
+    updateAuspexTraffic(currentContacts, true);
+    return lines.join('\n');
+  }
+
+  // resolve <number>
+  const index = parseInt(args[0]) - 1;
+  if (isNaN(index) || index < 0 || index >= currentContacts.length) {
+    return [
+      '',
+      '  [RESOLVE] Invalid contact number.',
+      '  Usage: resolve <1-' + currentContacts.length + '>  or  resolve all',
+      '',
+    ].join('\n');
+  }
+
+  const contact  = currentContacts[index];
+  const scanDays = Math.max(0, Math.round(currentContacts.length * 0.15));
+
+  if (contact.resolved) {
+    // Already resolved — just show it again
+    const lines = ['', '  [RESOLVE] Contact ' + (index + 1) + ' already resolved.', ''];
+    if (contact.xeno) {
+      lines.push('  ◈ [' + (index + 1) + '] [NO SIGNATURE] — does not resolve');
+    } else if (contact.dark) {
+      lines.push('  ◈ [' + (index + 1) + '] [NO SIGNATURE] — running dark');
+    } else {
+      lines.push('  ◈ [' + (index + 1) + '] ' + contact.shipClass + ' — ' + contact.registry);
+      if (contact.shipName) lines.push('       "' + contact.shipName + '"');
+    }
+    lines.push('');
+    return lines.join('\n');
+  }
+
+  if (contact.xeno) {
+    // Xeno contact — never resolves
+    if (scanDays > 0) playerState.currentDay += scanDays;
+    return [
+      '',
+      '  [RESOLVE] Scanning contact ' + (index + 1) + '...',
+      scanDays > 0 ? '  Scan duration: ' + scanDays + ' day(s).  Day: ' + playerState.currentDay : '',
+      '',
+      '  ◈ [' + (index + 1) + '] [NO SIGNATURE]',
+      '  Contact does not resolve. Signal structure is anomalous.',
+      '',
+    ].join('\n');
+  }
+
+  // Normal resolution
+  contact.resolved = true;
+  if (scanDays > 0) playerState.currentDay += scanDays;
+
+  const lines = [
+    '',
+    '  [RESOLVE] Scanning contact ' + (index + 1) + '...',
+    scanDays > 0 ? '  Scan duration: ' + scanDays + ' day(s).  Day: ' + playerState.currentDay : '',
+    '',
+  ];
+
+  if (contact.dark) {
+    lines.push('  ◈ [' + (index + 1) + '] [NO SIGNATURE] — running dark');
+    lines.push('  No transponder. No registry ping. They know you can see them.');
+  } else {
+    lines.push('  ◈ [' + (index + 1) + '] ' + contact.shipClass + ' — ' + contact.registry);
+    if (contact.shipName) lines.push('       "' + contact.shipName + '"');
+  }
+
+  lines.push('');
+
+  // Update auspex
+  updateAuspexTraffic(currentContacts, true);
+
+  return lines.join('\n');
+}
 
   const loc     = playerState.location;
   const q       = galaxy.quadrants[loc.quadrantIndex];
