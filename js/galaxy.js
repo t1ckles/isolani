@@ -147,9 +147,21 @@ function generateQuadrant(rng, name, naming) {
 
 function generateGalaxy(seed, naming) {
   const rng = new RNG(seed);
-  const quadrants = QUADRANT_NAMES.map(name =>
+const namePool = (naming && NAMES && NAMES.quadrant_names)
+    ? NAMES.quadrant_names
+    : ['Solace Reach','The Ashward','Crucible Expanse','Void Margin','Keth Basin','The Pale Fringe','Sunken Arc','Drift Terminus'];
+  const quadrantCount = 8;
+  const usedNames = [];
+  const tempRng = new RNG(rng.next() * 999999 | 0);
+  for (let i = 0; i < quadrantCount; i++) {
+    let name;
+    do { name = namePool[Math.floor(tempRng.next() * namePool.length)]; }
+    while (usedNames.includes(name));
+    usedNames.push(name);
+  }
+  const quadrants = usedNames.map(name =>
     generateQuadrant(new RNG(rng.next() * 999999 | 0), name, naming)
-  );
+  );I'm confiu
   const totalSystems = quadrants.reduce((n, q) =>
     n + q.clusters.reduce((m, c) => m + c.systems.length, 0), 0);
   const totalStations = quadrants.reduce((n, q) =>
