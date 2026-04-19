@@ -156,6 +156,7 @@ function handleCommand(raw) {
     case 'look':     return cmdWhere();
     case 'dock':     return cmdDock();
     case 'undock':   return cmdUndock();
+    case 'repair':   return cmdRepair(args);
     case 'trade':    return cmdTrade(args);
     case 'sell':     return cmdSell(args);
     case 'buy':      return cmdBuy(args);
@@ -204,6 +205,8 @@ function cmdHelp() {
     '  undock              — leave station',
     '  trade               — open trade terminal',
     '  bulletin            — view available contracts',
+    '  repair             — repair hull damage (when docked)',
+    '  repair <amount>    — repair specific percentage',
     '  accept <number>     — accept a contract',
     '',
     '  ── FIELD ─────────────────────────────────────────────────────',
@@ -732,6 +735,7 @@ function handleTradeCommand(cmd, args) {
   }
   if (cmd === 'sell')   return cmdSell(args);
   if (cmd === 'buy')    return cmdBuy(args);
+  if (cmd === 'repair') return cmdRepair(args);
   if (cmd === 'status') return cmdStatus();
   if (cmd === 'trade') {
     const loc = playerState.location;
@@ -868,6 +872,20 @@ function executeTrade(tx) {
       '',
     ].join('\n');
   }
+
+  if (tx.type === 'repair') {
+    playerState.hull    = Math.min(100, playerState.hull + tx.amount);
+    playerState.credits -= tx.cost;
+    return [
+      '',
+      '  [REPAIR] Hull repairs complete.',
+      '  Repaired  : +' + tx.amount + ' points',
+      '  Hull      : ' + playerState.hull + '%',
+      '  Scrip     : ' + playerState.credits + ' CR remaining',
+      '',
+    ].join('\n');
+  }
+  
   return '  [ERROR] Unknown transaction type.';
 }
 
@@ -1001,6 +1019,98 @@ function cmdAbandon() {
 function cmdRep() {
   const sys = getCurrentSystem();
   return renderRep(sys);
+}
+
+function cmdRepair(args) {
+  if (!playerState.docked) {
+    return [
+      '',
+      '  [REPAIR] You must be docked at a station to repair.',
+      '',
+    ].join('\n');
+  }
+
+  if (playerState.hull >= 100) {
+    return [
+      '',
+      '  [REPAIR] Hull integrity is already at 100%.',
+      '  No repairs needed.',
+      '',
+    ].join('\n');
+  }
+
+  const loc     = playerState.location;
+  const q       = galaxy.quadrants[loc.quadrantIndex];
+
+  // Repair cost varies by quadrant state
+  const costPerPoint = {
+    Established: 8,
+    Contested:   12,
+    Declining:   18,
+    Collapsed:   30,
+    Isolated:    22,
+    Forbidden:   35,
+  }[q.state] || 15;
+
+  const damage     = 100 - playerState.hull;
+  const fullCost   = damage * costPerPoint;
+
+  // No amount specified — show repair menu
+  if (!args[0]) {
+    return [
+      '',
+      '  [REPAIR] Hull integrity: ' + playerState.hull + '%',
+      '  Damage: ' + damage + ' points',
+      '',
+      '  Rate     : ' + costPerPoint + ' CR per point',
+      '  Full repair: ' + fullCost + ' CR',
+      '  Scrip    : ' + playerState.credits + ' CR',
+      '',
+      '  repair full        — full repair',
+      '  repair <amount>    — repair specific number of points',
+      '',
+    ].join('\n');
+  }
+
+  let repairAmount;
+
+  if (args[0] === 'full') {
+    repairAmount = damage;
+  } else {
+    repairAmount = parseInt(args[0]);
+    if (isNaN(repairAmount) || repairAmount <= 0) {
+      return '  [REPAIR] Usage: repair full  or  repair <amount>';
+    }
+    repairAmount = Math.min(repairAmount, damage);
+  }
+
+  const cost = repairAmount * costPerPoint;
+
+  if (playerState.credits < cost) {
+    return [
+      '',
+      '  [REPAIR] Insufficient scrip.',
+      '  Cost     : ' + cost + ' CR  (' + repairAmount + ' points at ' + costPerPoint + ' CR/point)',
+      '  You have : ' + playerState.credits + ' CR',
+      '',
+    ].join('\n');
+  }
+
+  // Stage confirmation
+  playerState.pendingTx = { type: 'repair', amount: repairAmount, cost };
+
+  return [
+    '',
+    '  [REPAIR] Confirm repair?',
+    '',
+    '  Hull now  : ' + playerState.hull + '%',
+    '  Repair    : +' + repairAmount + ' points',
+    '  Hull after: ' + Math.min(100, playerState.hull + repairAmount) + '%',
+    '  Cost      : ' + cost + ' CR',
+    '',
+    '  Type "yes" to confirm or anything else to cancel.',
+    '',
+  ].join('\n');
 }
 
 // ── Status ────────────────────────────────────
