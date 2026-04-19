@@ -236,16 +236,16 @@ function updateAuspex() {
     html += '<div class="ax-cyan">' + playerState.dockedAt + '</div>';
   }
 
-// Preserve traffic section if it exists
+  // Only preserve traffic if we're in the same system
+  // currentContacts being null means we've moved — clear traffic
   const existing = body.innerHTML;
   const trafficMarker = '<!-- traffic -->';
   const trafficIndex  = existing.indexOf(trafficMarker);
-  if (trafficIndex !== -1) {
+  if (trafficIndex !== -1 && typeof currentContacts !== 'undefined' && currentContacts !== null) {
     body.innerHTML = html + existing.substring(trafficIndex);
   } else {
     body.innerHTML = html;
   }
-}
 
 function updateCombatAlert() {
   const terminal = document.getElementById('terminal');
