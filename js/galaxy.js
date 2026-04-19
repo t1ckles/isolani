@@ -69,12 +69,21 @@ function generateSystem(rng, quadrantState) {
       veydrite: rng.next() < veydriteChance(starClass),
     });
   }
+
+  // Xenos thread — 6% of systems are quietly flagged
+  // Collapsed and Forbidden quadrants have higher incidence
+  const xenoChance = { Collapsed: 0.14, Forbidden: 0.12,
+                       Isolated: 0.09, Declining: 0.07,
+                       Contested: 0.05, Established: 0.02 }[quadrantState] ?? 0.06;
+  const xenoTainted = rng.next() < xenoChance;
+
   return {
     starClass,
     bodies,
     jumpPoints: 1 + Math.floor(rng.next() * 3),
     hazard: hazardLevel(quadrantState, rng),
     traffic: trafficLevel(quadrantState, rng),
+    xenoTainted,
   };
 }
 
