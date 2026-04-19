@@ -336,10 +336,6 @@ body::after {
   animation: powerOn 1.4s ease-out forwards, combatPulse 1.5s ease-in-out infinite;
 }
 
-#slot-modal {
-  margin-top: 10px;
-}
-
 .slot-modal-title {
   font-family: 'Share Tech Mono', monospace;
   font-size: 11px;
