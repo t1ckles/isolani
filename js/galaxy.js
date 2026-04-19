@@ -70,14 +70,11 @@ function generateSystem(rng, quadrantState) {
     });
   }
 
-  // Xenos thread — 6% of systems are quietly flagged
-  // Collapsed and Forbidden quadrants have higher incidence
   const xenoChance = { Collapsed: 0.14, Forbidden: 0.12,
                        Isolated: 0.09, Declining: 0.07,
                        Contested: 0.05, Established: 0.02 }[quadrantState] ?? 0.06;
   const xenoTainted = rng.next() < xenoChance;
 
-// Distress beacons — more common in declining/collapsed space
   const beaconChance = { Established: 0.04, Contested: 0.10, Declining: 0.18,
                           Collapsed: 0.25, Isolated: 0.15, Forbidden: 0.08 }[quadrantState] ?? 0.08;
   const hasBeacon = rng.next() < beaconChance;
@@ -91,6 +88,7 @@ function generateSystem(rng, quadrantState) {
     xenoTainted,
     hasBeacon,
   };
+}
 
 function generateCluster(rng, quadrantState, naming) {
   const systemCount = 2 + Math.floor(rng.next() * 6);
@@ -192,7 +190,7 @@ function renderGalaxyOverview(galaxy) {
     lines.push('  [' + (i + 1) + '] ' + q.name.padEnd(20) + ' ' + stateTag + '  ' + controlBar + '  ' + controlPct + '% ctrl');
     lines.push('      ' + q.notableFeature.padEnd(35) + ' ' + totalSys + ' systems');
     lines.push('');
-  })
+  });
   lines.push('  ── COMMANDS ────────────────────────────────────────────────');
   lines.push('');
   lines.push('  scan <1-8>          — survey a quadrant');
@@ -211,7 +209,6 @@ function renderQuadrantDetail(galaxy, index) {
   lines.push('  ── QUADRANT ' + (index + 1) + ': ' + q.name.toUpperCase() + ' ──────────────────────────────');
   lines.push('  Status: ' + q.state + '  |  ' + q.notableFeature);
   lines.push('');
-  lines.push('');
   q.clusters.forEach(function(cluster) {
     lines.push('  ▸ ' + cluster.name + '  [' + cluster.systems.length + ' systems]');
     cluster.systems.forEach(function(sys) {
@@ -219,8 +216,10 @@ function renderQuadrantDetail(galaxy, index) {
       const station = sys.bodies.some(function(b) { return b.hasStation; }) ? ' [STA]' : '';
       const ruin    = sys.bodies.some(function(b) { return b.hasRuin; })    ? ' [RUN]' : '';
       const veyd    = sys.bodies.some(function(b) { return b.veydrite; })   ? ' [VYD]' : '';
+      const beacon  = sys.hasBeacon ? ' [BCN]' : '';
+      const xeno    = sys.xenoTainted ? ' [???]' : '';
       const hazard  = '▲'.repeat(sys.hazard) + '△'.repeat(5 - sys.hazard);
-      lines.push('    ' + sys.name.padEnd(22) + ' ' + sys.starClass + '-class  HAZ:' + hazard + anchor + station + ruin + veyd);
+      lines.push('    ' + sys.name.padEnd(22) + ' ' + sys.starClass + '-class  HAZ:' + hazard + anchor + station + ruin + veyd + beacon + xeno);
     });
     lines.push('');
   });
