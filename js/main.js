@@ -305,15 +305,23 @@ document.addEventListener('keydown', (e) => {
       if (raw === '') return;
       print('> ' + raw, 'output-cmd');
 
-      const response = handleCommand(raw);
-      if (response) {
-        response.split('\n').forEach(line => print(line));
-      }
+      const thinkTime = 200 + Math.floor(Math.random() * 600);
+      setTimeout(() => {
+        const response = handleCommand(raw);
+        if (response) {
+          response.split('\n').forEach(line => queue(line, '', 18));
+        }
 
-      updateSidebar();
+        const waitForResponse = setInterval(() => {
+          if (!isPrinting && printQueue.length === 0) {
+            clearInterval(waitForResponse);
+            updateSidebar();
+            const output = document.getElementById('output');
+            if (output) output.scrollTop = output.scrollHeight;
+          }
+        }, 50);
 
-      const output = document.getElementById('output');
-      if (output) output.scrollTop = output.scrollHeight;
+      }, thinkTime);
     }
 
   } else if (e.key === 'Backspace') {
