@@ -90,6 +90,7 @@ let playerState = {
   ship:             'Wayward-class Prospector',
   shipName:         'The Unspoken',
   captainName:      'Unknown',
+  galaxySeed:       '4471-KETH-NULL',
   docked:           false,
   dockedAt:         null,
   dockedFactionKey: null,
