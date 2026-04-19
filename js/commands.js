@@ -160,7 +160,7 @@ function assignFaction(state, rng) {
 
 // ── Station name generator ────────────────────
 
-function generateStationName(systemName, factionKey, index) {
+function generateStationName(systemName, factionKey, index, rng) {
   const prefixes = {
     guild:       ['Assay Point', 'Survey Station', 'Guild Relay', 'Assessment Post'],
     pelk:        ['Pelk Depot', 'Transit Hub', 'Pelk Waystation', 'Logistics Post'],
