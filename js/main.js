@@ -170,7 +170,9 @@ function updateAuspex() {
 
   const loc     = playerState.location;
   const q       = galaxy.quadrants[loc.quadrantIndex];
-  const cluster = q && q.clusters.find(c => c.name === loc.clusterName);
+  const cluster = loc.clusterName
+    ? q && q.clusters.find(c => c.name === loc.clusterName)
+    : q && q.clusters[loc.clusterIndex || 0];
   const sys     = cluster && cluster.systems.find(s => s.name === loc.systemName);
 
   if (!sys) return;
@@ -1202,12 +1204,7 @@ if (response && response.trim().startsWith('__CLUSTERDEEPSCAN__')) {
             drive.sta = Math.min(drive.sta || 100, hpMap[level]);
           }
         }
-
-        function updateAuspex() {
-          // Intentionally empty — Auspex updates on next where/nav/dock command
-          // Do not call bootAuspex here — it wipes the display
-        }
-
+        
         if (response && response.trim().startsWith('__FOLD__')) {
           const fold    = JSON.parse(response.trim().slice(8));
           const isBlind = fold.type === 'blindfold';
