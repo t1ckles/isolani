@@ -1089,7 +1089,7 @@ const ATTACKER_TYPES = {
   },
 };
 
-function rollEncounter(sys, q, playerState) {
+function rollEncounter(sys, q, playerState, blindJump) {
   let rate = ENCOUNTER_RATES[q.state] || 0.05;
   if (blindJump) rate += 0.05;
 
