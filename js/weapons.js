@@ -287,17 +287,17 @@ function resolveShot(ship, slotId, targetSubsystem, targetArmor) {
   const sysDamage     = ammoDef.systemsDamage;
 
   return {
-    hit:          true,
-    weapon:       def.name,
-    ammoType:     slot.activeAmmo,
-    burst:        actualBurst,
+    hit:             true,
+    weapon:          def.name,
+    ammoType:        slot.activeAmmo,
+    burst:           actualBurst,
     hullDamage,
     sysDamage,
     targetSubsystem,
-    conditionAfter: slot.condition,
+    conditionBefore: conditionRating(slot.condition + def.conditionDecayPerBurst),
+    conditionAfter:  slot.condition,
     conditionRating: conditionRating(slot.condition),
   };
-}
 
 // ── Subsystem Damage ──────────────────────────
 
