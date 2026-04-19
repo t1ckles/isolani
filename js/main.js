@@ -416,8 +416,10 @@ function showMainMenu() {
     .filter(s => s.save && s.save.savedAt)
     .sort((a, b) => b.save.savedAt - a.save.savedAt)[0];
 
-  const contBtn = document.getElementById('menu-continue');
-  const info    = document.getElementById('menu-save-info');
+const contBtn  = document.getElementById('menu-continue');
+  const loadBtn  = document.getElementById('menu-load');
+  const info     = document.getElementById('menu-save-info');
+  const anySaves = slots.some(s => s.save !== null);
 
   if (mostRecent) {
     contBtn.style.display = 'block';
@@ -432,6 +434,8 @@ function showMainMenu() {
   } else {
     contBtn.style.display = 'none';
   }
+
+  loadBtn.style.display = anySaves ? 'block' : 'none';
 
   slots.forEach(({ slot, save }) => {
     const el       = document.getElementById('menu-slot-' + slot);
