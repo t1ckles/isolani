@@ -906,8 +906,22 @@ function startNewGame(slot) {
               clearInterval(waitForBoot);
               bootSidebar(playerState.captainName, playerState.shipName, () => {
                 updateSidebar();
-                const overview = handleCommand('galaxy');
-                overview.split('\n').forEach(line => queue(line, '', 12));
+                queue('', '', 40);
+                queue('  Guild network: CONNECTED', 'output-dim', 60);
+                queue('  Fold corridor data: PARTIAL — ' + galaxy.knownCorridors.length + ' corridors on record.', 'output-dim', 60);
+                queue('  Known quadrants: ' + (() => {
+                  const known = new Set([0]);
+                  galaxy.knownCorridors.forEach(idx => {
+                    known.add(galaxy.connections[idx][0]);
+                    known.add(galaxy.connections[idx][1]);
+                  });
+                  return known.size;
+                })() + ' of ' + galaxy.quadrants.length + '.', 'output-dim', 60);
+                queue('', '', 40);
+                queue('  Type map to view fold corridors.', 'output-dim', 60);
+                queue('  Type galaxy to survey known quadrants.', 'output-dim', 60);
+                queue('  Type nav <system> to plot a course.', 'output-dim', 60);
+                queue('', '', 40);
 
                 const waitForQueue = setInterval(() => {
                   if (!isPrinting && printQueue.length === 0) {
