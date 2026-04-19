@@ -404,7 +404,13 @@ function autosave() {
 // ── Main Menu ─────────────────────────────────
 
 function showMainMenu() {
-  const slots   = getAllSlots();
+  let slots;
+  try {
+    slots = getAllSlots();
+  } catch(e) {
+    console.error('getAllSlots failed:', e);
+    slots = [{slot:1,save:null},{slot:2,save:null},{slot:3,save:null}];
+  }
   const hasSave = slots.some(s => s.save !== null);
 
   // Show continue button only if there's a most-recent save
