@@ -1214,26 +1214,32 @@ if (response && response.trim().startsWith('__CLUSTERDEEPSCAN__')) {
             }
           }
 
-        function peak() {
-          terminal.style.transition  = 'all 0.3s ease';
-          terminal.style.transform   = 'skewX(1.5deg)';
-          terminal.style.borderColor = '#ffffff';
-          if (sidebar) {
-            sidebar.style.transition = 'opacity 0.2s ease';
-            sidebar.style.opacity    = '0';
+        function escalate() {
+            terminal.style.transition  = 'border-color 0.5s ease';
+            terminal.style.borderColor = '#aaffcc';
+            if (sidebar) sidebar.classList.add('fold-escalate');
           }
-          if (titleEl) titleEl.style.textShadow = '2px 0 red, -2px 0 blue, 0 0 8px white';
-          setTimeout(() => {
-            terminal.style.transition  = 'all 0.4s ease';
-            terminal.style.transform   = 'skewX(0deg)';
-            terminal.style.borderColor = '#00ff41';
+        
+          function peak() {
+            terminal.style.transition  = 'all 0.3s ease';
+            terminal.style.transform   = 'skewX(1.5deg)';
+            terminal.style.borderColor = '#ffffff';
             if (sidebar) {
-              sidebar.style.transition = 'opacity 0.6s ease';
-              sidebar.style.opacity    = '1';
+              sidebar.classList.remove('fold-escalate');
+              sidebar.classList.add('fold-peak');
             }
-            if (titleEl) titleEl.style.textShadow = '';
-          }, 400);
-        }
+            if (titleEl) titleEl.style.textShadow = '2px 0 red, -2px 0 blue, 0 0 8px white';
+            setTimeout(() => {
+              terminal.style.transition  = 'all 0.4s ease';
+              terminal.style.transform   = 'skewX(0deg)';
+              terminal.style.borderColor = '#00ff41';
+              if (sidebar) {
+                sidebar.classList.remove('fold-peak');
+                sidebar.classList.remove('fold-escalate');
+              }
+              if (titleEl) titleEl.style.textShadow = '';
+            }, 400);
+          }
         
           return { escalate, peak };
         }
