@@ -971,8 +971,8 @@ function cmdSell(args) {
 
 function cmdBuy(args) {
   if (!playerState.docked) return '  [BUY] You must be docked to buy.';
-  if (!args[0]) return '  [BUY] Usage: buy fuel <n>  |  buy weapon <name> <slot>  |  buy ammo <slot> <type> <n>';
-
+  if (!args[0]) return '  [BUY] Usage: buy fuel <n>  |  buy weapon <n> <slot>  |  buy ammo <slot> <#> <n>';
+  
   if (args[0] === 'weapon') return cmdBuyWeapon(args);
   if (args[0] === 'ammo')   return cmdBuyAmmo(args);
   if (args[0] === 'fuel')   return cmdBuyFuel(args);
@@ -1335,25 +1335,31 @@ function cmdBuyAmmo(args) {
 
   const ship = getShip();
 
-  // buy ammo <slot> <type> <amount>
-  const slotId   = parseInt(args[1]);
-  const ammoType = args[2] ? args[2].toUpperCase() : null;
-  const amount   = parseInt(args[3]);
+  // buy ammo <slot> <#> <amount>
+  const slotId      = parseInt(args[1]);
+  const ammoIndex   = parseInt(args[2]) - 1;
+  const amount      = parseInt(args[3]);
 
-  if (isNaN(slotId) || !ammoType || isNaN(amount) || amount <= 0) {
-    return '  [BUY] Usage: buy ammo <slot> <type> <amount>';
+  if (isNaN(slotId) || isNaN(ammoIndex) || ammoIndex < 0 || isNaN(amount) || amount <= 0) {
+    return '  [BUY] Usage: buy ammo <slot> <#> <amount>  —  use "armory" to see ammo index numbers.';
   }
 
   const slot = ship.weaponSlots.find(s => s.id === slotId);
   if (!slot || !slot.type) return '  [BUY] No weapon in slot ' + slotId + '.';
 
-  const weaponDef = WEAPON_DEFS[slot.type];
-  if (!weaponDef || !weaponDef.compatibleAmmo.includes(ammoType)) {
-    return ['', '  [BUY] ' + slot.name + ' cannot use ' + ammoType + ' ammo.', '  Compatible: ' + (weaponDef ? weaponDef.compatibleAmmo.join(', ') : 'none'), ''].join('\n');
+  const ammoType = ctx.stock.ammo[ammoIndex];
+  if (!ammoType) {
+    return ['', '  [BUY] No ammo at index ' + (ammoIndex + 1) + '.', '  Type "armory" to see available ammo.', ''].join('\n');
   }
 
-  if (!ctx.stock.ammo.includes(ammoType)) {
-    return ['', '  [BUY] ' + ammoType + ' not in stock here.', ''].join('\n');
+  const weaponDef = WEAPON_DEFS[slot.type];
+  if (!weaponDef || !weaponDef.compatibleAmmo.includes(ammoType)) {
+    return [
+      '',
+      '  [BUY] ' + slot.name + ' cannot use ' + ammoType + ' ammo.',
+      '  Compatible: ' + (weaponDef ? weaponDef.compatibleAmmo.join(', ') : 'none'),
+      '',
+    ].join('\n');
   }
 
   const cost = ammoPrice(ammoType, amount, ctx.stock.priceMod, ctx.tier);
@@ -1388,12 +1394,14 @@ function cmdBuyAmmo(args) {
     massPerRound,
   };
 
+  const ammoDef = AMMO_DEFS[ammoType] || { name: ammoType };
+
   return [
     '',
     '  [BUY] Confirm ammo purchase?',
     '',
     '  Weapon : ' + slot.name + '  [Slot ' + slotId + ']',
-    '  Ammo   : ' + ammoType + '  x' + amount,
+    '  Ammo   : ' + ammoDef.name + ' (' + ammoType + ')  x' + amount,
     '  Mass   : +' + addedMass.toFixed(1) + ' kg',
     '  Cost   : ' + cost + ' CR',
     '',
