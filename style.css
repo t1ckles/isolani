@@ -147,6 +147,7 @@ body {
   width: 280px;
   flex-shrink: 0;
   max-height: 60%;
+  opacity: 0;
   border: 1px solid #006618;
   border-radius: 8px;
   padding: 16px 14px;
