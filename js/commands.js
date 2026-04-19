@@ -1010,9 +1010,9 @@ function cmdBuy(args) {
   
   if (args[0] === 'weapon') return cmdBuyWeapon(args);
   if (args[0] === 'ammo')   return cmdBuyAmmo(args);
-  if (args[0] === 'fuel')   return cmdBuyFuel(args);
-
-  return '  [BUY] Unknown item. Try: fuel, weapon, ammo';
+  if (args[0] === 'fuel')  return cmdBuyFuel(args);
+  if (args[0] === 'cells') return cmdBuyCells(args);
+  return '  [BUY] Unknown item. Try: fuel, weapon, ammo, cells';
 }
 
 function cmdBuyFuel(args) {
@@ -1043,6 +1043,41 @@ function cmdBuyFuel(args) {
   ].join('\n');
 }
 
+function cmdBuyCells(args) {
+  const amount = parseInt(args[1]);
+  if (isNaN(amount) || amount < 1) return '  [BUY] Usage: buy cells <amount>';
+  const faction = playerState.dockedFactionKey;
+  const repTier = getRepTier(faction, playerState);
+  const result  = foldCellPrice(faction, repTier);
+  if (!result)        return '  [REFUSED] This station will not sell fold cells to you.';
+  if (result.noStock) return '  [NO STOCK] This station has no fold cells available.';
+  const max    = 20 - playerState.foldCells;
+  const buying = Math.min(amount, max);
+  if (buying <= 0) return '  [FULL] Fold cell magazine is at capacity (20/20).';
+  const total  = result.price * buying;
+  if (playerState.credits < total) {
+    return [
+      '',
+      '  [BUY] Insufficient scrip.',
+      '  ' + buying + ' cells at ' + result.price + ' CR each = ' + total + ' CR required.',
+      '  You have: ' + playerState.credits + ' CR',
+      '',
+    ].join('\n');
+  }
+  playerState.pendingTx = { type: 'buy', commodity: 'cells', amount: buying, cost: total, priceEach: result.price };
+  return [
+    '',
+    '  [BUY] Confirm fold cell purchase?',
+    '  Buy      : ' + buying + ' cells',
+    '  Rate     : ' + result.price + ' CR/cell',
+    '  You pay  : ' + total + ' CR',
+    '  Magazine : ' + playerState.foldCells + ' / 20  →  ' + (playerState.foldCells + buying) + ' / 20',
+    '',
+    '  Type "yes" to confirm or anything else to cancel.',
+    '',
+  ].join('\n');
+}
+
 function executeTrade(tx) {
   const ship = getShip();
   if (tx.type === 'sell' && tx.commodity === 'veydrite') {
@@ -1053,6 +1088,21 @@ function executeTrade(tx) {
     return ['', '  [SELL] Transaction complete.', '  Sold: ' + tx.amount + ' kg  |  Earned: ' + tx.earned + ' CR', '  Scrip: ' + playerState.credits + ' CR', veyAch, ''].join('\n');
   }
   if (tx.type === 'buy' && tx.commodity === 'fuel') {
+    if (tx.type === 'buy' && tx.commodity === 'cells') {
+    playerState.credits   -= tx.cost;
+    playerState.foldCells += tx.amount;
+    autosave();
+    updateSidebar();
+    return [
+      '',
+      '  [BUY] Fold cells loaded.',
+      '  Purchased : ' + tx.amount + ' cells at ' + tx.priceEach + ' CR each',
+      '  Total     : ' + tx.cost + ' CR',
+      '  Magazine  : ' + playerState.foldCells + ' / 20',
+      '  Scrip     : ' + playerState.credits + ' CR',
+      '',
+    ].join('\n');
+  }
     playerState.credits -= tx.cost;
     ship.fuel = Math.min(ship.fuelMax, ship.fuel + tx.amount);
     return ['', '  [BUY] Fuel transfer complete.', '  Purchased: ' + tx.amount + ' units  |  Cost: ' + tx.cost + ' CR', '  Fuel: ' + ship.fuel + '/' + ship.fuelMax + '  |  Scrip: ' + playerState.credits + ' CR', ''].join('\n');
