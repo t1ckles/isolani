@@ -149,6 +149,7 @@ function handleCommand(raw) {
     case 'galaxy':   return renderGalaxyOverview(galaxy);
     case 'scan':     return cmdScan(args);
     case 'nav':      return cmdNav(args);
+    case 'jump':       return cmdJump(args);
     case 'where':
     case 'look':     return cmdWhere();
     case 'dock':     return cmdDock();
@@ -188,6 +189,7 @@ function cmdHelp() {
     '  galaxy              — full quadrant index',
     '  scan <1-8>          — survey a quadrant',
     '  where               — current system survey',
+    '  jump <system name>  — blind jump within current cluster (fast, dark)',
     '  nav <system name>   — navigate to a system',
     '',
     '  ── STATION ───────────────────────────────────────────────────',
@@ -263,6 +265,142 @@ function cmdScanLog() {
     '  ' + log,
     '',
   ].join('\n');
+}
+
+function cmdJump(args) {
+  if (!galaxy) return '  [ERROR] Galaxy not initialized.';
+  if (args.length === 0) return '  [USAGE] jump <system name>';
+  if (playerState.docked) return '  [JUMP] You are docked. Type "undock" first.';
+
+  const query = args.join(' ').toLowerCase();
+
+  // Find current cluster
+  const loc        = playerState.location;
+  const q          = galaxy.quadrants[loc.quadrantIndex];
+  const curCluster = q && q.clusters.find(c => c.name === loc.clusterName);
+
+  if (!curCluster) return '  [ERROR] Location data corrupted.';
+
+  // Search only within current cluster
+  const target = curCluster.systems.find(s =>
+    s.name.toLowerCase().includes(query) && s.name !== loc.systemName
+  );
+
+  if (!target) {
+    return [
+      '',
+      '  [JUMP] No system matching "' + args.join(' ') + '" in local cluster.',
+      '  Cluster: ' + curCluster.name,
+      '  Systems here:',
+      ...curCluster.systems
+        .filter(s => s.name !== loc.systemName)
+        .map(s => '    — ' + s.name),
+      '',
+      '  For systems outside this cluster, use "nav".',
+      '',
+    ].join('\n');
+  }
+
+  // Fuel cost — cheaper than nav
+  const fuelCost = 6 + Math.floor(Math.random() * 5);
+  if (playerState.fuel < fuelCost) {
+    return [
+      '',
+      '  [JUMP] Insufficient fuel.',
+      '  Required: ' + fuelCost + ' units  |  Available: ' + playerState.fuel + ' units.',
+      '',
+    ].join('\n');
+  }
+
+  // Transit time — fast
+  const travelDays = 1 + Math.floor(Math.random() * 3);
+  playerState.fuel       -= fuelCost;
+  playerState.currentDay += travelDays;
+  playerState.location = {
+    quadrantIndex: loc.quadrantIndex,
+    clusterName:   curCluster.name,
+    systemName:    target.name,
+  };
+  playerState.docked           = false;
+  playerState.dockedAt         = null;
+  playerState.dockedFactionKey = null;
+
+  const lines = [
+    '',
+    '  [JUMP] Blind jump to ' + target.name + '...',
+    '',
+    '  Cluster  : ' + curCluster.name,
+    '  Star     : ' + target.starClass + '-class',
+    '  Fuel used: ' + fuelCost + ' units  |  Remaining: ' + playerState.fuel + ' units',
+    '  Transit  : ' + travelDays + ' standard days',
+    '  Day      : ' + playerState.currentDay,
+    '',
+    '  Arrived dark. Sensors offline.',
+    '  Type "where" to survey this system.',
+    '',
+  ];
+
+  // Hull stress — 30% chance of minor damage
+  if (Math.random() < 0.3) {
+    const stress = 1 + Math.floor(Math.random() * 3);
+    playerState.hull = Math.max(0, playerState.hull - stress);
+    lines.push('  [!] Exit stress — hull integrity -' + stress + '%.  Hull: ' + playerState.hull + '%');
+    lines.push('');
+
+    if (playerState.hull <= 0) {
+      return handleDeath('hull failure during blind jump to ' + target.name);
+    }
+  }
+
+  // Higher encounter rate for blind jumps
+  const encounter = rollEncounter(target, q, playerState, true);
+  if (encounter) {
+    playerState.inEncounter = true;
+    playerState.encounter   = encounter;
+    lines.push('  ── CONTACT ───────────────────────────────────────────────────');
+    lines.push('');
+    lines.push('  ' + encounter.openingLine);
+    lines.push('');
+    lines.push('  Hull: ' + playerState.hull + '%  |  Fuel: ' + playerState.fuel + ' units  |  Scrip: ' + playerState.credits + ' CR');
+    lines.push('');
+    lines.push('  evade  |  negotiate  |  fight  |  yield');
+    lines.push('');
+  }
+
+  // Beacon check — but don't update auspex (arrived dark)
+  const beacon = rollBeacon(target);
+  if (beacon) {
+    const ageTag = beacon.age === 'recent'  ? '[RECENT]'
+                 : beacon.age === 'old'     ? '[ARCHIVED]'
+                 : '[UNKNOWN AGE]';
+    lines.push('  ── DISTRESS BEACON DETECTED ──────────────────────────────────');
+    lines.push('');
+    lines.push('  ' + ageTag + ' ' + beacon.text);
+    lines.push('');
+    playerState.logs.push({ type: 'beacon', system: target.name, age: beacon.age, text: beacon.text });
+  }
+
+  // Check active contract
+  const active = activeContracts.find(c => !c.completed && !c.failed);
+  if (active) {
+    const status = checkContractStatus(active, playerState.currentDay, target.name);
+    if (status && status.status === 'failed') {
+      const result = failContract(active);
+      lines.push('  [CONTRACT] FAILED — ' + active.title);
+      lines.push('  Time limit exceeded.');
+      if (result.repResult) lines.push(renderRepChange(result.repResult));
+      lines.push('');
+    } else if (status && status.status === 'ready') {
+      lines.push('  [CONTRACT] Target system reached — type "complete" to finish.');
+      lines.push('  Days remaining: ' + status.daysLeft);
+      lines.push('');
+    } else if (status && status.status === 'active') {
+      lines.push('  [CONTRACT] ' + active.title + ' — ' + status.daysLeft + ' days remaining.');
+      lines.push('');
+    }
+  }
+
+  return lines.join('\n');
 }
 
 // ── Nav ───────────────────────────────────────
@@ -953,6 +1091,8 @@ const ATTACKER_TYPES = {
 
 function rollEncounter(sys, q, playerState) {
   let rate = ENCOUNTER_RATES[q.state] || 0.05;
+  if (blindJump) rate += 0.05;
+
 
   // Boost rate if hostile rep with dominant faction
   const stationFactions = sys.bodies
