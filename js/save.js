@@ -202,6 +202,8 @@ function saveGame(playerState, reputationData, contractData) {
       logs:  playerState.logs  || [],
       flags: playerState.flags || {},
       salvagedSystems: playerState.salvagedSystems || [],
+      astrographics:   playerState.astrographics   || [],
+      scannedSystems:  playerState.scannedSystems  || {},
 
 
       stats: {
@@ -299,6 +301,8 @@ function applySave(save, playerState, reputationObj, activeContractsArr) {
   playerState.logs  = save.logs  || [];
   playerState.flags = save.flags || {};
   playerState.salvagedSystems = save.salvagedSystems || [];
+  playerState.astrographics   = save.astrographics   || [];
+  playerState.scannedSystems  = save.scannedSystems  || {};
   playerState.stats = save.stats || {};
 
   // Reputation
