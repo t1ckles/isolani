@@ -375,6 +375,10 @@ function cmdNav(args) {
             lines.push('');
             playerState.logs.push({ type: 'beacon', system: sys.name, age: beacon.age, text: beacon.text });
           }
+
+// Update auspex on arrival
+          if (typeof updateAuspex === 'function') updateAuspex();
+          
           return lines.join('\n');
         }
       }
@@ -526,6 +530,8 @@ function cmdDock() {
   lines.push(renderRepChange(repResult));
   lines.push('');
 
+  if (typeof updateAuspex === 'function') updateAuspex();
+  
   return lines.join('\n');
 }
 
@@ -1293,6 +1299,9 @@ function cmdWhere() {
     lines.push('');
   }
 
+// Update auspex on where
+  if (typeof updateAuspex === 'function') updateAuspex();
+  
   return lines.join('\n');
 }
 
