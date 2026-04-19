@@ -104,29 +104,6 @@ function updateSidebar() {
   setStyledText('sb-veydrite', (playerState.veydrite || 0) + ' kg',
     playerState.veydrite > 0 ? 'sb-cyan' : 'sb-dim');
 
-  // Location
-  if (playerState.location && typeof galaxy !== 'undefined' && galaxy) {
-    const loc     = playerState.location;
-    const q       = galaxy.quadrants[loc.quadrantIndex];
-    const cluster = q && q.clusters.find(c => c.name === loc.clusterName);
-    const sys     = cluster && cluster.systems.find(s => s.name === loc.systemName);
-
-    setStyledText('sb-system',   sys     ? sys.name     : '—', 'sb-white');
-    setStyledText('sb-cluster',  cluster ? cluster.name : '—', 'sb-dim');
-    setStyledText('sb-quadrant', q       ? q.name       : '—', 'sb-dim');
-
-    const stateClass = {
-      Established: 'sb-green',
-      Contested:   'sb-orange',
-      Declining:   'sb-orange',
-      Collapsed:   'sb-orange',
-      Isolated:    'sb-cyan',
-      Forbidden:   'sb-white',
-    }[q ? q.state : ''] || 'sb-dim';
-    setStyledText('sb-state', q ? '[' + q.state + ']' : '—', stateClass);
-    setText('sb-docked', playerState.docked ? '⬛ ' + playerState.dockedAt : '');
-  }
-
   // Contract
   const active = typeof activeContracts !== 'undefined'
     ? activeContracts.find(c => !c.completed && !c.failed)
@@ -632,11 +609,6 @@ function bootSidebar(captainName, shipName, onComplete) {
   setText('sb-captain', '');
   setText('sb-ship', '');
   setText('sb-day', '');
-  setText('sb-system', '');
-  setText('sb-cluster', '');
-  setText('sb-quadrant', '');
-  setText('sb-state', '');
-  setText('sb-docked', '');
   setText('sb-credits', '');
   setText('sb-veydrite', '');
   setText('sb-contract', '');
