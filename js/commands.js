@@ -347,7 +347,6 @@ function getCurrentSystem() {
 const cluster = loc.clusterName
   ? q.clusters.find(c => c.name === loc.clusterName)
   : q.clusters[loc.clusterIndex || 0];
-  : q.clusters[loc.clusterIndex || 0];
   return cluster && cluster.systems.find(s => s.name === loc.systemName);
 }
 
