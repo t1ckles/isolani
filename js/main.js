@@ -1256,7 +1256,8 @@ if (response && response.trim().startsWith('__CLUSTERDEEPSCAN__')) {
         }
 
         function updateAuspex() {
-          if (typeof bootAuspex === 'function') bootAuspex(() => {});
+          // Intentionally empty — Auspex updates on next where/nav/dock command
+          // Do not call bootAuspex here — it wipes the display
         }
 
         if (response && response.trim().startsWith('__FOLD__')) {
