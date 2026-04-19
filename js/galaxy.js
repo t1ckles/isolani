@@ -159,9 +159,17 @@ const namePool = (naming && NAMES && NAMES.quadrant_names)
     while (usedNames.includes(name));
     usedNames.push(name);
   }
+  const namePool = NAMES.quadrant_names;
+  const usedNames = [];
+  for (let i = 0; i < 8; i++) {
+    let name;
+    do { name = namePool[Math.floor(rng.next() * namePool.length)]; }
+    while (usedNames.includes(name));
+    usedNames.push(name);
+  }
   const quadrants = usedNames.map(name =>
     generateQuadrant(new RNG(rng.next() * 999999 | 0), name, naming)
-  );I'm confiu
+  );
   const totalSystems = quadrants.reduce((n, q) =>
     n + q.clusters.reduce((m, c) => m + c.systems.length, 0), 0);
   const totalStations = quadrants.reduce((n, q) =>
