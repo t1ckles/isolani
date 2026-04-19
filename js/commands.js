@@ -383,6 +383,7 @@ function handleCommand(raw) {
     case 'map':       return renderFoldMap(galaxy, playerState.location.quadrantIndex);
     case 'fold':      return cmdFold(args);
     case 'blindfold': return cmdBlindFold(args);
+    case 'emergency': return cmdEmergencyRefine(args);
     case 'scan':      return cmdScan(args);
     case 'nav':       return cmdNav(args);
     case 'jump':      return cmdJump(args);
@@ -433,11 +434,15 @@ function cmdHelp() {
     '',
     '  ── NAVIGATION ────────────────────────────────────────────────',
     '',
-    '  galaxy              — full quadrant index',
-    '  scan <1-8>          — survey a quadrant',
-    '  where               — current system survey',
-    '  nav <system name>   — calculated jump anywhere',
-    '  jump <system name>  — blind jump within cluster',
+    '  galaxy                    — known quadrant index',
+    '  map                       — fold corridor map',
+    '  scan <1-42>               — survey a quadrant',
+    '  where                     — current system survey',
+    '  nav <system name>         — calculated jump within quadrant',
+    '  jump <system name>        — blind jump within cluster',
+    '  fold <quadrant name>      — fold to connected quadrant',
+    '  blindfold <quadrant name> — overdrive fold, any quadrant (12 cells)',
+    '  emergency refine <n>      — convert reserve veydrite to fold cells',
     '',
     '  ── SENSORS ───────────────────────────────────────────────────',
     '',
@@ -848,6 +853,84 @@ function cmdBlindFold(args) {
     '  Type "yes" to initiate overdrive sequence or anything else to cancel.',
     '',
   ].join('\n');
+}
+
+// ── Emergency refine ──────────────────────────
+
+function cmdEmergencyRefine(args) {
+  if (!args || args[0] !== 'refine') {
+    return [
+      '',
+      '  [EMERGENCY] Usage: emergency refine <cells>',
+      '  Converts raw reserve veydrite into fold cells.',
+      '  Rate: 10 kg per cell. 15% drive wear risk per cell.',
+      '  Reserve: ' + (playerState.reserveVeydrite || 0).toFixed(1) + ' kg / 15 kg',
+      '  Cells  : ' + (playerState.foldCells || 0) + ' / 20',
+      '',
+    ].join('\n');
+  }
+
+  const amount = parseInt(args[1]);
+  if (isNaN(amount) || amount < 1) {
+    return '  [EMERGENCY] Specify number of cells to refine. Example: emergency refine 1';
+  }
+
+  const reserve = playerState.reserveVeydrite || 0;
+  const current = playerState.foldCells       || 0;
+  const maxNew  = 20 - current;
+  const canMake = Math.min(amount, Math.floor(reserve / 10), maxNew);
+
+  if (canMake <= 0) {
+    if (reserve < 10) {
+      return [
+        '',
+        '  [EMERGENCY] Insufficient reserve veydrite.',
+        '  Minimum 10 kg required per cell.',
+        '  Reserve: ' + reserve.toFixed(1) + ' kg',
+        '',
+      ].join('\n');
+    }
+    if (maxNew <= 0) {
+      return '  [EMERGENCY] Fold cell magazine at capacity (20/20).';
+    }
+  }
+
+  const kgConsumed = canMake * 10;
+  playerState.reserveVeydrite -= kgConsumed;
+  playerState.foldCells       += canMake;
+
+  // Drive wear check — 15% per cell refined
+  let wearCount = 0;
+  for (let i = 0; i < canMake; i++) {
+    if (Math.random() < 0.15) wearCount++;
+  }
+
+  const lines = [
+    '',
+    '  [EMERGENCY] Field refinement initiated.',
+    '  Raw veydrite feed: ' + kgConsumed + ' kg consumed.',
+    '  Cells produced   : ' + canMake,
+    '  Magazine         : ' + playerState.foldCells + ' / 20',
+    '  Reserve          : ' + playerState.reserveVeydrite.toFixed(1) + ' kg / 15 kg',
+    '',
+  ];
+
+  if (wearCount > 0) {
+    const ship  = getShip();
+    const drive = ship && ship.systems && ship.systems.find(s => s.name === 'Drive');
+    if (drive) {
+      drive.hp  = Math.max(0, drive.hp  - (wearCount * 8));
+      drive.sta = Math.max(0, drive.sta - (wearCount * 8));
+      lines.push('  [WARN] Drive wear detected — ' + wearCount + ' rough feed event(s).');
+      lines.push('  Drive HP: ' + drive.hp + '  STA: ' + drive.sta);
+      lines.push('  Recommend drive inspection at next station.');
+    }
+    lines.push('');
+  }
+
+  updateSidebar();
+  autosave();
+  return lines.join('\n');
 }
 
 // ── Jump ──────────────────────────────────────
