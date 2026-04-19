@@ -1084,8 +1084,15 @@ document.addEventListener('keydown', (e) => {
       if (pendingNewSave) {
         pendingNewSave = false;
         if (raw.toLowerCase() === 'yes' || raw.toLowerCase() === 'y') {
-          print('  [NEWSAVE] Erasing save data...', 'output-dim');
-          setTimeout(() => { deleteSave(); location.reload(); }, 800);
+          print('  [NEWSAVE] Pilot record deleted.', 'output-dim');
+          setTimeout(() => {
+            if (typeof activeSlot !== 'undefined' && activeSlot) {
+              deleteSlotSave(activeSlot);
+            } else {
+              deleteSave();
+            }
+            location.reload();
+          }, 800);
           return;
         } else {
           print('  [NEWSAVE] Cancelled.', 'output-dim');
