@@ -306,15 +306,8 @@ function startNewGame() {
   deleteSave();
 
   setTimeout(() => {
-    queue('INITIALIZING — APHELION DEEP SURVEY TERMINAL', 'output-bright', 80);
-    queue('MASTER SEED: ' + MASTER_SEED, 'output-dim', 120);
-    queueBlank(80);
-    queue('> Loading naming systems...', 'output-dim', 200);
-    queue('> History engine standing by...', 'output-dim', 280);
-    queue('> Guild network: CONNECTED', 'output-dim', 180);
-    queueBlank(120);
-    queueDivider(60);
-    queue('NEW PILOT REGISTRATION', 'output-label', 80);
+    // Just show registration — no boot sequence yet
+    queue('APHELION — NEW PILOT REGISTRATION', 'output-bright', 80);
     queueDivider(60);
     queueBlank(80);
     queue('No pilot record found for this terminal.', 'output-dim', 100);
@@ -334,44 +327,53 @@ function startNewGame() {
         print('');
         updateSidebar();
 
-  // Generate a random seed for this universe
         const autoSeed = generateRandomSeed();
 
         askPlayer('  Galaxy seed: ' + autoSeed + '  — press Enter to accept or type your own:', (seedInput) => {
           const chosenSeed = seedInput.trim() || autoSeed;
 
-          setTimeout(() => {
-            queueDivider(60);
-            queue('REGISTRATION COMPLETE — GALAXY ACCESS GRANTED', 'output-label', 80);
-            queue('UNIVERSE SEED: ' + chosenSeed, 'output-dim', 80);
-            queueDivider(60);
-            queueBlank(80);
+          print('');
+          print('  Seed confirmed: ' + chosenSeed, 'output-dim');
+          print('');
 
-            initCommands(chosenSeed);
-              const waitForBoot = setInterval(() => {
+          // NOW do the dramatic boot sequence
+          queue('INITIALIZING — APHELION DEEP SURVEY TERMINAL', 'output-bright', 80);
+          queue('UNIVERSE SEED: ' + chosenSeed, 'output-dim', 120);
+          queueBlank(80);
+          queue('> Loading naming systems...', 'output-dim', 200);
+          queue('> History engine standing by...', 'output-dim', 280);
+          queue('> Guild network: CONNECTED', 'output-dim', 180);
+          queueBlank(120);
+          queueDivider(60);
+          queue('REGISTRATION COMPLETE — GALAXY ACCESS GRANTED', 'output-label', 80);
+          queueDivider(60);
+          queueBlank(80);
+
+          initCommands(chosenSeed);
+
+          const waitForBoot = setInterval(() => {
             if (!isPrinting && printQueue.length === 0) {
               clearInterval(waitForBoot);
               bootSidebar(playerState.captainName, playerState.shipName, () => {
-              updateSidebar();
-              const overview = handleCommand('galaxy');
-              overview.split('\n').forEach(line => queue(line, '', 12));
+                updateSidebar();
+                const overview = handleCommand('galaxy');
+                overview.split('\n').forEach(line => queue(line, '', 12));
 
-              const waitForQueue = setInterval(() => {
-                if (!isPrinting && printQueue.length === 0) {
-                  clearInterval(waitForQueue);
-                  enableInput('command');
-                  updateSidebar();
-                  autosave();
-                }
-              }, 100);
+                const waitForQueue = setInterval(() => {
+                  if (!isPrinting && printQueue.length === 0) {
+                    clearInterval(waitForQueue);
+                    enableInput('command');
+                    updateSidebar();
+                    autosave();
+                  }
+                }, 100);
               });
             }
           }, 100);
-          }, 800);
+
         });
       });
     });
-
   }, 400);
 }
 
