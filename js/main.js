@@ -255,7 +255,6 @@ function bootAuspex(onComplete) {
     () => { if (body) body.innerHTML = '<div class="ax-dim">> signal check...</div>'; },
     () => { if (body) body.innerHTML = '<div class="ax-dim">> environment nominal</div>'; },
     () => { if (body) body.innerHTML = '<div class="ax-dim">> local grid online</div>'; },
-    () => { updateAuspex(); },
     () => { if (onComplete) onComplete(); },
   ];
 
