@@ -273,6 +273,7 @@ function cmdJump(args) {
   if (!galaxy) return '  [ERROR] Galaxy not initialized.';
   if (args.length === 0) return '  [USAGE] jump <system name>';
   if (playerState.docked) return '  [JUMP] You are docked. Type "undock" first.';
+  currentContacts = null;
 
   const query = args.join(' ').toLowerCase();
 
@@ -411,6 +412,8 @@ function cmdNav(args) {
   if (!galaxy) return '  [ERROR] Galaxy not initialized.';
   if (args.length === 0) return '  [USAGE] nav <system name>';
   if (playerState.docked) return '  [NAV] You are docked. Type "undock" first.';
+// Clear contacts on nav — new system, fresh sweep needed
+  currentContacts = null;
 
   const query = args.join(' ').toLowerCase();
 
