@@ -929,7 +929,6 @@ function handleTradeCommand(cmd, args) {
   if (cmd === 'sell')    return cmdSell(args);
   if (cmd === 'buy')     return cmdBuy(args);
   if (cmd === 'repair')  return cmdRepair(args);
-  if (cmd === 'armory')    return cmdArmory(args);
   if (cmd === 'install')   return cmdInstall(args);
   if (cmd === 'uninstall') return cmdUninstall(args);
   if (cmd === 'status')  return cmdStatus();
