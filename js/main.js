@@ -411,7 +411,6 @@ function showMainMenu() {
     console.error('getAllSlots failed:', e);
     slots = [{slot:1,save:null},{slot:2,save:null},{slot:3,save:null}];
   }
-  const hasSave = slots.some(s => s.save !== null);
 
   const mostRecent = slots
     .filter(s => s.save && s.save.savedAt)
@@ -437,18 +436,45 @@ function showMainMenu() {
   slots.forEach(({ slot, save }) => {
     const el       = document.getElementById('menu-slot-' + slot);
     const infoSpan = el.querySelector('.slot-info');
+    const detail   = document.getElementById('slot-detail-' + slot);
+
     if (save) {
-      const ship = save.ship ? save.ship.name : 'Unknown vessel';
-      infoSpan.textContent =
-        save.captain.name + '  ·  ' + ship +
-        '  ·  Day ' + (save.currentDay || 0) +
-        '  ·  ' + (save.location.systemName || 'unknown');
+      const ship    = save.ship ? save.ship.name : 'Unknown vessel';
+      const cls     = save.ship ? save.ship.designation : '';
+      const date    = save.savedAt ? new Date(save.savedAt).toLocaleDateString() : 'unknown';
+      const time    = save.savedAt ? new Date(save.savedAt).toLocaleTimeString() : '';
+
+      infoSpan.textContent = save.captain.name + '  ·  ' + ship + '  ·  Day ' + (save.currentDay || 0);
       el.classList.add('slot-occupied');
+
+      detail.innerHTML = `
+        <div class="slot-detail-row"><span>Vessel</span><span>${ship} (${cls})</span></div>
+        <div class="slot-detail-row"><span>Location</span><span>${save.location.systemName || 'unknown'}</span></div>
+        <div class="slot-detail-row"><span>Day</span><span>${save.currentDay || 0}</span></div>
+        <div class="slot-detail-row"><span>Scrip</span><span>${save.economy.credits} CR</span></div>
+        <div class="slot-detail-row"><span>Hull</span><span>${save.ship.hull || '?'} / ${save.ship.hullMax || '?'}</span></div>
+        <div class="slot-detail-row"><span>Saved</span><span>${date} ${time}</span></div>
+        <div class="slot-detail-actions">
+          <span class="slot-action" id="slot-load-${slot}">[L] Load</span>
+          <span class="slot-action danger" id="slot-delete-${slot}">[X] Delete</span>
+        </div>
+      `;
     } else {
       infoSpan.textContent = '— EMPTY —';
-      el.classList.remove('slot-occupied');
+      el.classList.add('slot-empty');
+      detail.innerHTML = `
+        <div class="slot-detail-actions">
+          <span class="slot-action" id="slot-new-${slot}">[N] New Game</span>
+        </div>
+      `;
     }
-    el.addEventListener('click', () => selectSlot(slot));
+
+    el.addEventListener('click', (e) => {
+      if (e.target.id === 'slot-load-' + slot)   { activeSlot = slot; dismissMenu(); startContinue(save); return; }
+      if (e.target.id === 'slot-delete-' + slot)  { confirmDeleteSlot(slot); return; }
+      if (e.target.id === 'slot-new-' + slot)     { activeSlot = slot; dismissMenu(); startNewGame(slot); return; }
+      selectSlot(slot);
+    });
   });
 
   document.getElementById('menu-load').addEventListener('click', openSlotModal);
@@ -543,16 +569,27 @@ function selectSlot(slot) {
   [1, 2, 3].forEach(s => {
     document.getElementById('menu-slot-' + s).classList.toggle('slot-selected', s === slot);
   });
-  const save = loadGameFromSlot(slot);
-  if (slotModalMode === 'new') {
-    dismissMenu();
-    startNewGame(slot);
-  } else {
-    if (save) {
-      dismissMenu();
-      startContinue(save);
-    }
-  }
+}
+
+function confirmDeleteSlot(slot) {
+  const detail = document.getElementById('slot-detail-' + slot);
+  detail.innerHTML += `
+    <div style="font-size:11px;color:#ff8800;margin-top:8px;">
+      Delete this pilot record? This cannot be undone.<br>
+      <span class="slot-action" id="slot-delete-confirm-${slot}" style="color:#ff8800">[Y] Confirm delete</span>
+      &nbsp;&nbsp;
+      <span class="slot-action" id="slot-delete-cancel-${slot}">[N] Cancel</span>
+    </div>
+  `;
+  document.getElementById('slot-delete-confirm-' + slot).addEventListener('click', () => {
+    deleteSlotSave(slot);
+    closeSlotModal();
+    showMainMenu();
+  });
+  document.getElementById('slot-delete-cancel-' + slot).addEventListener('click', () => {
+    closeSlotModal();
+    showMainMenu();
+  });
 }
 
 function menuKeyHandler(e) {
