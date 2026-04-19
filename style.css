@@ -583,3 +583,13 @@ body::after {
 .menu-archive:hover {
   color: #00aa2a;
 }
+
+#sidebar.fold-escalate {
+  opacity: 0.3 !important;
+  transition: opacity 0.5s ease;
+}
+
+#sidebar.fold-peak {
+  opacity: 0 !important;
+  transition: opacity 0.2s ease;
+}
