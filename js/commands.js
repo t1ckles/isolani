@@ -249,6 +249,7 @@ let galaxy = null;
 let playerState = {
   location:         null,
   cargo:            [],
+  salvagedSystems: [],
   credits:          200,
   veydrite:         0,
   ship:             null,   // set in initCommands
@@ -729,6 +730,17 @@ function cmdSalvage() {
   const sys     = cluster && cluster.systems.find(s => s.name === loc.systemName);
   if (!sys) return '  [ERROR] Location data corrupted.';
 
+  // Check if already salvaged this visit
+  const sysKey = sys.name + '_' + playerState.currentDay;
+  if (playerState.salvagedSystems.includes(sysKey)) {
+    return [
+      '',
+      '  [SALVAGE] This site has already been worked today.',
+      '  Move on and return another day, or find a new site.',
+      '',
+    ].join('\n');
+  }
+  
   const hasRuin   = sys.bodies.some(b => b.hasRuin);
   const hasVeyd   = sys.bodies.some(b => b.veydrite);
   const hasDebris = ['Debris Field', 'Shattered Planet', 'Dust Belt']
@@ -742,6 +754,14 @@ function cmdSalvage() {
   const salvageDays = 1 + Math.floor(Math.random() * 2);
   playerState.currentDay += salvageDays;
   rechargePower(ship, salvageDays, false);
+
+// Record this salvage so it can't be repeated same day
+  playerState.salvagedSystems.push(sysKey);
+
+  // Trim old entries to prevent bloat
+  if (playerState.salvagedSystems.length > 50) {
+    playerState.salvagedSystems = playerState.salvagedSystems.slice(-50);
+  }
 
   const result = rollSalvage(sys, q.state);
   return renderSalvageResult(result, playerState) + '  Day: ' + playerState.currentDay + '\n';
