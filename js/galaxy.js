@@ -228,6 +228,11 @@ function generateGalaxy(seed, naming) {
     generateQuadrant(new RNG(rng.next() * 999999 | 0), name, naming)
   );
 
+  // Force starting quadrant to be survivable
+  if (quadrants[0].state === 'Collapsed' || quadrants[0].state === 'Forbidden') {
+    quadrants[0].state = 'Contested';
+  }
+
   // Connectivity
   const connRng    = new RNG(rng.next() * 999999 | 0);
   const connections = generateConnectivity(quadrantCount, connRng);
