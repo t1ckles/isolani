@@ -245,7 +245,7 @@ function startContinue(save) {
 
   setTimeout(() => {
     queue('INITIALIZING — APHELION DEEP SURVEY TERMINAL', 'output-bright', 80);
-    queue('MASTER SEED: ' + MASTER_SEED, 'output-dim', 120);
+    queue('INITIALIZING GALAXY ENGINE...', 'output-dim', 120);
     queueBlank(80);
     queue('> Loading galaxy data...', 'output-dim', 200);
     queue('> Restoring pilot record...', 'output-dim', 280);
