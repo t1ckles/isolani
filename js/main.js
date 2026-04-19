@@ -266,6 +266,55 @@ function bootAuspex(onComplete) {
   }, 250);
 }
 
+function updateAuspexTraffic(contacts, resolved) {
+  if (!contacts) return;
+  const body = document.getElementById('auspex-body');
+  if (!body) return;
+
+  // Get current auspex content and append traffic section
+  // We rebuild the traffic section only
+  let existing = body.innerHTML;
+
+  // Remove old traffic section if present
+  const trafficMarker = '<!-- traffic -->';
+  const markerIndex   = existing.indexOf(trafficMarker);
+  if (markerIndex !== -1) {
+    existing = existing.substring(0, markerIndex);
+  }
+
+  let trafficHtml = trafficMarker;
+  trafficHtml += '<div class="ax-label">TRAFFIC</div>';
+
+  if (contacts.length === 0) {
+    trafficHtml += '<div class="ax-dim">no contacts</div>';
+  } else if (!resolved) {
+    trafficHtml += '<div class="ax-dim">gravimetric sweep</div>';
+    trafficHtml += '<div class="ax-dim">' + contacts.length + ' contact(s)</div>';
+    contacts.forEach(c => {
+      const cls = c.xeno ? 'ax-orange' : 'ax-dim';
+      trafficHtml += '<div class="' + cls + '">  ◈ ' + c.mass + '</div>';
+    });
+  } else {
+    trafficHtml += '<div class="ax-dim">active scan</div>';
+    contacts.forEach(c => {
+      if (c.xeno) {
+        trafficHtml += '<div class="ax-orange">  ◈ [NO SIG] dark</div>';
+        trafficHtml += '<div class="ax-dim">    does not resolve</div>';
+      } else if (c.dark) {
+        trafficHtml += '<div class="ax-orange">  ◈ [NO SIG] dark</div>';
+      } else {
+        trafficHtml += '<div class="ax-cyan">  ◈ ' + c.shipClass + '</div>';
+        if (c.shipName) {
+          trafficHtml += '<div class="ax-white">    "' + c.shipName + '"</div>';
+        }
+        trafficHtml += '<div class="ax-dim">    ' + c.registry + '</div>';
+      }
+    });
+  }
+
+  body.innerHTML = existing + trafficHtml;
+}
+
 // ── Death screen ──────────────────────────────
 
 function showDeathScreen() {
