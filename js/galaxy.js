@@ -91,7 +91,7 @@ function generateSystem(rng, quadrantState) {
 }
 
 function generateCluster(rng, quadrantState, naming) {
-  const systemCount = 2 + Math.floor(rng.next() * 6);
+  const systemCount = 2 + Math.floor(rng.next() * 4);
   const systems = [];
   for (let i = 0; i < systemCount; i++) {
     const sysName = naming.starSystem
@@ -135,7 +135,7 @@ function computeControlScore(clusters) {
 function generateQuadrant(rng, name, naming) {
   const stateIndex = Math.floor(rng.next() * CIVILIZATION_STATES.length);
   const state = CIVILIZATION_STATES[stateIndex];
-  const clusterCount = 2 + Math.floor(rng.next() * 4);
+  const clusterCount = 1 + Math.floor(rng.next() * 2);
   const clusters = [];
   for (let i = 0; i < clusterCount; i++) {
     clusters.push(generateCluster(rng, state, naming));
