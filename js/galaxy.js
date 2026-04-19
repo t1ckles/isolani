@@ -1,6 +1,7 @@
 // js/galaxy.js
-// Galaxy Hierarchy Generator — Stage 2
-// Aphelion v0.2.0-dev
+// Galaxy Hierarchy Generator — Stage 3
+// Aphelion v0.3.0-dev
+// 42 quadrants, connectivity graph, fold corridors, state propagation
 
 const CIVILIZATION_STATES = [
   'Established', 'Contested', 'Declining',
@@ -16,6 +17,8 @@ const BODY_TYPES = [
   'Rogue Moon', 'Shattered Planet'
 ];
 
+// ── Weighted pick ─────────────────────────────
+
 function weightedPick(rng, items, weights) {
   const total = weights.reduce((a, b) => a + b, 0);
   let roll = rng.next() * total;
@@ -25,6 +28,8 @@ function weightedPick(rng, items, weights) {
   }
   return items[items.length - 1];
 }
+
+// ── System generation ─────────────────────────
 
 function stationChance(state) {
   return { Established: 0.6, Contested: 0.4, Declining: 0.25,
@@ -54,34 +59,29 @@ function trafficLevel(state, rng) {
 
 function generateSystem(rng, quadrantState) {
   const starClass = weightedPick(rng, STAR_CLASSES, STAR_CLASS_WEIGHT);
-  const bodyCount = 1 + Math.floor(rng.next() * 7);
+  const bodyCount = 1 + Math.floor(rng.next() * 5);
   const bodies = [];
   for (let i = 0; i < bodyCount; i++) {
     bodies.push({
-      type: BODY_TYPES[Math.floor(rng.next() * BODY_TYPES.length)],
+      type:       BODY_TYPES[Math.floor(rng.next() * BODY_TYPES.length)],
       hasStation: rng.next() < stationChance(quadrantState),
-      hasRuin: rng.next() < ruinChance(quadrantState),
-      veydrite: rng.next() < veydriteChance(starClass),
+      hasRuin:    rng.next() < ruinChance(quadrantState),
+      veydrite:   rng.next() < veydriteChance(starClass),
     });
   }
-
   const xenoChance = { Collapsed: 0.14, Forbidden: 0.12,
                        Isolated: 0.09, Declining: 0.07,
                        Contested: 0.05, Established: 0.02 }[quadrantState] ?? 0.06;
   const xenoTainted = rng.next() < xenoChance;
-
   const beaconChance = { Established: 0.04, Contested: 0.10, Declining: 0.18,
-                          Collapsed: 0.25, Isolated: 0.15, Forbidden: 0.08 }[quadrantState] ?? 0.08;
+                         Collapsed: 0.25, Isolated: 0.15, Forbidden: 0.08 }[quadrantState] ?? 0.08;
   const hasBeacon = rng.next() < beaconChance;
-
   return {
-    starClass,
-    bodies,
+    starClass, bodies,
     jumpPoints: 1 + Math.floor(rng.next() * 3),
-    hazard: hazardLevel(quadrantState, rng),
-    traffic: trafficLevel(quadrantState, rng),
-    xenoTainted,
-    hasBeacon,
+    hazard:     hazardLevel(quadrantState, rng),
+    traffic:    trafficLevel(quadrantState, rng),
+    xenoTainted, hasBeacon,
   };
 }
 
@@ -99,9 +99,7 @@ function generateCluster(rng, quadrantState, naming) {
     systems[best].bodies.filter(b => b.hasStation).length ? i : best, 0);
   systems[anchorIndex].isAnchor = true;
   return {
-    name: naming.harshWorld
-      ? naming.harshWorld(rng)
-      : ('Cluster-' + Math.floor(rng.next() * 999)),
+    name: naming.harshWorld ? naming.harshWorld(rng) : ('Cluster-' + Math.floor(rng.next() * 999)),
     systems,
     dominantFaction: null,
   };
@@ -109,59 +107,140 @@ function generateCluster(rng, quadrantState, naming) {
 
 function pickNotableFeature(rng, state) {
   const pool = {
-    Established:  ['Major trade hub', 'Guild assay station', 'Corp shipyard', 'Fuel depot network'],
-    Contested:    ['Active conflict zone', 'Disputed relay station', 'Black market corridor', 'Mercenary staging area'],
-    Declining:    ['Failing infrastructure grid', 'Abandoned colony chain', 'Debt-locked stations', 'Evacuation convoys'],
-    Collapsed:    ['Mass ruin field', 'Derelict fleet graveyard', 'Feral settlement clusters', 'Xeno-adjacent silence'],
-    Isolated:     ['Signal-dark region', 'Unknown cultural drift', 'Pre-contact colony', 'Self-sufficient enclave'],
-    Forbidden:    ['Hard exclusion zone', 'Unknown enforcement presence', 'Sealed coordinates', 'Disappearance cluster'],
+    Established: ['Major trade hub', 'Guild assay station', 'Corp shipyard', 'Fuel depot network'],
+    Contested:   ['Active conflict zone', 'Disputed relay station', 'Black market corridor', 'Mercenary staging area'],
+    Declining:   ['Failing infrastructure grid', 'Abandoned colony chain', 'Debt-locked stations', 'Evacuation convoys'],
+    Collapsed:   ['Mass ruin field', 'Derelict fleet graveyard', 'Feral settlement clusters', 'Xeno-adjacent silence'],
+    Isolated:    ['Signal-dark region', 'Unknown cultural drift', 'Pre-contact colony', 'Self-sufficient enclave'],
+    Forbidden:   ['Hard exclusion zone', 'Unknown enforcement presence', 'Sealed coordinates', 'Disappearance cluster'],
   };
   const features = pool[state] ?? pool['Declining'];
   return features[Math.floor(rng.next() * features.length)];
 }
 
 function computeControlScore(clusters) {
-  const totalSystems = clusters.reduce((n, c) => n + c.systems.length, 0);
+  const totalSystems     = clusters.reduce((n, c) => n + c.systems.length, 0);
   const stationedSystems = clusters.reduce((n, c) =>
     n + c.systems.filter(s => s.bodies.some(b => b.hasStation)).length, 0);
   return totalSystems > 0 ? stationedSystems / totalSystems : 0;
 }
 
+// ── State propagation ─────────────────────────
+
+function propagateStates(quadrants, connections, rng) {
+  const states    = quadrants.map(q => q.state);
+  const newStates = [...states];
+  connections.forEach(([a, b]) => {
+    const sa = states[a];
+    const sb = states[b];
+    if (sa === 'Collapsed' && sb === 'Declining'  && rng.next() < 0.40) newStates[b] = 'Collapsed';
+    if (sb === 'Collapsed' && sa === 'Declining'  && rng.next() < 0.40) newStates[a] = 'Collapsed';
+    if (sa === 'Declining' && sb === 'Contested'  && rng.next() < 0.25) newStates[b] = 'Declining';
+    if (sb === 'Declining' && sa === 'Contested'  && rng.next() < 0.25) newStates[a] = 'Declining';
+  });
+  quadrants.forEach((q, i) => { q.state = newStates[i]; });
+}
+
+// ── Quadrant generation ───────────────────────
+
 function generateQuadrant(rng, name, naming) {
-  const stateIndex = Math.floor(rng.next() * CIVILIZATION_STATES.length);
-  const state = CIVILIZATION_STATES[stateIndex];
+  const stateWeights = [15, 20, 25, 20, 12, 8];
+  const state        = weightedPick(rng, CIVILIZATION_STATES, stateWeights);
   const clusterCount = 1 + Math.floor(rng.next() * 2);
-  const clusters = [];
+  const clusters     = [];
   for (let i = 0; i < clusterCount; i++) {
     clusters.push(generateCluster(rng, state, naming));
   }
   return {
-    name,
-    state,
-    clusters,
+    name, state, clusters,
     notableFeature: pickNotableFeature(rng, state),
-    factions: [],
-    controlScore: computeControlScore(clusters),
+    factions:       [],
+    controlScore:   computeControlScore(clusters),
   };
 }
 
-function generateGalaxy(seed, naming) {
-  const rng = new RNG(seed);
+// ── Connectivity graph ────────────────────────
 
-  // Pull quadrant names from naming pool — no duplicates
-  const namePool = NAMES.quadrant_names;
+function generateConnectivity(quadrantCount, rng) {
+  const connections = [];
+  // Spanning tree — every quadrant gets at least one connection
+  const connected   = [0];
+  const unconnected = [];
+  for (let i = 1; i < quadrantCount; i++) unconnected.push(i);
+  while (unconnected.length > 0) {
+    const from = connected[Math.floor(rng.next() * connected.length)];
+    const toIdx = Math.floor(rng.next() * unconnected.length);
+    const to    = unconnected[toIdx];
+    connections.push([from, to, 'primary']);
+    connected.push(to);
+    unconnected.splice(toIdx, 1);
+  }
+  // Extra connections — ~40% additional
+  const extraCount = Math.floor(quadrantCount * 0.4);
+  for (let i = 0; i < extraCount; i++) {
+    const a = Math.floor(rng.next() * quadrantCount);
+    const b = Math.floor(rng.next() * quadrantCount);
+    if (a === b) continue;
+    const exists = connections.some(([x, y]) => (x === a && y === b) || (x === b && y === a));
+    if (!exists) connections.push([a, b, 'secondary']);
+  }
+  // Highway corridors — 3-4 among primaries
+  const primaries    = connections.filter(c => c[2] === 'primary');
+  const highwayCount = 3 + Math.floor(rng.next() * 2);
+  primaries.sort(() => rng.next() - 0.5);
+  for (let i = 0; i < Math.min(highwayCount, primaries.length); i++) {
+    primaries[i][2] = 'highway';
+  }
+  return connections;
+}
+
+// ── Player corridor knowledge ─────────────────
+
+function initCorridorKnowledge(quadrantCount, connections, startQuadrant, rng) {
+  const known = new Set();
+  connections.forEach(([a, b], idx) => {
+    if (a === startQuadrant || b === startQuadrant) {
+      known.add(idx);
+    } else if (rng.next() < 0.33) {
+      known.add(idx);
+    }
+  });
+  return Array.from(known);
+}
+
+// ── Galaxy entry point ────────────────────────
+
+function generateGalaxy(seed, naming) {
+  const rng           = new RNG(seed);
+  const namePool      = NAMES.quadrant_names;
+  const quadrantCount = 42;
+
+  // Pick 42 unique quadrant names
   const usedNames = [];
-  for (let i = 0; i < 8; i++) {
-    let name;
-    do { name = namePool[Math.floor(rng.next() * namePool.length)]; }
-    while (usedNames.includes(name));
-    usedNames.push(name);
+  const nameRng   = new RNG(rng.next() * 999999 | 0);
+  while (usedNames.length < quadrantCount) {
+    const name = namePool[Math.floor(nameRng.next() * namePool.length)];
+    if (!usedNames.includes(name)) usedNames.push(name);
   }
 
+  // Generate quadrants
   const quadrants = usedNames.map(name =>
     generateQuadrant(new RNG(rng.next() * 999999 | 0), name, naming)
   );
 
+  // Connectivity
+  const connRng    = new RNG(rng.next() * 999999 | 0);
+  const connections = generateConnectivity(quadrantCount, connRng);
+
+  // State propagation
+  const propRng = new RNG(rng.next() * 999999 | 0);
+  propagateStates(quadrants, connections, propRng);
+
+  // Player knowledge — starts in quadrant 0
+  const knownRng      = new RNG(rng.next() * 999999 | 0);
+  const knownCorridors = initCorridorKnowledge(quadrantCount, connections, 0, knownRng);
+
+  // Meta
   const totalSystems = quadrants.reduce((n, q) =>
     n + q.clusters.reduce((m, c) => m + c.systems.length, 0), 0);
   const totalStations = quadrants.reduce((n, q) =>
@@ -173,41 +252,170 @@ function generateGalaxy(seed, naming) {
       m + c.systems.reduce((k, s) =>
         k + s.bodies.filter(b => b.hasRuin).length, 0), 0), 0);
 
-  return { seed, quadrants, meta: { totalSystems, totalStations, totalRuins } };
+  return {
+    seed, quadrants, connections, knownCorridors,
+    meta: { totalSystems, totalStations, totalRuins, quadrantCount },
+  };
 }
+
+// ── Corridor helpers ──────────────────────────
+
+function getConnectedQuadrants(galaxy, quadrantIndex) {
+  return galaxy.connections
+    .map((conn, idx) => ({ conn, idx }))
+    .filter(({ conn }) => conn[0] === quadrantIndex || conn[1] === quadrantIndex)
+    .map(({ conn, idx }) => ({
+      index:   conn[0] === quadrantIndex ? conn[1] : conn[0],
+      type:    conn[2],
+      known:   galaxy.knownCorridors.includes(idx),
+      connIdx: idx,
+    }));
+}
+
+function isConnected(galaxy, fromIndex, toIndex) {
+  return galaxy.connections.some(([a, b]) =>
+    (a === fromIndex && b === toIndex) || (a === toIndex && b === fromIndex)
+  );
+}
+
+function getCorridorType(galaxy, fromIndex, toIndex) {
+  const conn = galaxy.connections.find(([a, b]) =>
+    (a === fromIndex && b === toIndex) || (a === toIndex && b === fromIndex)
+  );
+  return conn ? conn[2] : null;
+}
+
+function revealCorridor(galaxy, fromIndex, toIndex) {
+  galaxy.connections.forEach(([a, b], idx) => {
+    if ((a === fromIndex && b === toIndex) || (a === toIndex && b === fromIndex)) {
+      if (!galaxy.knownCorridors.includes(idx)) {
+        galaxy.knownCorridors.push(idx);
+      }
+    }
+  });
+}
+
+function revealAllCorridorsFrom(galaxy, quadrantIndex) {
+  galaxy.connections.forEach(([a, b], idx) => {
+    if (a === quadrantIndex || b === quadrantIndex) {
+      if (!galaxy.knownCorridors.includes(idx)) {
+        galaxy.knownCorridors.push(idx);
+      }
+    }
+  });
+}
+
+function foldCellCost(corridorType) {
+  return { highway: 2, primary: 3, secondary: 4 }[corridorType] || 3;
+}
+
+// ── Galaxy overview ───────────────────────────
 
 function renderGalaxyOverview(galaxy) {
   const lines = [];
-  const bar = (n, max, char, empty) => {
-    char = char || '█';
-    empty = empty || '░';
-    return char.repeat(Math.round(n)) + empty.repeat(max - Math.round(n));
-  };
+  const bar   = (n, max) => '█'.repeat(Math.round(n)) + '░'.repeat(max - Math.round(n));
   lines.push('');
-  lines.push('  ── DEEP SURVEY — GALAXY MANIFEST v0.2 ────────────────────');
+  lines.push('  ── DEEP SURVEY — GALAXY MANIFEST v0.3 ────────────────────');
   lines.push('');
-  lines.push('  Seed: ' + galaxy.seed + '  |  Systems: ' + galaxy.meta.totalSystems + '  |  Stations: ' + galaxy.meta.totalStations + '  |  Ruins: ' + galaxy.meta.totalRuins);
+  lines.push(
+    '  Seed: ' + galaxy.seed +
+    '  |  Quadrants: ' + galaxy.meta.quadrantCount +
+    '  |  Systems: ' + galaxy.meta.totalSystems +
+    '  |  Stations: ' + galaxy.meta.totalStations
+  );
   lines.push('');
   lines.push('  ── QUADRANT INDEX ──────────────────────────────────────────');
   lines.push('');
   galaxy.quadrants.forEach(function(q, i) {
-    const totalSys = q.clusters.reduce(function(n, c) { return n + c.systems.length; }, 0);
+    const totalSys   = q.clusters.reduce((n, c) => n + c.systems.length, 0);
     const controlPct = Math.round(q.controlScore * 100);
     const controlBar = bar(q.controlScore * 10, 10);
-    const stateTag = q.state.toUpperCase().padEnd(12);
-    lines.push('  [' + (i + 1) + '] ' + q.name.padEnd(20) + ' ' + stateTag + '  ' + controlBar + '  ' + controlPct + '% ctrl');
-    lines.push('      ' + q.notableFeature.padEnd(35) + ' ' + totalSys + ' systems');
+    const stateTag   = q.state.toUpperCase().padEnd(12);
+    lines.push('  [' + String(i + 1).padStart(2) + '] ' + q.name.padEnd(32) + ' ' + stateTag + '  ' + controlBar + '  ' + controlPct + '%');
+    lines.push('        ' + q.notableFeature.padEnd(40) + totalSys + ' systems');
     lines.push('');
   });
   lines.push('  ── COMMANDS ────────────────────────────────────────────────');
   lines.push('');
-  lines.push('  scan <1-8>          — survey a quadrant');
-  lines.push('  nav <system name>   — navigate to a system');
-  lines.push('  status              — ship and cargo status');
-  lines.push('  help                — full command list');
+  lines.push('  scan <1-42>              — survey a quadrant');
+  lines.push('  map                      — fold corridor map');
+  lines.push('  fold <quadrant name>     — fold to connected quadrant');
+  lines.push('  blindfold <quadrant>     — overdrive fold (12 cells, dangerous)');
+  lines.push('  nav <system name>        — navigate within quadrant');
+  lines.push('  help                     — full command list');
   lines.push('');
   return lines.join('\n');
 }
+
+// ── Fold corridor map ─────────────────────────
+
+function renderFoldMap(galaxy, playerQuadrantIndex) {
+  const lines   = [];
+  const current = galaxy.quadrants[playerQuadrantIndex];
+
+  lines.push('');
+  lines.push('  ── FOLD CORRIDOR MAP ─────────────────────────────────────');
+  lines.push('');
+  lines.push('  ═══ highway [2 cells]   ─── primary [3 cells]   ··· secondary [4 cells]');
+  lines.push('');
+  lines.push('  Current: [' + String(playerQuadrantIndex + 1).padStart(2) + '] ' + current.name.toUpperCase());
+  lines.push('  State  : ' + current.state);
+  lines.push('');
+  lines.push('  ── CORRIDORS FROM HERE ───────────────────────────────────');
+  lines.push('');
+
+  const connected = getConnectedQuadrants(galaxy, playerQuadrantIndex);
+  if (connected.length === 0) {
+    lines.push('  No corridors detected.');
+  } else {
+    connected.forEach(({ index, type, known }) => {
+      if (!known) {
+        const sig = NAMES.fold_signatures[index % NAMES.fold_signatures.length];
+        lines.push('  ···  [??] ' + sig);
+        return;
+      }
+      const dest = galaxy.quadrants[index];
+      const sym  = type === 'highway' ? '═══' : type === 'primary' ? '───' : '···';
+      const cost = type === 'highway' ? '[2 cells — highway]' : type === 'primary' ? '[3 cells]' : '[4 cells]';
+      lines.push('  ' + sym + '  [' + String(index + 1).padStart(2) + '] ' +
+        dest.name.padEnd(30) + dest.state.padEnd(14) + cost);
+    });
+  }
+
+  lines.push('');
+  lines.push('  ── ALL KNOWN QUADRANTS ───────────────────────────────────');
+  lines.push('');
+
+  const knownSet = new Set([playerQuadrantIndex]);
+  galaxy.knownCorridors.forEach(idx => {
+    const [a, b] = galaxy.connections[idx];
+    knownSet.add(a);
+    knownSet.add(b);
+  });
+
+  Array.from(knownSet).sort((a, b) => a - b).forEach(qi => {
+    const q        = galaxy.quadrants[qi];
+    const isCur    = qi === playerQuadrantIndex;
+    const marker   = isCur ? '► ' : '  ';
+    const totalSys = q.clusters.reduce((n, c) => n + c.systems.length, 0);
+    lines.push(marker + '[' + String(qi + 1).padStart(2) + '] ' +
+      q.name.padEnd(32) + q.state.padEnd(14) + totalSys + ' systems');
+  });
+
+  const unknownCount = galaxy.quadrants.length - knownSet.size;
+  if (unknownCount > 0) {
+    lines.push('');
+    lines.push('  ... ' + unknownCount + ' quadrant(s) lie beyond known corridors.');
+  }
+
+  lines.push('');
+  lines.push('  fold <quadrant name>   — fold to a connected quadrant');
+  lines.push('  blindfold <quadrant>   — overdrive fold, any quadrant (12 cells, dangerous)');
+  lines.push('');
+  return lines.join('\n');
+}
+
+// ── Quadrant detail ───────────────────────────
 
 function renderQuadrantDetail(galaxy, index, scannedSystems) {
   const q = galaxy.quadrants[index];
