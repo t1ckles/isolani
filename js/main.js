@@ -552,7 +552,7 @@ function openSlotModal(mode) {
   hint.textContent = slotModalMode === 'new'
     ? 'All slots occupied. Choose a slot to overwrite.'
     : 'Press 1, 2, or 3 to select a pilot record.';
-  document.getElementById('slot-modal').style.display = 'block';
+  document.getElementById('slot-modal').style.display = 'flex';
 }
 
 function closeSlotModal() {
