@@ -471,8 +471,29 @@ function cmdScan(args) {
   if (isNaN(index) || index < 0 || index >= galaxy.quadrants.length) {
     return '  [ERROR] Invalid quadrant. Use scan <1-8>.';
   }
-  return renderQuadrantDetail(galaxy, index);
-}
+// Basic scan generates a tiny astrographic yield
+  const q = galaxy.quadrants[index];
+  if (q) {
+    q.clusters.forEach(cluster => {
+      cluster.systems.forEach(sys => {
+        if (!playerState.scannedSystems[sys.name]) {
+          const units = astrographicYield(sys, 'basic', q.state);
+          const existing = playerState.astrographics.find(a => a.systemName === sys.name);
+          if (!existing) {
+            playerState.astrographics.push({
+              systemName:    sys.name,
+              quadrantIndex: index,
+              quality:       'basic',
+              scannedDay:    playerState.currentDay,
+              units,
+              data: { state: q.state },
+            });
+          }
+        }
+      });
+    });
+  }
+  return renderQuadrantDetail(galaxy, index, playerState.scannedSystems);}
 
 function cmdScanLog() {
   const sys = getCurrentSystem();
