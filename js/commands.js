@@ -850,7 +850,8 @@ function cmdDock() {
   if (faction_info && faction_info.contracts) {
     lines.push('  Contracts available — type "bulletin" to view.');
   }
-  lines.push('  Type "trade" to open the trade terminal.');
+lines.push('  Type "trade" to open the trade terminal.');
+  lines.push('  Type "armory" to browse weapons and ammo.');
   lines.push('  Type "repair" for hull and weapon repair.');
   lines.push('  Type "undock" to return to space.');
   lines.push('');
@@ -2379,9 +2380,9 @@ function cmdMenu() {
 
 function stationServices(attitude) {
   const services = {
-    neutral:    'Fuel exchange  |  Cargo hold  |  Assay terminal  |  Bulletin board',
-    commercial: 'Fuel exchange  |  Cargo trading  |  Pelk contract board  |  Repair bay',
-    military:   'Fuel exchange  |  Restricted cargo only  |  CCC contract board',
+    neutral:    'Fuel exchange  |  Cargo hold  |  Assay terminal  |  Armory  |  Bulletin board',
+    commercial: 'Fuel exchange  |  Cargo trading  |  Armory  |  Pelk contract board  |  Repair bay',
+    military:   'Fuel exchange  |  Restricted cargo only  |  Military armory  |  CCC contract board',
     hostile:    'Fuel (price negotiable)  |  No formal services  |  Watch your cargo',
     unknown:    'Services unknown  |  Proceed with caution',
   };
