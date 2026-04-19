@@ -519,7 +519,6 @@ function startNewGame() {
                     bootAuspex(() => { updateAuspex(); });
                   }
                 }, 100);
-              });
       });
     });
   }, 400);
