@@ -568,3 +568,230 @@ function renderEnemyProfile(enemy) {
 
   return lines.join('\n');
 }
+
+// ── Armory ────────────────────────────────────
+
+const WEAPON_PRICES = {
+  autoturret:     800,
+  autocannon:     1400,
+  railgun_light:  2200,
+  railgun_heavy:  4500,
+  missile_short:  1800,
+  torpedo:        5000,
+  dumbfire_rocket: 900,
+};
+
+const AMMO_PRICES = {
+  AP:           2,
+  HE:           3,
+  Frag:         1.5,
+  Incendiary:   2.5,
+  missile_srm:  80,
+  torpedo_mk9:  400,
+  rocket_df:    35,
+};
+
+const FACTION_STOCK = {
+  guild: {
+    weapons: ['autoturret', 'dumbfire_rocket'],
+    ammo:    ['AP', 'HE', 'Frag', 'Incendiary', 'rocket_df'],
+    repair:  true,
+  },
+  pelk: {
+    weapons: ['autoturret', 'autocannon', 'railgun_light', 'missile_short', 'dumbfire_rocket'],
+    ammo:    ['AP', 'HE', 'Frag', 'Incendiary', 'missile_srm', 'rocket_df'],
+    repair:  true,
+  },
+  colonial: {
+    weapons: ['autocannon', 'railgun_light', 'railgun_heavy', 'missile_short', 'torpedo'],
+    ammo:    ['AP', 'HE', 'missile_srm', 'torpedo_mk9'],
+    repair:  true,
+    repRequired: 'KNOWN',
+  },
+  feral: {
+    weapons: [],   // randomized on visit
+    ammo:    [],
+    repair:  false,
+    blackMarket: true,
+  },
+  independent: {
+    weapons: ['autoturret', 'dumbfire_rocket'],
+    ammo:    ['AP', 'HE', 'Frag'],
+    repair:  true,
+  },
+  forbidden: {
+    weapons: [],
+    ammo:    [],
+    repair:  false,
+  },
+};
+
+const STATE_PRICE_MOD = {
+  Established: 1.0,
+  Contested:   1.15,
+  Declining:   1.3,
+  Collapsed:   1.6,
+  Isolated:    1.4,
+  Forbidden:   2.0,
+};
+
+const STATE_STOCK_FILTER = {
+  Established: (weapons) => weapons,
+  Contested:   (weapons) => weapons.filter(w => w !== 'railgun_heavy' && w !== 'torpedo'),
+  Declining:   (weapons) => weapons.filter(w => ['autoturret', 'dumbfire_rocket', 'autocannon'].includes(w)),
+  Collapsed:   (weapons) => weapons.slice(0, Math.floor(Math.random() * 2) + 1),
+  Isolated:    (weapons) => weapons.slice(0, Math.floor(Math.random() * 3) + 1),
+  Forbidden:   () => [],
+};
+
+function getArmoryStock(factionKey, quadrantState, playerRep) {
+  const factionStock = FACTION_STOCK[factionKey];
+  if (!factionStock) return null;
+
+  // Check rep requirement
+  if (factionStock.repRequired) {
+    const tier = repTier(playerRep || 0);
+    if (tier === 'WATCHED' || tier === 'HOSTILE') return { restricted: true };
+  }
+
+  // Black market — random stock
+  if (factionStock.blackMarket) {
+    const allWeapons = Object.keys(WEAPON_PRICES);
+    const allAmmo    = Object.keys(AMMO_PRICES);
+    const count      = 1 + Math.floor(Math.random() * 3);
+    return {
+      weapons:    allWeapons.sort(() => Math.random() - 0.5).slice(0, count),
+      ammo:       allAmmo.sort(() => Math.random() - 0.5).slice(0, count + 1),
+      repair:     Math.random() < 0.4,
+      blackMarket: true,
+      priceMod:   1.8 + Math.random() * 0.6,
+    };
+  }
+
+  // Filter by quadrant state
+  const stateFilter = STATE_STOCK_FILTER[quadrantState] || STATE_STOCK_FILTER['Established'];
+  const weapons     = stateFilter(factionStock.weapons || []);
+  const priceMod    = STATE_PRICE_MOD[quadrantState] || 1.0;
+
+  return {
+    weapons,
+    ammo:    factionStock.ammo || [],
+    repair:  factionStock.repair || false,
+    priceMod,
+  };
+}
+
+function weaponPrice(weaponType, priceMod, repTierStr) {
+  const base = WEAPON_PRICES[weaponType] || 999999;
+  let mod    = priceMod || 1.0;
+  if (repTierStr === 'TRUSTED') mod *= 0.9;
+  if (repTierStr === 'HOSTILE') mod *= 1.2;
+  return Math.round(base * mod);
+}
+
+function ammoPrice(ammoType, amount, priceMod, repTierStr) {
+  const base = AMMO_PRICES[ammoType] || 99;
+  let mod    = priceMod || 1.0;
+  if (repTierStr === 'TRUSTED') mod *= 0.9;
+  if (repTierStr === 'HOSTILE') mod *= 1.2;
+  return Math.round(base * mod * amount);
+}
+
+function sellWeaponValue(weaponType, condition, repTierStr) {
+  const base      = WEAPON_PRICES[weaponType] || 0;
+  const rangeLow  = 0.35;
+  const rangeHigh = 0.65;
+  const rangeRoll = rangeLow + Math.random() * (rangeHigh - rangeLow);
+  const condMod   = 0.6 + (condition / 100) * 0.4;
+  let repMod      = 1.0;
+  if (repTierStr === 'TRUSTED') repMod = 1.10;
+  if (repTierStr === 'HOSTILE') repMod = 0.85;
+  return Math.round(base * rangeRoll * condMod * repMod);
+}
+
+function renderArmory(stock, ship, playerCredits, factionKey, quadrantState) {
+  if (!stock) return ['', '  [ARMORY] No armory at this station.', ''].join('\n');
+  if (stock.restricted) return ['', '  [ARMORY] Access restricted. Improve your standing first.', ''].join('\n');
+
+  const lines = [];
+  lines.push('');
+  lines.push('  ── ARMORY' + (stock.blackMarket ? ' — BLACK MARKET' : '') + ' ────────────────────────────────────────');
+  lines.push('');
+  lines.push('  Your scrip: ' + playerCredits + ' CR');
+  lines.push('');
+
+  // Weapons for sale
+  if (stock.weapons.length > 0) {
+    lines.push('  ── WEAPONS ───────────────────────────────────────────────────');
+    lines.push('');
+    stock.weapons.forEach(wType => {
+      const def   = WEAPON_DEFS[wType];
+      if (!def) return;
+      const price = weaponPrice(wType, stock.priceMod);
+      const affordable = playerCredits >= price ? '' : '  [insufficient scrip]';
+      lines.push('  ' + def.name.padEnd(36) + price + ' CR' + affordable);
+      lines.push('    Compatible ammo: ' + def.compatibleAmmo.join(', '));
+      lines.push('');
+    });
+  } else {
+    lines.push('  No weapons in stock.');
+    lines.push('');
+  }
+
+  // Ammo for sale
+  if (stock.ammo.length > 0) {
+    lines.push('  ── AMMUNITION ────────────────────────────────────────────────');
+    lines.push('');
+    stock.ammo.forEach(aType => {
+      const def   = AMMO_DEFS[aType];
+      if (!def) return;
+      const price = Math.round((AMMO_PRICES[aType] || 0) * stock.priceMod);
+      lines.push('  ' + def.name.padEnd(24) + price + ' CR/rd');
+    });
+    lines.push('');
+  }
+
+  // Repair
+  if (stock.repair) {
+    lines.push('  ── REPAIR SERVICES ───────────────────────────────────────────');
+    lines.push('');
+    lines.push('  Weapon repair    available');
+    lines.push('  Subsystem repair available');
+    lines.push('');
+  }
+
+  // Installed weapons — sell option
+  const installedWeapons = ship.weaponSlots.filter(s => s.type);
+  const cargoWeapons     = ship.cargoWeapons || [];
+
+  if (installedWeapons.length > 0 || cargoWeapons.length > 0) {
+    lines.push('  ── YOUR WEAPONS ──────────────────────────────────────────────');
+    lines.push('');
+    installedWeapons.forEach(slot => {
+      const def = WEAPON_DEFS[slot.type];
+      lines.push('  [Slot ' + slot.id + '] ' + slot.name + '  cond: ' + slot.condition + '/100');
+    });
+    cargoWeapons.forEach((w, i) => {
+      const def = WEAPON_DEFS[w.weaponType];
+      lines.push('  [Cargo ' + (i+1) + '] ' + (def ? def.name : w.weaponType) + '  cond: ' + w.condition + '/100');
+    });
+    lines.push('');
+  }
+
+  // Commands
+  lines.push('  ── COMMANDS ──────────────────────────────────────────────────');
+  lines.push('');
+  lines.push('  buy weapon <name> <slot>     — purchase and install');
+  lines.push('  buy weapon <name> cargo      — purchase into cargo hold');
+  lines.push('  buy ammo <slot> <type> <n>   — restock ammo');
+  lines.push('  install <slot> <cargo#>      — install weapon from cargo');
+  lines.push('  uninstall <slot>             — move weapon to cargo');
+  lines.push('  sell weapon <slot>           — sell installed weapon');
+  lines.push('  sell cargo <cargo#>          — sell cargo weapon');
+  lines.push('  repair weapon <slot>         — repair weapon condition');
+  lines.push('  repair system <name>         — repair subsystem');
+  lines.push('  armory exit                  — close armory');
+  lines.push('');
+
+  return lines.join('\n');
+}
