@@ -159,6 +159,8 @@ function handleCommand(raw) {
     case 'abandon':  return cmdAbandon();
     case 'status':   return cmdStatus();
     case 'logs':     return cmdLogs();
+    case 'save':     return cmdSave();
+    case 'newsave':  return cmdNewSave();
     case '':         return '';
     default:         return '  [UNKNOWN] "' + cmd + '" is not a recognized command. Type help.';
   }
@@ -1078,4 +1080,30 @@ function cmdLogs() {
   });
 
   return lines.join('\n');
+}
+function cmdSave() {
+  const result = saveGame(playerState, reputation, {
+    active:  activeContracts.find(c => !c.completed && !c.failed) || null,
+    history: activeContracts.filter(c => c.completed || c.failed),
+  });
+
+  if (result.success) {
+    const date = new Date(result.savedAt);
+    return [
+      '',
+      '  [SAVE] Game saved.',
+      '  ' + date.toLocaleDateString() + ' ' + date.toLocaleTimeString(),
+      '',
+    ].join('\n');
+  }
+  return '  [SAVE] Save failed: ' + result.error;
+}
+
+function cmdNewSave() {
+  return [
+    '',
+    '  [NEWSAVE] This will erase your current save and start over.',
+    '  Type "yes" to confirm or anything else to cancel.',
+    '',
+  ].join('\n');
 }
