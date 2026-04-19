@@ -793,7 +793,7 @@ function renderArmory(stock, ship, playerCredits, factionKey, quadrantState) {
   lines.push('  ── COMMANDS ──────────────────────────────────────────────────');
   lines.push('');
   lines.push('  buy weapon <#> <slot|cargo>  — purchase weapon by index');
-  lines.push('  buy ammo <slot> <type> <n>   — restock ammo');
+  lines.push('  buy ammo <slot> <#> <n>      — restock ammo by index');
   lines.push('  install <slot> <cargo#>      — install cargo weapon');
   lines.push('  uninstall <slot>             — move weapon to cargo');
   lines.push('  sell weapon <slot>           — sell installed weapon');
