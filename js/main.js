@@ -1006,11 +1006,12 @@ let pendingNewSave    = false;
 function enableInput(mode = 'command') {
   inputEnabled = true;
   inputMode    = mode;
+  const inputLine = document.getElementById('input-line');
+  if (inputLine) inputLine.style.display = '';
 }
 
 function disableInput() {
-  const inputLine = document.getElementById('input-line');
-  if (inputLine) inputLine.style.display = 'none';
+  inputEnabled = false;
 }
 
 function askPlayer(question, callback) {
