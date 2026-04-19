@@ -335,3 +335,39 @@ body::after {
 #terminal.in-combat {
   animation: powerOn 1.4s ease-out forwards, combatPulse 1.5s ease-in-out infinite;
 }
+#menu-slots {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.menu-slot {
+  padding: 8px 12px;
+  border: 1px solid #1a2a1a;
+  cursor: pointer;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 13px;
+  color: #4a7a4a;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.menu-slot:hover {
+  border-color: #3a5a3a;
+  color: #7aaa7a;
+}
+
+.menu-slot.slot-occupied {
+  color: #8ab88a;
+}
+
+.menu-slot.slot-selected {
+  border-color: #5a9a5a;
+  color: #aaffaa;
+  background: #0a140a;
+}
+
+.menu-key {
+  color: #aaffaa;
+  margin-right: 8px;
+}
