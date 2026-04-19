@@ -255,7 +255,9 @@ let galaxy = null;
 let playerState = {
   location:         null,
   cargo:            [],
-  salvagedSystems: [],
+  salvagedSystems:  [],
+  astrographics:    [],
+  scannedSystems:   {},
   credits:          200,
   veydrite:         0,
   ship:             null,   // set in initCommands
@@ -392,6 +394,7 @@ function handleCommand(raw) {
     case 'abandon':   return cmdAbandon();
     case 'ping':      return cmdPing();
     case 'resolve':   return cmdResolve(args);
+    case 'deepscan':  return cmdDeepscan(args);
     case 'status':    return cmdStatus();
     case 'weapons':   return cmdWeapons();
     case 'systems':   return cmdSystems();
@@ -966,6 +969,7 @@ function handleTradeCommand(cmd, args) {
 
 function cmdSell(args) {
   if (!playerState.docked) return '  [SELL] You must be docked to sell.';
+  if (args[0] === 'astrographics') return cmdSellAstrographics(args);
   const loc   = playerState.location;
   const q     = galaxy.quadrants[loc.quadrantIndex];
   let price   = veydritePrice(q.state);
@@ -2381,6 +2385,213 @@ function cmdResolve(args) {
 function cmdRep() {
   const sys = getCurrentSystem();
   return renderRep(sys);
+}
+
+// ── Deepscan ──────────────────────────────────
+
+function cmdDeepscan(args) {
+  if (!galaxy) return '  [ERROR] Galaxy not initialized.';
+
+  const ship = getShip();
+  const loc  = playerState.location;
+  const q    = galaxy.quadrants[loc.quadrantIndex];
+  if (!q) return '  [ERROR] Location data unavailable.';
+
+  // Find target system in current quadrant only
+  const query = args.join(' ').toLowerCase().trim();
+  if (!query) return '  [DEEPSCAN] Usage: deepscan <system name>';
+
+  let targetSys  = null;
+  let targetName = null;
+  q.clusters.forEach(cluster => {
+    cluster.systems.forEach(sys => {
+      if (sys.name.toLowerCase().includes(query)) {
+        targetSys  = sys;
+        targetName = sys.name;
+      }
+    });
+  });
+
+  if (!targetSys) {
+    return [
+      '',
+      '  [DEEPSCAN] No system matching "' + query + '" in this quadrant.',
+      '  Deepscan range is limited to your current quadrant.',
+      '',
+    ].join('\n');
+  }
+
+  // Power check
+  const powerCost = 40;
+  if (ship.powerCore.current < powerCost) {
+    return [
+      '',
+      '  [DEEPSCAN] Insufficient power.',
+      '  Required: ' + powerCost + '  |  Available: ' + ship.powerCore.current,
+      '  Recharge or dock for shore power.',
+      '',
+    ].join('\n');
+  }
+
+  // Drain power
+  drainPower(ship, powerCost);
+
+  // Build result immediately — delay is cosmetic only
+  const hasStation = targetSys.bodies.some(b => b.hasStation);
+  const hasRuin    = targetSys.bodies.some(b => b.hasRuin);
+  const hasVeyd    = targetSys.bodies.some(b => b.veydrite);
+  const bodyCount  = targetSys.bodies.length;
+
+  // Generate astrographic data
+  const units    = astrographicYield(targetSys, 'deep', q.state);
+  const existing = playerState.astrographics.findIndex(a => a.systemName === targetName);
+  const entry    = {
+    systemName:    targetName,
+    quadrantIndex: loc.quadrantIndex,
+    quality:       'deep',
+    scannedDay:    playerState.currentDay,
+    units,
+    data: {
+      state:      q.state,
+      starClass:  targetSys.starClass,
+      hazard:     targetSys.hazard,
+      traffic:    targetSys.traffic,
+      jumpPoints: targetSys.jumpPoints,
+      bodyCount,
+      hasStation,
+      hasRuin,
+      hasVeydrite: hasVeyd,
+    },
+  };
+
+  if (existing >= 0) {
+    playerState.astrographics[existing] = entry;
+  } else {
+    playerState.astrographics.push(entry);
+  }
+  playerState.scannedSystems[targetName] = true;
+
+  // Find station name if present
+  let stationName = 'none detected';
+  if (hasStation) {
+    const stationBody = targetSys.bodies.find(b => b.hasStation);
+    stationName = stationBody && stationBody.stationName
+      ? stationBody.stationName
+      : 'station present';
+  }
+
+  const hazardBar  = '▲'.repeat(targetSys.hazard)  + '△'.repeat(5 - targetSys.hazard);
+  const trafficBar = '◉'.repeat(targetSys.traffic) + '○'.repeat(5 - targetSys.traffic);
+  const powerAfter = ship.powerCore.current;
+
+  const result = [
+    '',
+    '  ── ' + targetName.toUpperCase() + ' ─────────────────────────────────────────',
+    '',
+    '  Star class  : ' + targetSys.starClass + '-type',
+    '  Bodies      : ' + bodyCount,
+    '  State       : ' + q.state,
+    '  Hazard      : ' + hazardBar,
+    '  Traffic     : ' + trafficBar,
+    '  Jump points : ' + targetSys.jumpPoints + ' outbound',
+    '  Station     : ' + stationName,
+    '  Veydrite    : ' + (hasVeyd ? 'trace deposits detected  [VYD]' : 'none detected'),
+    '  Ruins       : ' + (hasRuin ? 'structural signatures present  [RUN]' : 'none detected'),
+    '  Beacon      : ' + (targetSys.hasBeacon ? 'active  [BCN]' : 'none'),
+    '',
+    '  Astrographic data recorded.  +' + units + ' units',
+    '  Power core: ' + powerAfter + '/' + ship.powerCore.max + '  [' + powerStatus(ship) + ']',
+    '',
+  ].join('\n');
+
+  // Cosmetic delay — print init lines then resolve
+  return '__DEEPSCAN__' + JSON.stringify({ targetName, result });
+}
+
+// ── Sell Astrographics ────────────────────────
+
+function cmdSellAstrographics(args) {
+  if (!playerState.docked) return '  [SELL] Must be docked.';
+
+  const factionKey = playerState.dockedFactionKey;
+  if (factionKey !== 'guild') {
+    return ['', '  [SELL] Astrographic data is purchased exclusively by the Assayer\'s Guild.', '  Dock at a Guild station to sell your charts.', ''].join('\n');
+  }
+
+  const records = playerState.astrographics;
+  if (!records || records.length === 0) {
+    return ['', '  [SELL] No astrographic data on record.', '  Run deepscan on systems to generate chart data.', ''].join('\n');
+  }
+
+  const repScore = getRep('guild');
+
+  // sell astrographics all
+  if (args[1] === 'all') {
+    let total = 0;
+    records.forEach(entry => {
+      const val = astrographicValue(entry, playerState.currentDay, repScore);
+      total += val.total;
+      delete playerState.scannedSystems[entry.systemName];
+    });
+    playerState.astrographics = [];
+    playerState.credits += total;
+    return [
+      '',
+      '  [SELL] All astrographic records transferred to Guild archive.',
+      '  Charts cleared from memory matrix.',
+      '  Earned: ' + total + ' CR  |  Scrip: ' + playerState.credits + ' CR',
+      '',
+    ].join('\n');
+  }
+
+  // sell astrographics <#>
+  const index = parseInt(args[1]) - 1;
+  if (!isNaN(index) && index >= 0) {
+    const entry = records[index];
+    if (!entry) return '  [SELL] No record at index ' + (index + 1) + '.';
+    const val = astrographicValue(entry, playerState.currentDay, repScore);
+    playerState.credits += val.total;
+    delete playerState.scannedSystems[entry.systemName];
+    playerState.astrographics.splice(index, 1);
+    return [
+      '',
+      '  [SELL] Record transferred: ' + entry.systemName,
+      '  Chart deleted from memory matrix.',
+      '  Earned: ' + val.total + ' CR  |  Scrip: ' + playerState.credits + ' CR',
+      '',
+    ].join('\n');
+  }
+
+  // No args — show portfolio
+  const lines = [
+    '',
+    '  ── ASTROGRAPHIC DATA — ASSAYER\'S GUILD ──────────────────────',
+    '',
+    '  Charted systems on record: ' + records.length,
+    '',
+  ];
+
+  records.forEach((entry, i) => {
+    const val     = astrographicValue(entry, playerState.currentDay, repScore);
+    const aging   = val.aging ? '  [aging]' : '';
+    const quality = entry.quality === 'deep' ? 'deep scan' : 'basic scan';
+    lines.push(
+      '  [' + (i + 1) + '] ' + entry.systemName.padEnd(24) +
+      quality.padEnd(12) +
+      ('Day ' + entry.scannedDay).padEnd(10) +
+      entry.units + ' units   ' +
+      val.total + ' CR' + aging
+    );
+  });
+
+  lines.push('');
+  lines.push('  sell astrographics <#>   — sell individual record');
+  lines.push('  sell astrographics all   — sell entire portfolio');
+  lines.push('');
+  lines.push('  Warning: sold data is permanently deleted from your charts.');
+  lines.push('');
+
+  return lines.join('\n');
 }
 
 // ── Bulletin ──────────────────────────────────
