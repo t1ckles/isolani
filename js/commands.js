@@ -250,8 +250,6 @@ function createStartingShip(shipName) {
 }
 
 // ── Player State ──────────────────────────────
-
-let galaxy = null;
 let playerState = {
   location:         null,
   cargo:            [],
@@ -260,7 +258,9 @@ let playerState = {
   scannedSystems:   {},
   credits:          200,
   veydrite:         0,
-  ship:             null,   // set in initCommands
+  foldCells:        3,
+  reserveVeydrite:  0,
+  ship:             null,
   captainName:      'Unknown',
   galaxySeed:       '4471-KETH-NULL',
   docked:           false,
