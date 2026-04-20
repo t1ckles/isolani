@@ -113,7 +113,12 @@ function updateSidebar() {
 
   const reserveEl = document.getElementById('sb-reserve');
   if (reserveEl) reserveEl.textContent = (playerState.reserveVeydrite ?? 0).toFixed(1) + ' kg';
-
+  const oreEl = document.getElementById('sb-ore');
+  if (oreEl) {
+    const solid = (playerState.orePods && playerState.orePods.solid) || 0;
+    oreEl.textContent = solid + ' / 50';
+  }
+  
   // Contract
   const active = typeof activeContracts !== 'undefined'
     ? activeContracts.find(c => !c.completed && !c.failed)
@@ -883,6 +888,14 @@ function startNewGame(slot) {
                 queue('  Type map to view fold corridors.', 'output-dim', 60);
                 queue('  Type galaxy to survey known quadrants.', 'output-dim', 60);
                 queue('  Type nav <system> to plot a course.', 'output-dim', 60);
+                queue('', '', 40);
+                if (playerState.ship && playerState.ship.utilitySlots[0].type === 'mining_auger') {
+                  queue('  Utility manifest: Auger-1 Light Mining Head detected.', 'output-dim', 60);
+                  queue('  This vessel is configured for extraction operations.', 'output-dim', 60);
+                } else {
+                  queue('  Utility manifest: Harrow-7 Salvage Head detected.', 'output-dim', 60);
+                  queue('  This vessel is configured for salvage operations.', 'output-dim', 60);
+                }
                 queue('', '', 40);
 
                 const waitForQueue = setInterval(() => {
