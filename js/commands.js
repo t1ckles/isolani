@@ -302,9 +302,14 @@ function initCommands(seed) {
         let stationIndex = 0;
         sys.bodies.forEach(body => {
           if (body.hasStation) {
-            body.factionKey  = assignFaction(q.state, stationRng);
-            body.faction     = FACTIONS[body.factionKey] || FACTIONS.independent;
-            body.stationName = generateStationName(sys.name, body.factionKey, stationIndex++, stationRng);
+            body.factionKey    = assignFaction(q.state, stationRng);
+            body.faction       = FACTIONS[body.factionKey] || FACTIONS.independent;
+            body.stationName   = generateStationName(sys.name, body.factionKey, stationIndex++, stationRng);
+            body.hasRefinery   = hasRefinery(body.factionKey);
+            body.refineryGrade = refineryGrade(body.factionKey);
+            body.yieldShare    = body.hasRefinery
+              ? refineryYieldShare(body.factionKey, stationRng)
+              : null;
           }
         });
       });
