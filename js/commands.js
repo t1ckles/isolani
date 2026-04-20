@@ -406,6 +406,9 @@ function handleCommand(raw) {
     case 'install':   return cmdInstall(args);
     case 'uninstall': return cmdUninstall(args);
     case 'salvage':   return cmdSalvage();
+    case 'survey':    return cmdSurvey(args);
+    case 'mine':      return cmdMine(args);
+    case 'refine':    return cmdRefine(args);
     case 'rep':       return cmdRep();
     case 'bulletin':  return cmdBulletin();
     case 'accept':    return cmdAccept(args);
@@ -1056,6 +1059,564 @@ function cmdJump(args) {
   }
 
   return lines.join('\n');
+}
+
+// ── Survey ────────────────────────────────────
+
+function cmdSurvey(args) {
+  if (!galaxy) return '  [ERROR] Galaxy not initialized.';
+  if (playerState.docked) return '  [SURVEY] Undock first.';
+
+  const ship = getShip();
+  const loc  = playerState.location;
+  const q    = galaxy.quadrants[loc.quadrantIndex];
+  const cluster = loc.clusterName
+    ? q.clusters.find(c => c.name === loc.clusterName)
+    : q.clusters[loc.clusterIndex || 0];
+  const sys = cluster && cluster.systems.find(s => s.name === loc.systemName);
+  if (!sys) return '  [ERROR] Location data corrupted.';
+
+  // survey node — broad system geological sweep
+  if (!args[0] || args[0] === 'node') {
+    // Must have run where or clusterdeepscan first
+    if (!playerState.scannedSystems[sys.name] && !playerState.astrographics.find(a => a.systemName === sys.name)) {
+      return [
+        '',
+        '  [SURVEY] No astrographic data on file for this system.',
+        '  Run "where" to survey local grid before geological sweep.',
+        '',
+      ].join('\n');
+    }
+
+    const powerCost = 35;
+    if (ship.powerCore.current < powerCost) {
+      return [
+        '',
+        '  [SURVEY] Insufficient power for geological sweep.',
+        '  Required: ' + powerCost + '  |  Available: ' + ship.powerCore.current,
+        '',
+      ].join('\n');
+    }
+
+    // Check for mining tool
+    const hasMiningTool = ship.utilitySlots.some(s => s.type === 'mining_auger');
+    if (!hasMiningTool) {
+      return [
+        '',
+        '  [SURVEY] No mining tool detected in utility slots.',
+        '  Install an Auger-1 Light Mining Head to conduct geological surveys.',
+        '',
+      ].join('\n');
+    }
+
+    drainPower(ship, powerCost);
+    playerState.currentDay += 1;
+
+    const lines = [
+      '',
+      '  ── GEOLOGICAL SURVEY — ' + sys.name.toUpperCase() + ' ────────────────────────',
+      '',
+      '  Auger-1 array sweeping system bodies...',
+      '  Survey duration: 1 day.  Day: ' + playerState.currentDay,
+      '',
+    ];
+
+    let miningBodies = 0;
+    sys.bodies.forEach((body, i) => {
+      if (!body.mining || !body.mining.ores) {
+        lines.push('  [' + (i + 1) + '] ' + body.type.padEnd(20) + ' — no extractable deposits detected');
+        return;
+      }
+
+      miningBodies++;
+      const m = body.mining;
+
+      // Ash hint — very subtle
+      let ashHint = '';
+      if (m.ashFlag && Math.random() < 0.4) {
+        ashHint = '  [!] Anomalous mass reading. Verify on body survey.';
+      }
+
+      const qualityTag = m.ores.some(o => o.quality === 'rich') ? 'RICH' :
+                         m.ores.some(o => o.quality === 'standard') ? 'STANDARD' : 'DEPLETED';
+      const oreGrades  = [...new Set(m.ores.map(o => ORE_DEFS[o.type] ? ORE_DEFS[o.type].grade : 'common'))];
+      const gradeTag   = oreGrades.includes('exotic') ? 'EXOTIC' :
+                         oreGrades.includes('rare') ? 'RARE' :
+                         oreGrades.includes('uncommon') ? 'UNCOMMON' : 'COMMON';
+
+      lines.push('  [' + (i + 1) + '] ' + body.type.padEnd(20) + ' — ' + qualityTag + '  ' + gradeTag + ' deposits  (' + m.nodeYield + ' units est.)');
+      if (ashHint) lines.push(ashHint);
+    });
+
+    if (miningBodies === 0) {
+      lines.push('  No extractable deposits detected in this system.');
+    } else {
+      lines.push('');
+      lines.push('  Use "survey body <n>" for detailed composition analysis.');
+    }
+
+    lines.push('');
+    return lines.join('\n');
+  }
+
+  // survey body <n> — detailed geological sweep of specific body
+  if (args[0] === 'body') {
+    const bodyIndex = parseInt(args[1]) - 1;
+    if (isNaN(bodyIndex) || bodyIndex < 0 || bodyIndex >= sys.bodies.length) {
+      return [
+        '',
+        '  [SURVEY] Usage: survey body <1-' + sys.bodies.length + '>',
+        '  Run "survey node" first to identify mining targets.',
+        '',
+      ].join('\n');
+    }
+
+    const body = sys.bodies[bodyIndex];
+
+    if (!body.mining || !body.mining.ores) {
+      return [
+        '',
+        '  [SURVEY] Body ' + (bodyIndex + 1) + ' (' + body.type + ') has no extractable deposits.',
+        '',
+      ].join('\n');
+    }
+
+    // Must have run survey node first
+    if (!playerState.scannedSystems[sys.name] && !playerState.astrographics.find(a => a.systemName === sys.name)) {
+      return [
+        '',
+        '  [SURVEY] No system data on file. Run "survey node" first.',
+        '',
+      ].join('\n');
+    }
+
+    const hasMiningTool = ship.utilitySlots.some(s => s.type === 'mining_auger');
+    if (!hasMiningTool) {
+      return [
+        '',
+        '  [SURVEY] No mining tool detected.',
+        '  Install an Auger-1 Light Mining Head to conduct body surveys.',
+        '',
+      ].join('\n');
+    }
+
+    const powerCost = 15;
+    if (ship.powerCore.current < powerCost) {
+      return [
+        '',
+        '  [SURVEY] Insufficient power.',
+        '  Required: ' + powerCost + '  |  Available: ' + ship.powerCore.current,
+        '',
+      ].join('\n');
+    }
+
+    drainPower(ship, powerCost);
+    playerState.currentDay += 1;
+
+    const m = body.mining;
+    m.surveyed = true;
+
+    const lines = [
+      '',
+      '  ── BODY SURVEY: [' + (bodyIndex + 1) + '] ' + body.type.toUpperCase() + ' ─────────────────────────',
+      '',
+      '  Survey duration: 1 day.  Day: ' + playerState.currentDay,
+      '',
+    ];
+
+    // Ash detection — harder to spot
+    if (m.ashFlag) {
+      if (Math.random() < 0.25) {
+        lines.push('  [!!] ANOMALOUS CRYSTALLINE STRUCTURE DETECTED.');
+        lines.push('  Mass readings inconsistent with known ore compositions.');
+        lines.push('  Guild notation: potential NPCP contamination. File report on dock.');
+        lines.push('  Proceed with extreme caution.');
+        lines.push('');
+      } else {
+        lines.push('  [!] Minor mass anomaly detected. Within survey tolerance.');
+        lines.push('');
+      }
+    }
+
+    lines.push('  ── ORE COMPOSITION ───────────────────────────────────────────');
+    lines.push('');
+
+    m.ores.forEach((ore, i) => {
+      const def     = ORE_DEFS[ore.type];
+      if (!def) return;
+      const refined = REFINED_DEFS[def.refinesTo];
+      const refName = refined ? refined.name : def.refinesTo;
+      lines.push(
+        '  [' + (i + 1) + '] ' + def.name.padEnd(22) +
+        ore.quality.padEnd(10) +
+        ore.quantity + ' units  →  ' + refName
+      );
+    });
+
+    lines.push('');
+    lines.push('  Total yield estimate : ' + m.nodeYield + ' units');
+    lines.push('  Node status          : ' + (m.ashFlag ? 'ANOMALOUS' : 'NOMINAL'));
+    lines.push('');
+    lines.push('  Use "mine body ' + (bodyIndex + 1) + '" to begin extraction.');
+    lines.push('  Use "mine body ' + (bodyIndex + 1) + ' <cycles>" to queue multiple cycles.');
+    lines.push('');
+
+    return lines.join('\n');
+  }
+
+  return '  [SURVEY] Usage: survey node  |  survey body <n>';
+}
+
+// ── Mine ──────────────────────────────────────
+
+function cmdMine(args) {
+  if (!galaxy) return '  [ERROR] Galaxy not initialized.';
+  if (playerState.docked) return '  [MINE] Undock first.';
+
+  const ship = getShip();
+
+  // Check for mining tool
+  const miningSlot = ship.utilitySlots.find(s => s.type === 'mining_auger');
+  if (!miningSlot) {
+    return [
+      '',
+      '  [MINE] No mining tool detected in utility slots.',
+      '  Install an Auger-1 Light Mining Head to begin extraction.',
+      '',
+    ].join('\n');
+  }
+
+  const loc     = playerState.location;
+  const q       = galaxy.quadrants[loc.quadrantIndex];
+  const cluster = loc.clusterName
+    ? q.clusters.find(c => c.name === loc.clusterName)
+    : q.clusters[loc.clusterIndex || 0];
+  const sys = cluster && cluster.systems.find(s => s.name === loc.systemName);
+  if (!sys) return '  [ERROR] Location data corrupted.';
+
+  if (!args[0] || args[0] !== 'body') {
+    return [
+      '',
+      '  [MINE] Usage: mine body <n>  |  mine body <n> <cycles>',
+      '  Run "survey node" then "survey body <n>" before mining.',
+      '',
+    ].join('\n');
+  }
+
+  const bodyIndex = parseInt(args[1]) - 1;
+  if (isNaN(bodyIndex) || bodyIndex < 0 || bodyIndex >= sys.bodies.length) {
+    return '  [MINE] Invalid body index. Use survey node to list bodies.';
+  }
+
+  const body = sys.bodies[bodyIndex];
+
+  if (!body.mining || !body.mining.ores || body.mining.ores.length === 0) {
+    return [
+      '',
+      '  [MINE] Body ' + (bodyIndex + 1) + ' (' + body.type + ') has no extractable deposits.',
+      '',
+    ].join('\n');
+  }
+
+  if (!body.mining.surveyed) {
+    return [
+      '',
+      '  [MINE] Body ' + (bodyIndex + 1) + ' has not been surveyed.',
+      '  Run "survey body ' + (bodyIndex + 1) + '" before extraction.',
+      '',
+    ].join('\n');
+  }
+
+  if (body.mining.nodeYield <= 0) {
+    return [
+      '',
+      '  [MINE] Body ' + (bodyIndex + 1) + ' is exhausted. No yield remaining.',
+      '',
+    ].join('\n');
+  }
+
+  const cycles    = Math.max(1, parseInt(args[2]) || 1);
+  const powerCost = 25 * cycles;
+
+  if (ship.powerCore.current < powerCost) {
+    const canDo = Math.max(1, Math.floor(ship.powerCore.current / 25));
+    return [
+      '',
+      '  [MINE] Insufficient power for ' + cycles + ' cycle(s).',
+      '  Required: ' + powerCost + '  |  Available: ' + ship.powerCore.current,
+      '  Can run: ' + canDo + ' cycle(s) with current power.',
+      '',
+    ].join('\n');
+  }
+
+  // Check ore pod capacity
+  if (!playerState.orePods) playerState.orePods = { solid: 0, liquid: 0 };
+  const podCapacity    = 50; // Standard Ore Pod
+  const liquidCapacity = 50; // Standard Fluid Pod (if installed)
+
+  const m = body.mining;
+  const lines = [
+    '',
+    '  ── EXTRACTION OPERATION ──────────────────────────────────────',
+    '',
+    '  Body     : [' + (bodyIndex + 1) + '] ' + body.type,
+    '  Cycles   : ' + cycles,
+    '  Power    : ' + powerCost + ' units',
+    '',
+  ];
+
+  drainPower(ship, powerCost);
+  const miningDays = cycles * (1 + Math.floor(Math.random() * 2));
+  playerState.currentDay += miningDays;
+  rechargePower(ship, miningDays, false);
+
+  let totalExtracted = 0;
+  let ashTriggered   = false;
+  let podFull        = false;
+
+  for (let cycle = 0; cycle < cycles; cycle++) {
+    if (m.nodeYield <= 0) break;
+
+    // Ash propagation check per cycle
+    if (m.ashFlag) {
+      if (Math.random() < 0.05) {
+        // Ash spreads to adjacent body
+        const adjacentBodies = sys.bodies.filter((b, i) =>
+          i !== bodyIndex && b.mining && b.mining.ores && !b.mining.ashFlag
+        );
+        if (adjacentBodies.length > 0) {
+          const target = adjacentBodies[Math.floor(Math.random() * adjacentBodies.length)];
+          target.mining.ashFlag = true;
+          ashTriggered = true;
+        }
+      }
+      // Ash degrades yield
+      m.ashProgress = Math.min(100, m.ashProgress + 20);
+      m.nodeYield   = Math.max(0, Math.floor(m.nodeYield * 0.8));
+    }
+
+    // Extract from each ore type proportionally
+    const cycleYield = Math.min(m.nodeYield, 8 + Math.floor(Math.random() * 8));
+    m.nodeYield     -= cycleYield;
+    totalExtracted  += cycleYield;
+
+    // Distribute extracted ore to pods
+    const isLiquid = m.ores.some(o => ORE_DEFS[o.type] && ORE_DEFS[o.type].liquid);
+    if (isLiquid) {
+      const space = liquidCapacity - playerState.orePods.liquid;
+      const add   = Math.min(cycleYield, space);
+      playerState.orePods.liquid += add;
+      if (add < cycleYield) { podFull = true; break; }
+    } else {
+      const space = podCapacity - playerState.orePods.solid;
+      const add   = Math.min(cycleYield, space);
+      playerState.orePods.solid += add;
+
+      // Track ore type breakdown
+      if (!playerState.oreHold) playerState.oreHold = {};
+      m.ores.forEach(ore => {
+        if (!ORE_DEFS[ore.type] || ORE_DEFS[ore.type].liquid) return;
+        const share = Math.round((ore.quantity / m.ores.reduce((n, o) => n + o.quantity, 0)) * add);
+        playerState.oreHold[ore.type] = (playerState.oreHold[ore.type] || 0) + share;
+      });
+
+      if (add < cycleYield) { podFull = true; break; }
+    }
+  }
+
+  lines.push('  Extraction complete.  Duration: ' + miningDays + ' day(s).');
+  lines.push('  Day: ' + playerState.currentDay);
+  lines.push('');
+  lines.push('  Yield extracted  : ' + totalExtracted + ' units');
+  lines.push('  Node remaining   : ' + m.nodeYield + ' units');
+  lines.push('');
+
+  if (m.ashFlag) {
+    lines.push('  [!!] ASH CONTAMINATION ACTIVE — yield degrading.');
+    if (ashTriggered) {
+      lines.push('  [!!] CONTAMINATION SPREADING — adjacent body affected.');
+    }
+    lines.push('  File Guild report on dock. Bounty available.');
+    lines.push('');
+  }
+
+  if (podFull) {
+    lines.push('  [!] Ore pod at capacity. Offload at a station before continuing.');
+    lines.push('');
+  }
+
+  // Ore hold summary
+  if (playerState.oreHold && Object.keys(playerState.oreHold).length > 0) {
+    lines.push('  ── ORE HOLD ──────────────────────────────────────────────────');
+    lines.push('');
+    Object.entries(playerState.oreHold).forEach(([oreType, qty]) => {
+      const def = ORE_DEFS[oreType];
+      if (def && qty > 0) {
+        lines.push('  ' + def.name.padEnd(24) + qty + ' units');
+      }
+    });
+    lines.push('');
+    lines.push('  Solid pod: ' + (playerState.orePods.solid || 0) + ' / ' + podCapacity + ' units');
+    if (playerState.orePods.liquid > 0) {
+      lines.push('  Fluid pod: ' + playerState.orePods.liquid + ' / ' + liquidCapacity + ' units');
+    }
+    lines.push('');
+  }
+
+  updateSidebar();
+  autosave();
+  return lines.join('\n');
+}
+
+// ── Refine ────────────────────────────────────
+
+function cmdRefine(args) {
+  if (!playerState.docked) return '  [REFINE] You must be docked at a station with a refinery.';
+
+  const loc  = playerState.location;
+  const q    = galaxy.quadrants[loc.quadrantIndex];
+  const cluster = loc.clusterName
+    ? q.clusters.find(c => c.name === loc.clusterName)
+    : q.clusters[loc.clusterIndex || 0];
+  const sys  = cluster && cluster.systems.find(s => s.name === loc.systemName);
+  if (!sys) return '  [ERROR] Location data corrupted.';
+
+  const stationBody = sys.bodies.find(b => b.hasStation && b.stationName === playerState.dockedAt);
+  if (!stationBody || !stationBody.hasRefinery) {
+    return [
+      '',
+      '  [REFINE] This station has no refinery.',
+      '  Pelk Logistics and CCC installations typically offer refining services.',
+      '',
+    ].join('\n');
+  }
+
+  if (!playerState.oreHold || Object.keys(playerState.oreHold).length === 0) {
+    return [
+      '',
+      '  [REFINE] No ore in hold.',
+      '  Mine ore deposits with "mine body <n>" before refining.',
+      '',
+    ].join('\n');
+  }
+
+  const repScore  = getRep(playerState.dockedFactionKey);
+  const tier      = repScore !== null ? repTier(repScore) : 'UNKNOWN';
+  const grade     = stationBody.refineryGrade;
+  const share     = stationBody.yieldShare || 0.15;
+  const shareDisp = Math.round(share * 100);
+
+  // Show refinery menu if no args
+  if (!args[0]) {
+    const lines = [
+      '',
+      '  ── REFINERY TERMINAL ─────────────────────────────────────────',
+      '',
+      '  Station  : ' + playerState.dockedAt,
+      '  Grade    : ' + grade.toUpperCase(),
+      '  Fee      : ' + shareDisp + '% yield share  (station keeps ' + shareDisp + '% of refined output)',
+      '',
+      '  ── ORE HOLD ──────────────────────────────────────────────────',
+      '',
+    ];
+
+    Object.entries(playerState.oreHold).forEach(([oreType, qty]) => {
+      const def     = ORE_DEFS[oreType];
+      if (!def || qty <= 0) return;
+      const refined = REFINED_DEFS[def.refinesTo];
+      const yRate   = refineYieldRate(def.grade, grade, tier);
+      const output  = Math.floor(qty * def.units * yRate * (1 - share));
+      const refName = refined ? refined.name : def.refinesTo;
+      lines.push('  ' + def.name.padEnd(22) + qty + ' units  →  ' + refName + ' x' + output + '  (' + Math.round(yRate * 100) + '% yield)');
+    });
+
+    lines.push('');
+    lines.push('  refine all        — refine entire ore hold');
+    lines.push('  refine scrip      — pay flat scrip fee instead of yield share');
+    lines.push('');
+    return lines.join('\n');
+  }
+
+  // refine all
+  if (args[0] === 'all' || args[0] === 'scrip') {
+    const payWithScrip = args[0] === 'scrip';
+    const lines = [
+      '',
+      '  ── REFINING OPERATION ────────────────────────────────────────',
+      '',
+    ];
+
+    if (!playerState.refinedHold) playerState.refinedHold = {};
+    let totalScripCost = 0;
+
+    Object.entries(playerState.oreHold).forEach(([oreType, qty]) => {
+      const def     = ORE_DEFS[oreType];
+      if (!def || qty <= 0) return;
+      const refined = REFINED_DEFS[def.refinesTo];
+      if (!refined) return;
+
+      const yRate     = refineYieldRate(def.grade, grade, tier);
+      const grossOut  = Math.floor(qty * def.units * yRate);
+      const stationCut = payWithScrip ? 0 : Math.floor(grossOut * share);
+      const playerOut = grossOut - stationCut;
+      const scripCost = payWithScrip
+        ? refineryScripFee(playerState.dockedFactionKey, q.state) * qty
+        : 0;
+
+      totalScripCost += scripCost;
+      playerState.refinedHold[def.refinesTo] = (playerState.refinedHold[def.refinesTo] || 0) + playerOut;
+
+      const refName = refined.name;
+      lines.push('  ' + def.name.padEnd(22) + qty + ' units  →  ' + refName + ' x' + playerOut);
+    });
+
+    if (payWithScrip) {
+      if (playerState.credits < totalScripCost) {
+        return [
+          '',
+          '  [REFINE] Insufficient scrip.',
+          '  Required: ' + totalScripCost + ' CR  |  Available: ' + playerState.credits + ' CR',
+          '  Use "refine all" for yield-share payment instead.',
+          '',
+        ].join('\n');
+      }
+      playerState.credits -= totalScripCost;
+      lines.push('');
+      lines.push('  Processing fee : ' + totalScripCost + ' CR');
+      lines.push('  Scrip remaining: ' + playerState.credits + ' CR');
+    } else {
+      lines.push('');
+      lines.push('  Station yield share: ' + shareDisp + '% retained by ' + playerState.dockedAt);
+    }
+
+    // Clear ore hold and pods
+    playerState.oreHold = {};
+    if (playerState.orePods) {
+      playerState.orePods.solid  = 0;
+      playerState.orePods.liquid = 0;
+    }
+
+    lines.push('');
+    lines.push('  ── REFINED METALS HOLD ───────────────────────────────────────');
+    lines.push('');
+
+    Object.entries(playerState.refinedHold).forEach(([metalKey, qty]) => {
+      const def = REFINED_DEFS[metalKey];
+      if (def && qty > 0) {
+        lines.push('  ' + def.name.padEnd(24) + qty + ' units');
+      }
+    });
+
+    lines.push('');
+    lines.push('  Use "sell metals" to sell refined metals.');
+    lines.push('');
+
+    updateSidebar();
+    autosave();
+    return lines.join('\n');
+  }
+
+  return '  [REFINE] Usage: refine  |  refine all  |  refine scrip';
 }
 
 // ── Salvage ───────────────────────────────────
