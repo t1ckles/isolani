@@ -829,93 +829,103 @@ function startNewGame(slot) {
         print('  Vessel registered: ' + playerState.shipName, 'output-dim');
         print('');
         updateSidebar();
+        print('  How did you come by her?', 'output-dim');
+        print('');
+        print('  [A] She was my father\'s. He didn\'t come back from the Ashward run.', 'output-dim');
+        print('  [B] Won her in a card game off a Pelk officer who\'d had too much.', 'output-dim');
+        print('  [C] Bought her off a Guild decommission lot. Registry wiped clean.', 'output-dim');
+        print('  [D] Built her myself over six years in a Feral settlement dock.', 'output-dim');
+        print('');
 
-        const autoSeed = generateRandomSeed();
-
-        askPlayer('  Galaxy seed: ' + autoSeed + '  — press Enter to accept or type your own:', (seedInput) => {
-          const chosenSeed = seedInput.trim() || autoSeed;
-
+        askPlayer('  Enter A, B, C, or D:', (originInput) => {
+          playerState.shipOrigin = (originInput || 'c').toLowerCase().trim();
           print('');
-          print('  Seed confirmed: ' + chosenSeed, 'output-dim');
-          print('');
 
-          queue('INITIALIZING — APHELION DEEP SURVEY TERMINAL', 'output-bright', 80);
-          queue('UNIVERSE SEED: ' + chosenSeed, 'output-dim', 120);
-          queueBlank(80);
-          queue('> Loading naming systems...', 'output-dim', 200);
-          queue('> History engine standing by...', 'output-dim', 280);
-          queue('> Guild network: CONNECTED', 'output-dim', 180);
-          queueBlank(120);
-          queueDivider(60);
-          queue('REGISTRATION COMPLETE — GALAXY ACCESS GRANTED', 'output-label', 80);
-          queueDivider(60);
-          queueBlank(80);
+          const autoSeed = generateRandomSeed();
 
-          playerState.foldCells       = 3;
-          playerState.reserveVeydrite = Math.floor(7 + Math.random() * 5);
-          initCommands(chosenSeed);
+          askPlayer('  Galaxy seed: ' + autoSeed + '  — press Enter to accept or type your own:', (seedInput) => {
+            const chosenSeed = seedInput.trim() || autoSeed;
 
-          // Coin flip — Harrow-7 (salvage) or Auger-1 (mining)
-          const ship = playerState.ship;
-          if (ship && ship.utilitySlots && ship.utilitySlots[0]) {
-            const gotMining = Math.random() < 0.5;
-            if (gotMining) {
-              ship.utilitySlots[0].name      = 'Auger-1 Light Mining Head';
-              ship.utilitySlots[0].type      = 'mining_auger';
-              ship.utilitySlots[0].powerCost = 25;
+            print('');
+            print('  Seed confirmed: ' + chosenSeed, 'output-dim');
+            print('');
+
+            queue('INITIALIZING — APHELION DEEP SURVEY TERMINAL', 'output-bright', 80);
+            queue('UNIVERSE SEED: ' + chosenSeed, 'output-dim', 120);
+            queueBlank(80);
+            queue('> Loading naming systems...', 'output-dim', 200);
+            queue('> History engine standing by...', 'output-dim', 280);
+            queue('> Guild network: CONNECTED', 'output-dim', 180);
+            queueBlank(120);
+            queueDivider(60);
+            queue('REGISTRATION COMPLETE — GALAXY ACCESS GRANTED', 'output-label', 80);
+            queueDivider(60);
+            queueBlank(80);
+
+            playerState.foldCells       = 3;
+            playerState.reserveVeydrite = Math.floor(7 + Math.random() * 5);
+            initCommands(chosenSeed);
+
+            // Origin determines starting tool
+            const ship = playerState.ship;
+            if (ship && ship.utilitySlots && ship.utilitySlots[0]) {
+              const gotMining = playerState.shipOrigin === 'b' ||
+                ((playerState.shipOrigin === 'c' || playerState.shipOrigin === 'd') && Math.random() < 0.5);
+              if (gotMining) {
+                ship.utilitySlots[0].name      = 'Auger-1 Light Mining Head';
+                ship.utilitySlots[0].type      = 'mining_auger';
+                ship.utilitySlots[0].powerCost = 25;
+              }
             }
-            // else keep Harrow-7 as default
-          }
-          
 
-          const waitForBoot = setInterval(() => {
-            if (!isPrinting && printQueue.length === 0) {
-              clearInterval(waitForBoot);
-              bootSidebar(playerState.captainName, playerState.shipName, () => {
-                updateSidebar();
-                queue('', '', 40);
-                queue('  Guild network: CONNECTED', 'output-dim', 60);
-                queue('  Fold corridor data: PARTIAL — ' + galaxy.knownCorridors.length + ' corridors on record.', 'output-dim', 60);
-                queue('  Known quadrants: ' + (() => {
-                  const known = new Set([0]);
-                  galaxy.knownCorridors.forEach(idx => {
-                    known.add(galaxy.connections[idx][0]);
-                    known.add(galaxy.connections[idx][1]);
-                  });
-                  return known.size;
-                })() + ' of ' + galaxy.quadrants.length + '.', 'output-dim', 60);
-                queue('', '', 40);
-                queue('  Type map to view fold corridors.', 'output-dim', 60);
-                queue('  Type galaxy to survey known quadrants.', 'output-dim', 60);
-                queue('  Type nav <system> to plot a course.', 'output-dim', 60);
-                queue('', '', 40);
-                if (playerState.ship && playerState.ship.utilitySlots[0].type === 'mining_auger') {
-                  queue('  Utility manifest: Auger-1 Light Mining Head detected.', 'output-dim', 60);
-                  queue('  This vessel is configured for extraction operations.', 'output-dim', 60);
-                } else {
-                  queue('  Utility manifest: Harrow-7 Salvage Head detected.', 'output-dim', 60);
-                  queue('  This vessel is configured for salvage operations.', 'output-dim', 60);
-                }
-                queue('', '', 40);
-
-                const waitForQueue = setInterval(() => {
-                  if (!isPrinting && printQueue.length === 0) {
-                    clearInterval(waitForQueue);
-                    enableInput('command');
-                    updateSidebar();
-                    autosave(slot);
-                    bootAuspex(() => {});
+            const waitForBoot = setInterval(() => {
+              if (!isPrinting && printQueue.length === 0) {
+                clearInterval(waitForBoot);
+                bootSidebar(playerState.captainName, playerState.shipName, () => {
+                  updateSidebar();
+                  queue('', '', 40);
+                  queue('  Guild network: CONNECTED', 'output-dim', 60);
+                  queue('  Fold corridor data: PARTIAL — ' + galaxy.knownCorridors.length + ' corridors on record.', 'output-dim', 60);
+                  queue('  Known quadrants: ' + (() => {
+                    const known = new Set([0]);
+                    galaxy.knownCorridors.forEach(idx => {
+                      known.add(galaxy.connections[idx][0]);
+                      known.add(galaxy.connections[idx][1]);
+                    });
+                    return known.size;
+                  })() + ' of ' + galaxy.quadrants.length + '.', 'output-dim', 60);
+                  queue('', '', 40);
+                  queue('  Type map to view fold corridors.', 'output-dim', 60);
+                  queue('  Type galaxy to survey known quadrants.', 'output-dim', 60);
+                  queue('  Type nav <system> to plot a course.', 'output-dim', 60);
+                  queue('', '', 40);
+                  if (playerState.ship && playerState.ship.utilitySlots[0].type === 'mining_auger') {
+                    queue('  Utility manifest: Auger-1 Light Mining Head detected.', 'output-dim', 60);
+                    queue('  This vessel is configured for extraction operations.', 'output-dim', 60);
+                  } else {
+                    queue('  Utility manifest: Harrow-7 Salvage Head detected.', 'output-dim', 60);
+                    queue('  This vessel is configured for salvage operations.', 'output-dim', 60);
                   }
-                }, 100);
-              });
-            }
-          }, 100);
-        }, 600);
+                  queue('', '', 40);
+
+                  const waitForQueue = setInterval(() => {
+                    if (!isPrinting && printQueue.length === 0) {
+                      clearInterval(waitForQueue);
+                      enableInput('command');
+                      updateSidebar();
+                      autosave(slot);
+                      bootAuspex(() => {});
+                    }
+                  }, 100);
+                });
+              }
+            }, 100);
+          }, 600);
+        });
       });
     });
   }, 400);
 }
-
 // ── Autosave ──────────────────────────────────
 
 function autosave(slot) {
