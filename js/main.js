@@ -849,6 +849,18 @@ function startNewGame(slot) {
           playerState.foldCells       = 3;
           playerState.reserveVeydrite = Math.floor(7 + Math.random() * 5);
           initCommands(chosenSeed);
+
+          // Coin flip — Harrow-7 (salvage) or Auger-1 (mining)
+          const ship = playerState.ship;
+          if (ship && ship.utilitySlots && ship.utilitySlots[0]) {
+            const gotMining = Math.random() < 0.5;
+            if (gotMining) {
+              ship.utilitySlots[0].name      = 'Auger-1 Light Mining Head';
+              ship.utilitySlots[0].type      = 'mining_auger';
+              ship.utilitySlots[0].powerCost = 25;
+            }
+            // else keep Harrow-7 as default
+          }
           
 
           const waitForBoot = setInterval(() => {
