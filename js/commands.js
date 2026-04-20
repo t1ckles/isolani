@@ -253,6 +253,9 @@ function createStartingShip(shipName) {
 let playerState = {
   location:         null,
   cargo:            [],
+  oreHold:          {},
+  refinedHold:      {},
+  orePods:          { solid: 0, liquid: 0 },
   salvagedSystems:  [],
   astrographics:    [],
   scannedSystems:   {},
