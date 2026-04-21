@@ -685,19 +685,20 @@ body::after {
 }
 
 #mobile-input {
-  position: absolute;
-  opacity: 0;
-  width: 1px;
-  height: 1px;
-  top: 0;
-  left: 0;
-  pointer-events: none;
+  flex: 1;
+  background: transparent;
   border: none;
   outline: none;
-  background: transparent;
-  color: transparent;
+  color: #00e5ff;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 14px;
+  caret-color: #00e5ff;
   padding: 0;
-  margin: 0;
+  min-width: 0;
+}
+
+#mobile-input::placeholder {
+  color: #003310;
 }
 
 /* Fix for Chrome iOS viewport height */
