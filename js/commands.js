@@ -501,6 +501,7 @@ function handleCommand(raw) {
     case 'jump':      return cmdJump(args);
     case 'where':
     case 'look':      return cmdWhere();
+    case 'system':    return cmdSystem();
     case 'dock':      return cmdDock();
     case 'undock':    return cmdUndock();
     case 'trade':     return cmdTrade(args);
@@ -552,7 +553,8 @@ function cmdHelp() {
     '  galaxy                    — known quadrant index',
     '  map                       — fold corridor map',
     '  scan <1-42>               — survey a quadrant',
-    '  where                     — current system / body survey',
+    '  where                     — current position / local body stack',
+    '  system                    — full current system survey',
     '  nav <system or body>      — calculated transit within quadrant',
     '  jump <system name>        — blind jump within cluster',
     '  fold <quadrant name>      — fold to connected quadrant',
@@ -2922,6 +2924,71 @@ function cmdStatus() {
 }
 
 // ── Where ─────────────────────────────────────
+
+
+function cmdSystem() {
+  if (!playerState.location) return '  [STATUS] No location fix.';
+  const loc = playerState.location;
+  const q = galaxy.quadrants[loc.quadrantIndex];
+  const cluster = loc.clusterName
+    ? q.clusters.find(c => c.name === loc.clusterName)
+    : q.clusters[loc.clusterIndex || 0];
+  const sys = cluster && cluster.systems.find(s => s.name === loc.systemName);
+  if (!sys) return '  [ERROR] Location data corrupted.';
+
+  const bodies = normalizeSystemBodies(sys);
+  const stations = bodies.filter(b => b.hasStation);
+  const ruins = bodies.filter(b => b.hasRuin);
+  const veydrite = bodies.filter(b => b.veydrite);
+  const currentBody = getCurrentBody(sys);
+  const anchor = sys.isAnchor ? '  ◆ ANCHOR' : '';
+
+  const lines = [
+    '',
+    '  ── SYSTEM SURVEY ─────────────────────────────────────────────',
+    '',
+    '  System   : ' + sys.name + anchor,
+    '  Cluster  : ' + cluster.name,
+    '  Quadrant : ' + q.name + '  [' + (loc.quadrantIndex + 1) + ']  [' + q.state + ']',
+    '  Star     : ' + sys.starClass + '-class',
+    '  Bodies   : ' + bodies.length + ' indexed locations',
+    '  Jumps    : ' + sys.jumpPoints + ' outbound',
+    '  Hazard   : ' + '▲'.repeat(sys.hazard) + '△'.repeat(5 - sys.hazard) + '  (' + sys.hazard + '/5)',
+    '  Traffic  : ' + '◉'.repeat(sys.traffic) + '○'.repeat(5 - sys.traffic) + '  (' + sys.traffic + '/5)',
+    currentBody ? ('  Position : ' + formatBodyDisplayName(currentBody) + '  [' + getBodyKindLabel(currentBody) + ']') : '  Position : system-level approach',
+    '',
+    '  ── ASSETS ───────────────────────────────────────────────────',
+    '',
+    '  Stations : ' + (stations.length ? stations.length + ' detected' : 'none detected'),
+  ];
+
+  if (stations.length > 0) {
+    stations.forEach(b => {
+      const f = b.faction || FACTIONS.independent;
+      const rep = getRep(b.factionKey);
+      const tier = rep !== null ? '  [' + repTier(rep) + ']' : '';
+      lines.push('    — ' + (b.stationName || formatBodyDisplayName(b)) + '  [' + f.short + ']' + tier);
+    });
+    lines.push('  ' + stationDescription(q.state));
+  }
+
+  lines.push('');
+  lines.push('  Ruins    : ' + (ruins.length ? ruins.length + ' site(s) on record' : 'none on record'));
+  if (ruins.length > 0) lines.push('  ' + ruinDescription(q.state));
+  lines.push('');
+  lines.push('  Veydrite : ' + (veydrite.length ? ('POSITIVE — ' + veydrite.length + ' body/bodies') : 'negative'));
+  if (veydrite.length > 0) lines.push('  ' + veydriteRating(sys.starClass));
+  lines.push('');
+  lines.push('  ── BODY INDEX ───────────────────────────────────────────────');
+  lines.push('');
+  bodies.forEach(body => lines.push('  ' + formatBodyLine(body)));
+  lines.push('');
+  lines.push('  ── OPERATOR NOTE ────────────────────────────────────────────');
+  lines.push('');
+  lines.push('  ' + systemFlavor(sys, q.state));
+  lines.push('');
+  return lines.join('\n');
+}
 
 function cmdWhere() {
   if (!playerState.location) return '  [STATUS] No location fix.';
