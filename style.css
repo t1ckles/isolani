@@ -683,3 +683,19 @@ body::after {
   #slot-modal-inner { min-width: calc(100vw - 24px); padding: 16px; }
   #achievements-modal-inner { min-width: calc(100vw - 24px); padding: 16px; }
 }
+
+#mobile-input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: transparent;
+  padding: 0;
+  margin: 0;
+}
