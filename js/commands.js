@@ -524,8 +524,8 @@ function cmdHelp() {
     '  galaxy                    — known quadrant index',
     '  map                       — fold corridor map',
     '  scan <1-42>               — survey a quadrant',
-    '  where                     — current system survey',
-    '  nav <system name>         — calculated jump within quadrant',
+    '  where                     — current system / body survey',
+    '  nav <system or body>      — calculated transit within quadrant',
     '  jump <system name>        — blind jump within cluster',
     '  fold <quadrant name>      — fold to connected quadrant',
     '  blindfold <quadrant name> — overdrive fold, any quadrant (12 cells)',
@@ -615,8 +615,12 @@ function cmdNav(args) {
   if (args.length === 0) return '  [USAGE] nav <system or body name>';
   if (playerState.docked) return '  [NAV] You are docked. Type "undock" first.';
 
-  const ship  = getShip();
-  const query = args.join(' ').toLowerCase();
+  const ship = getShip();
+  const query = args.join(' ').trim().toLowerCase();
+  let targetQuadrant = null;
+  let targetCluster = null;
+  let targetSys = null;
+  let targetBody = null;
 
   if (currentContacts && playerState.location) {
     contactCache[playerState.location.systemName] = currentContacts;
@@ -629,108 +633,103 @@ function cmdNav(args) {
     for (let ci = 0; ci < q.clusters.length; ci++) {
       const cluster = q.clusters[ci];
       for (const sys of cluster.systems) {
-        if (sys.name.toLowerCase().includes(query)) {
-          const fuelCost = 8 + Math.floor(Math.random() * 8);
-          if (ship.fuel < fuelCost) {
-            return [
-              '',
-              '  [NAV] Insufficient fuel for transit to ' + sys.name + '.',
-              '  Required: ' + fuelCost + ' units  |  Available: ' + ship.fuel + ' units.',
-              '',
-            ].join('\n');
-          }
-
-          const powerCost = 8;
-          if (ship.powerCore.current < powerCost) {
-            return [
-              '',
-              '  [NAV] Insufficient power for nav calculation.',
-              '  Core: ' + ship.powerCore.current + ' / ' + ship.powerCore.max,
-              '',
-            ].join('\n');
-          }
-
-          const travelDays = 4 + Math.floor(Math.random() * 7);
-          ship.fuel -= fuelCost;
-          drainPower(ship, powerCost);
-          rechargePower(ship, travelDays, false);
-          playerState.currentDay += travelDays;
-
-          playerState.location = {
-            quadrantIndex: qi,
-            clusterName:   cluster.name,
-            systemName:    sys.name,
-          };
-          playerState.docked           = false;
-          playerState.dockedAt         = null;
-          playerState.dockedFactionKey = null;
-
-          const lines = [
-            '',
-            '  [NAV] Plotting course to ' + sys.name + '...',
-            '',
-            '  Quadrant : ' + q.name,
-            '  Cluster  : ' + cluster.name,
-            '  Star     : ' + sys.starClass + '-class',
-            '  Hazard   : ' + '▲'.repeat(sys.hazard) + '△'.repeat(5 - sys.hazard),
-            '  Fuel used: ' + fuelCost + ' units  |  Remaining: ' + ship.fuel + ' units',
-            '  Power used: ' + powerCost + ' — Core: ' + ship.powerCore.current + '/' + ship.powerCore.max,
-            '  Transit  : ' + travelDays + ' standard days',
-            '  Day      : ' + playerState.currentDay,
-            '',
-            '  Drive nominal. Arrived.',
-            '  Type "where" to survey this body stack.',
-            '',
-          ];
-
-          // Encounter check
-          const encounter = rollEncounter(sys, q, playerState, false);
-          if (encounter) {
-            playerState.inEncounter = true;
-            playerState.encounter   = encounter;
-            initCombat(encounter, ship);
-            lines.push('  ── CONTACT ───────────────────────────────────────────────────');
-            lines.push('');
-            lines.push('  ' + encounter.openingLine);
-            lines.push('');
-            lines.push(renderCombatOptions());
-          }
-
-          // Beacon check
-          const beacon = rollBeacon(sys);
-          if (beacon) {
-            const ageTag = beacon.age === 'recent' ? '[RECENT]' : beacon.age === 'old' ? '[ARCHIVED]' : '[UNKNOWN AGE]';
-            lines.push('  ── DISTRESS BEACON DETECTED ──────────────────────────────────');
-            lines.push('');
-            lines.push('  ' + ageTag + ' ' + beacon.text);
-            lines.push('');
-            playerState.logs.push({ type: 'beacon', system: sys.name, age: beacon.age, text: beacon.text });
-          }
-
-          // Contract check
-          const active = activeContracts.find(c => !c.completed && !c.failed);
-          if (active) {
-            const status = checkContractStatus(active, playerState.currentDay, sys.name);
-            if (status && status.status === 'failed') {
-              const result = failContract(active);
-              lines.push('  [CONTRACT] FAILED — ' + active.title);
-              if (result.repResult) lines.push(renderRepChange(result.repResult));
-              lines.push('');
-            } else if (status && status.status === 'ready') {
-              lines.push('  [CONTRACT] Target reached — type "complete" to finish.');
-              lines.push('');
-            } else if (status && status.status === 'active') {
-              lines.push('  [CONTRACT] ' + active.title + ' — ' + status.daysLeft + ' days remaining.');
-              lines.push('');
-            }
-          }
-
-          return lines.join('\n');
+        if (sys.name.toLowerCase() === query || sys.name.toLowerCase().includes(query)) {
+          targetQuadrant = q;
+          targetCluster = cluster;
+          targetSys = sys;
+          targetBody = normalizeSystemBodies(sys)[0] || null;
+          break;
+        }
+        const bodyMatch = findBodyByName(sys, query);
+        if (bodyMatch) {
+          targetQuadrant = q;
+          targetCluster = cluster;
+          targetSys = sys;
+          targetBody = bodyMatch;
+          break;
         }
       }
+      if (targetSys) break;
     }
+    if (targetSys) break;
   }
-  return '  [NAV] No system matching "' + args.join(' ') + '" found in catalog.';
+
+  if (!targetSys) {
+    return [
+      '',
+      '  [NAV] Destination not found.',
+      '  Use a known system name or a surveyed body name.',
+      '',
+    ].join('
+');
+  }
+
+  const fuelCost = 8 + Math.floor(Math.random() * 8);
+  if (ship.fuel < fuelCost) {
+    return [
+      '',
+      '  [NAV] Insufficient fuel for transit to ' + targetSys.name + '.',
+      '  Required: ' + fuelCost + ' units  |  Available: ' + ship.fuel + ' units.',
+      '',
+    ].join('
+');
+  }
+
+  const powerCost = 8;
+  if (ship.powerCore.current < powerCost) {
+    return [
+      '',
+      '  [NAV] Insufficient power for nav calculation.',
+      '  Core: ' + ship.powerCore.current + ' / ' + ship.powerCore.max,
+      '',
+    ].join('
+');
+  }
+
+  const currentSys = getCurrentSystem();
+  const fromBody = currentSys ? getCurrentBody(currentSys) : null;
+  const localHours = targetBody ? bodyTravelHours(fromBody, targetBody) : 0;
+  const travelDays = 4 + Math.floor(Math.random() * 7);
+
+  ship.fuel -= fuelCost;
+  drainPower(ship, powerCost);
+  rechargePower(ship, travelDays, false);
+  playerState.currentDay += travelDays;
+
+  playerState.location = {
+    quadrantIndex: galaxy.quadrants.indexOf(targetQuadrant),
+    quadrantName: targetQuadrant.name,
+    clusterName: targetCluster.name,
+    systemName: targetSys.name,
+    bodyId: targetBody ? targetBody.id : null,
+    bodyName: targetBody ? (targetBody.name || targetBody.type) : null,
+    bodyKind: targetBody ? targetBody.kind : null,
+    locationType: targetBody ? targetBody.kind : 'system',
+  };
+  playerState.docked = false;
+  playerState.dockedAt = null;
+  playerState.dockedFactionKey = null;
+
+  const lines = [
+    '',
+    '  [NAV] Plotting course to ' + targetSys.name + (targetBody ? (' / ' + (targetBody.name || targetBody.type)) : '') + '...',
+    '',
+    '  Quadrant : ' + targetQuadrant.name,
+    '  Cluster  : ' + targetCluster.name,
+    '  Star     : ' + targetSys.starClass + '-class',
+    '  Hazard   : ' + '▲'.repeat(targetSys.hazard) + '△'.repeat(5 - targetSys.hazard),
+    '  Fuel used: ' + fuelCost + ' units  |  Remaining: ' + ship.fuel + ' units',
+    '  Power used: ' + powerCost + ' — Core: ' + ship.powerCore.current + '/' + ship.powerCore.max,
+    '  Transit  : ' + travelDays + ' standard days' + (targetBody ? ('  |  Local approach: ' + localHours + 'h') : ''),
+    '  Day      : ' + playerState.currentDay,
+    '',
+    '  Drive nominal. Arrived.',
+    '  Type "where" to survey this body stack.',
+    '',
+  ];
+
+  return lines.join('
+');
 }
 
 // ── Fold command ──────────────────────────────
@@ -2901,18 +2900,20 @@ function cmdStatus() {
 
 function cmdWhere() {
   if (!playerState.location) return '  [STATUS] No location fix.';
-  const loc     = playerState.location;
-  const q       = galaxy.quadrants[loc.quadrantIndex];
+  const loc = playerState.location;
+  const q = galaxy.quadrants[loc.quadrantIndex];
   const cluster = loc.clusterName
     ? q.clusters.find(c => c.name === loc.clusterName)
     : q.clusters[loc.clusterIndex || 0];
-  const sys     = cluster && cluster.systems.find(s => s.name === loc.systemName);
+  const sys = cluster && cluster.systems.find(s => s.name === loc.systemName);
   if (!sys) return '  [ERROR] Location data corrupted.';
 
-  const stations = sys.bodies.filter(b => b.hasStation);
-  const ruins    = sys.bodies.filter(b => b.hasRuin);
-  const veydrite = sys.bodies.filter(b => b.veydrite);
-  const anchor   = sys.isAnchor ? '  ◆ ANCHOR' : '';
+  const bodies = normalizeSystemBodies(sys);
+  const currentBody = getCurrentBody(sys);
+  const stations = bodies.filter(b => b.hasStation);
+  const ruins = bodies.filter(b => b.hasRuin);
+  const veydrite = bodies.filter(b => b.veydrite);
+  const anchor = sys.isAnchor ? '  ◆ ANCHOR' : '';
 
   const lines = [
     '',
@@ -2921,24 +2922,23 @@ function cmdWhere() {
     '  System   : ' + sys.name + anchor,
     '  Cluster  : ' + cluster.name,
     '  Quadrant : ' + q.name + '  [' + (loc.quadrantIndex + 1) + ']  [' + q.state + ']',
-    '  Star     : ' + sys.starClass + '-class  |  Bodies: ' + sys.bodies.length,
+    '  Star     : ' + sys.starClass + '-class',
+    '  Bodies   : ' + bodies.length + ' indexed locations',
     '  Day      : ' + playerState.currentDay,
     '',
     '  ── LOCAL SURVEY ──────────────────────────────────────────────',
     '',
   ];
 
+  lines.push('  Stations : ' + (stations.length ? stations.length + ' detected' : 'none detected'));
   if (stations.length > 0) {
-    lines.push('  Stations : ' + stations.length + ' detected');
     stations.forEach(b => {
-      const f   = b.faction || FACTIONS.independent;
+      const f = b.faction || FACTIONS.independent;
       const rep = getRep(b.factionKey);
       const tier = rep !== null ? '  [' + repTier(rep) + ']' : '';
-      lines.push('    — ' + b.stationName + '  [' + f.short + ']' + tier);
+      lines.push('    — ' + (b.stationName || b.name) + '  [' + f.short + ']' + tier);
     });
     lines.push('  ' + stationDescription(q.state));
-  } else {
-    lines.push('  Stations : none detected');
   }
   lines.push('');
 
@@ -2961,6 +2961,11 @@ function cmdWhere() {
   lines.push('  Jumps    : ' + sys.jumpPoints + ' outbound');
   lines.push('  Hazard   : ' + '▲'.repeat(sys.hazard) + '△'.repeat(5 - sys.hazard) + '  (' + sys.hazard + '/5)');
   lines.push('  Traffic  : ' + '◉'.repeat(sys.traffic) + '○'.repeat(5 - sys.traffic) + '  (' + sys.traffic + '/5)');
+  if (currentBody) lines.push('  Position : ' + (currentBody.name || currentBody.type) + '  [' + currentBody.kind.toUpperCase() + ']');
+  lines.push('');
+  lines.push('  ── BODY STACK ────────────────────────────────────────────────');
+  lines.push('');
+  bodies.forEach(body => lines.push('  ' + formatBodyLine(body)));
   lines.push('');
   lines.push('  ── FIELD NOTES ───────────────────────────────────────────────');
   lines.push('');
@@ -2971,7 +2976,8 @@ function cmdWhere() {
   if (typeof updateAuspex === 'function') updateAuspex();
   if (!playerState.visitedSystems) playerState.visitedSystems = {};
   playerState.visitedSystems[sys.name] = true;
-  return lines.join('\n');
+  return lines.join('
+');
 }
 
 // ── Combat ────────────────────────────────────
