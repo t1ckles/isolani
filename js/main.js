@@ -597,7 +597,7 @@ function menuKeyHandler(e) {
     return;
   }
 
-  if (e.key === '1' || e.key === '2' || e.key === '3') {
+if (e.key === '1' || e.key === '2' || e.key === '3') {
     if (modalOpen) {
       e.preventDefault();
       selectSlot(parseInt(e.key));
@@ -605,7 +605,25 @@ function menuKeyHandler(e) {
     return;
   }
 
-  if (modalOpen) return; // eat all other keys while modal is open
+  if (modalOpen) {
+    // Handle slot action hotkeys
+    if (activeSlot) {
+      const save = getAllSlots().find(s => s.slot === activeSlot)?.save;
+      if (e.key === 'l' || e.key === 'L') {
+        if (save) { dismissMenu(); startContinue(save); }
+      } else if (e.key === 'x' || e.key === 'X') {
+        confirmDeleteSlot(activeSlot);
+      } else if (e.key === 'n' || e.key === 'N') {
+        if (!save) { activeSlot; dismissMenu(); startNewGame(activeSlot); }
+        else { closeSlotModal(); showMainMenu(); } // N = cancel on delete confirm
+      } else if (e.key === 'y' || e.key === 'Y') {
+        // Y on delete confirm
+        const confirmBtn = document.getElementById('slot-delete-confirm-' + activeSlot);
+        if (confirmBtn) confirmBtn.click();
+      }
+    }
+    return;
+  }
 
   if (e.key === 'c' || e.key === 'C') {
     const mostRecent = getAllSlots()
