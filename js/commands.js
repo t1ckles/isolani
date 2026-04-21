@@ -660,8 +660,7 @@ function cmdNav(args) {
       '  [NAV] Destination not found.',
       '  Use a known system name or a surveyed body name.',
       '',
-    ].join('
-');
+    ].join('\n');
   }
 
   const fuelCost = 8 + Math.floor(Math.random() * 8);
@@ -671,8 +670,7 @@ function cmdNav(args) {
       '  [NAV] Insufficient fuel for transit to ' + targetSys.name + '.',
       '  Required: ' + fuelCost + ' units  |  Available: ' + ship.fuel + ' units.',
       '',
-    ].join('
-');
+    ].join('\n');
   }
 
   const powerCost = 8;
@@ -682,8 +680,7 @@ function cmdNav(args) {
       '  [NAV] Insufficient power for nav calculation.',
       '  Core: ' + ship.powerCore.current + ' / ' + ship.powerCore.max,
       '',
-    ].join('
-');
+    ].join('\n');
   }
 
   const currentSys = getCurrentSystem();
@@ -728,8 +725,7 @@ function cmdNav(args) {
     '',
   ];
 
-  return lines.join('
-');
+  return lines.join('\n');
 }
 
 // ── Fold command ──────────────────────────────
@@ -2976,8 +2972,7 @@ function cmdWhere() {
   if (typeof updateAuspex === 'function') updateAuspex();
   if (!playerState.visitedSystems) playerState.visitedSystems = {};
   playerState.visitedSystems[sys.name] = true;
-  return lines.join('
-');
+  return lines.join('\n');
 }
 
 // ── Combat ────────────────────────────────────
