@@ -1107,7 +1107,7 @@ const Naming = {
   // Generate a bar or establishment name
   establishment(rng) {
     return rng.pick(NAMES.establishment);
-  }
+  },
 
     // Generate a planet/moon/body name
   // Uses NAMES array for variety
