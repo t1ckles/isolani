@@ -774,3 +774,42 @@ body::after {
     display: block;
   }
 }
+
+.archive-fragment {
+  border: 1px solid var(--green-dark);
+  background: rgba(0, 26, 8, 0.45);
+  padding: 14px 16px;
+  margin: 20px 0;
+  max-width: 680px;
+  color: var(--green-dim);
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+.archive-fragment strong {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--green);
+  letter-spacing: 0.16em;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.field-note {
+  color: var(--green-dim);
+  border-left: 2px solid var(--green-dark);
+  padding-left: 16px;
+  margin: 20px 0;
+  font-size: 12px;
+  line-height: 1.8;
+  max-width: 640px;
+}
+
+.operator-note {
+  color: var(--green-dark);
+  margin: 10px 0 18px 0;
+  font-size: 11px;
+  line-height: 1.8;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
