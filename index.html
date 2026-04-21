@@ -222,7 +222,7 @@
           this.textContent = col.classList.contains('panel-open') ? '[ESC] STATUS' : '[STA] STATUS';
         });
     
-        document.addEventListener('click', function(e) {
+    document.addEventListener('click', function(e) {
           var col = document.getElementById('right-column');
           var btn = document.getElementById('status-toggle');
           if (col && col.classList.contains('panel-open') && !col.contains(e.target) && e.target !== btn) {
@@ -230,6 +230,31 @@
             btn.textContent = '[STA] STATUS';
           }
         });
+
+        // iOS keyboard handling via visualViewport
+        if (window.visualViewport) {
+          window.visualViewport.addEventListener('resize', function() {
+            var inputRow = document.getElementById('mobile-input-row');
+            var termBody = document.getElementById('terminal-body');
+            if (!inputRow) return;
+            var viewportHeight = window.visualViewport.height;
+            var offset = window.innerHeight - viewportHeight;
+            if (offset > 150) {
+              termBody.style.paddingBottom = offset + 'px';
+              inputRow.style.position = 'sticky';
+              inputRow.style.bottom = '0';
+              inputRow.style.background = '#0a0a0a';
+              inputRow.style.paddingBottom = '8px';
+              var output = document.getElementById('output');
+              if (output) output.scrollTop = output.scrollHeight;
+            } else {
+              termBody.style.paddingBottom = '';
+              inputRow.style.position = '';
+              inputRow.style.bottom = '';
+              inputRow.style.paddingBottom = '';
+            }
+          });
+        }
     </script>
 
 </body>
