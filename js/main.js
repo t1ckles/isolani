@@ -560,7 +560,7 @@ const contBtn  = document.getElementById('menu-continue');
       // Just keep input clean for submission
     });
   }
-
+}
 function menuKeyHandler(e) {
   if (menuDismissed) {
     document.removeEventListener('keydown', menuKeyHandler);
@@ -1241,15 +1241,6 @@ if (response && response.trim().startsWith('__CLUSTERDEEPSCAN__')) {
         
           terminal.style.transition  = 'border-color 2s ease';
           terminal.style.borderColor = '#00e5ff';
-        
-        function escalate() {
-            terminal.style.transition  = 'border-color 0.5s ease';
-            terminal.style.borderColor = '#aaffcc';
-            if (sidebar) {
-              sidebar.style.transition = 'opacity 0.5s ease';
-              sidebar.style.opacity    = '0.3';
-            }
-          }
 
         function escalate() {
             terminal.style.transition  = 'border-color 0.5s ease';
