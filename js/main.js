@@ -559,9 +559,10 @@ const contBtn  = document.getElementById('menu-continue');
     }
 
 // Sync mobile input value to the typed span so player can see input
-    mobileInputEl.addEventListener('input', function() {
+  mobileInputEl.addEventListener('input', function() {
+      // On mobile, the input field shows text natively
+      // Just keep currentInputValue in sync for submission
       currentInputValue = mobileInputEl.value;
-      updateTyped(currentInputValue);
     });
   }
 }
