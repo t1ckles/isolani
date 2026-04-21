@@ -286,6 +286,16 @@ function getCurrentBody(sys) {
   return bodies[0] || null;
 }
 
+function getBodyKindLabel(body) {
+  if (!body) return 'BODY';
+  if (body.kind) return String(body.kind).toUpperCase();
+  const type = String(body.type || body.baseType || '').toLowerCase();
+  if (type.includes('moon')) return 'MOON';
+  if (type.includes('lagrange')) return 'LAGRANGE';
+  if (type.includes('belt') || type.includes('field')) return 'FIELD';
+  return 'BODY';
+}
+
 function formatBodyDisplayName(body) {
   if (!body) return '';
   const label = body.type || body.baseType || body.kind || 'Unknown Body';
@@ -298,7 +308,7 @@ function formatBodyDisplayName(body) {
 
 function formatBodyLine(body) {
   const indent = body.depth === 0 ? '' : '    ';
-  const label = body.kind === 'planet' ? 'BODY' : body.kind.toUpperCase();
+  const label = getBodyKindLabel(body);
   const tags = [];
   if (body.hasStation) tags.push('station');
   if (body.hasRuin) tags.push('ruin');
@@ -1745,9 +1755,9 @@ function cmdSalvage() {
   }
   
   const hasRuin   = sys.bodies.some(b => b.hasRuin);
-  const hasVeyd   = sys.bodies.some(b => b.veydrite);
+  const hasVeyd   = bodies.some(b => b.veydrite);
   const hasDebris = ['Debris Field', 'Shattered Planet', 'Dust Belt']
-    .some(t => sys.bodies.some(b => b.type === t));
+    .some(t => bodies.some(b => b.type === t));
 
   if (!hasRuin && !hasVeyd && !hasDebris) {
     return ['', '  [SALVAGE] Nothing to salvage in ' + sys.name + '.', ''].join('\n');
@@ -2967,7 +2977,7 @@ function cmdWhere() {
   lines.push('  Jumps    : ' + sys.jumpPoints + ' outbound');
   lines.push('  Hazard   : ' + '▲'.repeat(sys.hazard) + '△'.repeat(5 - sys.hazard) + '  (' + sys.hazard + '/5)');
   lines.push('  Traffic  : ' + '◉'.repeat(sys.traffic) + '○'.repeat(5 - sys.traffic) + '  (' + sys.traffic + '/5)');
-  if (currentBody) lines.push('  Position : ' + formatBodyDisplayName(currentBody) + '  [' + currentBody.kind.toUpperCase() + ']');
+  if (currentBody) lines.push('  Position : ' + formatBodyDisplayName(currentBody) + '  [' + getBodyKindLabel(currentBody) + ']');
   lines.push('');
   lines.push('  ── BODY STACK ────────────────────────────────────────────────');
   lines.push('');
