@@ -286,6 +286,14 @@ function getCurrentBody(sys) {
   return bodies[0] || null;
 }
 
+function getBodyDisplayIndex(body, fallback = '?') {
+  if (!body) return fallback;
+  if (body.index !== undefined && body.index !== null) return body.index;
+  if (body.ordinal !== undefined && body.ordinal !== null) return body.ordinal;
+  if (body.localIndex !== undefined && body.localIndex !== null) return body.localIndex;
+  return fallback;
+}
+
 function getBodyKindLabel(body) {
   if (!body) return 'BODY';
   if (body.kind) return String(body.kind).toUpperCase();
@@ -313,7 +321,7 @@ function formatBodyLine(body) {
   if (body.hasStation) tags.push('station');
   if (body.hasRuin) tags.push('ruin');
   if (body.veydrite) tags.push('veydrite');
-  return indent + '[' + body.index + '] ' + formatBodyDisplayName(body) + '  —  ' + label + (tags.length ? '  [' + tags.join(' | ') + ']' : '');
+  return indent + '[' + getBodyDisplayIndex(body) + '] ' + formatBodyDisplayName(body) + '  —  ' + label + (tags.length ? '  [' + tags.join(' | ') + ']' : '');
 }
 
 function updateLocationBody(sys, body) {
