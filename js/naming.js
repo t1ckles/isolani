@@ -1109,4 +1109,11 @@ const Naming = {
     return rng.pick(NAMES.establishment);
   }
 
+    // Generate a planet/moon/body name
+  // Uses NAMES array for variety
+  planetBody(rng) {
+    const root = rng.pick(NAMES.first_masculine.concat(NAMES.first_feminine));
+    return root;
+  },
+
 };
