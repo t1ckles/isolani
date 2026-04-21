@@ -511,7 +511,54 @@ const contBtn  = document.getElementById('menu-continue');
 
   document.getElementById('menu-archive').addEventListener('click', openAchievementsModal);
   document.addEventListener('keydown', menuKeyHandler);
+
+  // ── Mobile input bridge ───────────────────────
+const mobileInput = document.getElementById('mobile-input');
+if (mobileInput) {
+  // Focus mobile input when terminal area is tapped
+  document.getElementById('input-line').addEventListener('touchend', function(e) {
+    e.preventDefault();
+    mobileInput.focus();
+  });
+
+  // Also focus when tapping anywhere in the terminal body
+  document.getElementById('terminal-body').addEventListener('touchend', function(e) {
+    mobileInput.focus();
+  });
+
+  mobileInput.addEventListener('keydown', function(e) {
+    // Forward all keydown events to the main handler
+    document.dispatchEvent(new KeyboardEvent('keydown', {
+      key:      e.key,
+      keyCode:  e.keyCode,
+      which:    e.which,
+      shiftKey: e.shiftKey,
+      ctrlKey:  e.ctrlKey,
+      metaKey:  e.metaKey,
+      bubbles:  true,
+    }));
+    // Prevent the input from actually storing characters
+    e.preventDefault();
+  });
+
+  mobileInput.addEventListener('input', function(e) {
+    // Handle autocorrect/paste on mobile which fires input not keydown
+    const val = mobileInput.value;
+    if (val.length > 0) {
+      val.split('').forEach(char => {
+        document.dispatchEvent(new KeyboardEvent('keydown', {
+          key: char,
+          bubbles: true,
+        }));
+      });
+      mobileInput.value = '';
+    }
+  });
 }
+  
+}
+
+
 
 function menuKeyHandler(e) {
   if (menuDismissed) {
