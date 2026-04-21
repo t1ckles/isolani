@@ -1142,6 +1142,8 @@ document.addEventListener('keydown', (e) => {
           return;
         }
 
+        const responseHasTrustedHtml = typeof response === 'string' && response.includes('class="body-name"');
+
 if (response && response.trim().startsWith('__CLUSTERDEEPSCAN__')) {
           const payload = JSON.parse(response.trim().slice(19));
           const SCAN_MESSAGES = [
