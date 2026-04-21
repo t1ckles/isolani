@@ -523,12 +523,8 @@ const contBtn  = document.getElementById('menu-continue');
         e.preventDefault();
         const val = mobileInputEl.value;
         mobileInputEl.value = '';
-        if (val.trim() !== '') {
-          // Simulate typing the value then Enter
-          val.split('').forEach(char => {
-            document.dispatchEvent(new KeyboardEvent('keydown', { key: char, bubbles: true }));
-          });
-        }
+        currentInputValue = val;
+        updateTyped(val);
         document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
         return;
       }
@@ -544,23 +540,25 @@ const contBtn  = document.getElementById('menu-continue');
       mobileSendBtn.addEventListener('click', function() {
         const val = mobileInputEl.value;
         mobileInputEl.value = '';
+        currentInputValue = '';
+        updateTyped('');
         if (val.trim() !== '') {
-          val.split('').forEach(char => {
-            document.dispatchEvent(new KeyboardEvent('keydown', { key: char, bubbles: true }));
-          });
+          // Set the value directly and fire Enter
+          currentInputValue = val;
+          document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
         }
-        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-        mobileInputEl.focus();
+        setTimeout(() => mobileInputEl.focus(), 100);
       });
     }
 
-    // Sync mobile input display to the typed span
+// Sync mobile input value to the typed span so player can see input
     mobileInputEl.addEventListener('input', function() {
-      // Let the game's own typed display handle display
-      // Just keep input clean for submission
+      currentInputValue = mobileInputEl.value;
+      updateTyped(currentInputValue);
     });
   }
 }
+
 function menuKeyHandler(e) {
   if (menuDismissed) {
     document.removeEventListener('keydown', menuKeyHandler);
