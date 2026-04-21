@@ -1762,10 +1762,11 @@ function cmdSalvage() {
     ].join('\n');
   }
   
-  const hasRuin   = sys.bodies.some(b => b.hasRuin);
+  const bodies    = normalizeSystemBodies(sys);
+  const hasRuin   = bodies.some(b => b.hasRuin);
   const hasVeyd   = bodies.some(b => b.veydrite);
   const hasDebris = ['Debris Field', 'Shattered Planet', 'Dust Belt']
-    .some(t => bodies.some(b => b.type === t));
+    .some(t => bodies.some(b => b.type === t || b.baseType === t));
 
   if (!hasRuin && !hasVeyd && !hasDebris) {
     return ['', '  [SALVAGE] Nothing to salvage in ' + sys.name + '.', ''].join('\n');
