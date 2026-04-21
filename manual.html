@@ -19,6 +19,26 @@
       --bg:          #0a0a0a;
       --bg-card:     #0d120d;
     }
+    
+        .toc-return {
+      position: fixed;
+      bottom: 32px;
+      right: 32px;
+      color: var(--green-dim);
+      text-decoration: none;
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      border: 1px solid var(--green-dark);
+      padding: 8px 14px;
+      background: var(--bg);
+      transition: color 0.2s, border-color 0.2s;
+      z-index: 1000;
+    }
+    
+    .toc-return:hover {
+      color: var(--green);
+      border-color: var(--green-dim);
+    }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -1719,5 +1739,7 @@
   <p>— THE ASSAYER'S GUILD</p>
 </div>
 
+  <a href="#" class="toc-return" title="Return to Table of Contents">[◆ CONTENTS]</a>
+  
 </body>
 </html>
