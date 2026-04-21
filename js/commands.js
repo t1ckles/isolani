@@ -286,6 +286,14 @@ function getCurrentBody(sys) {
   return bodies[0] || null;
 }
 
+function formatBodyDisplayName(body) {
+  if (!body) return '';
+  if (body.type && body.name && body.type !== body.name) {
+    return body.type + ' (<span class="body-name">' + body.name + '</span>)';
+  }
+  return body.name || body.type || 'Unknown Body';
+}
+
 function formatBodyLine(body) {
   const indent = body.depth === 0 ? '' : '    ';
   const label = body.kind === 'planet' ? 'BODY' : body.kind.toUpperCase();
@@ -293,7 +301,7 @@ function formatBodyLine(body) {
   if (body.hasStation) tags.push('station');
   if (body.hasRuin) tags.push('ruin');
   if (body.veydrite) tags.push('veydrite');
-  return indent + '[' + body.index + '] ' + (body.name || body.type) + '  —  ' + label + (tags.length ? '  [' + tags.join(' | ') + ']' : '');
+  return indent + '[' + body.index + '] ' + formatBodyDisplayName(body) + '  —  ' + label + (tags.length ? '  [' + tags.join(' | ') + ']' : '');
 }
 
 function updateLocationBody(sys, body) {
@@ -686,19 +694,7 @@ function cmdNav(args) {
   const currentSys = getCurrentSystem();
   const fromBody = currentSys ? getCurrentBody(currentSys) : null;
   const localHours = targetBody ? bodyTravelHours(fromBody, targetBody) : 0;
-  // Determine if intra-system or inter-system travel
-  const isSameSystem = currentSys && targetSys && (currentSys.name === targetSys.name);
-  let travelDays = 0;
-  let travelHours = 0;
-  
-  if (isSameSystem) {
-    // Intra-system: use hours (local body-to-body transit)
-    travelHours = localHours || 8; // Default 8h if not calculated
-    travelDays = travelHours / 24; // Convert to fractional days for time advancement
-  } else {
-    // Inter-system: use days (fold jump)
-    travelDays = 4 + Math.floor(Math.random() * 7);
-  }
+  const travelDays = 4 + Math.floor(Math.random() * 7);
 
   ship.fuel -= fuelCost;
   drainPower(ship, powerCost);
@@ -729,7 +725,7 @@ function cmdNav(args) {
     '  Hazard   : ' + '▲'.repeat(targetSys.hazard) + '△'.repeat(5 - targetSys.hazard),
     '  Fuel used: ' + fuelCost + ' units  |  Remaining: ' + ship.fuel + ' units',
     '  Power used: ' + powerCost + ' — Core: ' + ship.powerCore.current + '/' + ship.powerCore.max,
-  ' Transit  : ' + (isSameSystem ? (travelHours + 'h') : (travelDays + ' standard days' + (targetBody ? (' | Local approach: ' + localHours + 'h') : ''))),
+    '  Transit  : ' + travelDays + ' standard days' + (targetBody ? ('  |  Local approach: ' + localHours + 'h') : ''),
     '  Day      : ' + playerState.currentDay,
     '',
     '  Drive nominal. Arrived.',
@@ -2969,7 +2965,7 @@ function cmdWhere() {
   lines.push('  Jumps    : ' + sys.jumpPoints + ' outbound');
   lines.push('  Hazard   : ' + '▲'.repeat(sys.hazard) + '△'.repeat(5 - sys.hazard) + '  (' + sys.hazard + '/5)');
   lines.push('  Traffic  : ' + '◉'.repeat(sys.traffic) + '○'.repeat(5 - sys.traffic) + '  (' + sys.traffic + '/5)');
-  if (currentBody) lines.push('  Position : ' + (currentBody.name || currentBody.type) + '  [' + currentBody.kind.toUpperCase() + ']');
+  if (currentBody) lines.push('  Position : ' + formatBodyDisplayName(currentBody) + '  [' + currentBody.kind.toUpperCase() + ']');
   lines.push('');
   lines.push('  ── BODY STACK ────────────────────────────────────────────────');
   lines.push('');
