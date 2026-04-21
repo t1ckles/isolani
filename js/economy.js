@@ -235,6 +235,8 @@ function buildTradeMenu(playerState, factionKey, quadrantState) {
   lines.push('');
   lines.push('  Your scrip    : ' + playerState.credits + ' CR');
   lines.push('  Your veydrite : ' + playerState.veydrite + ' kg');
+  lines.push('  Fold cells    : ' + playerState.foldCells + ' / 20');
+  lines.push('  Reserve       : ' + (playerState.reserveVeydrite || 0).toFixed(1) + ' kg / 15 kg');
   lines.push('  Fuel reserve  : ' + (ship ? ship.fuel + '/' + ship.fuelMax : '—') + ' units');
   lines.push('  Hull          : ' + (ship ? ship.hull + '/' + ship.hullMax : '—'));
   lines.push('  Power Core    : ' + (ship ? ship.powerCore.current + '/' + ship.powerCore.max : '—') + '  [shore power — fully charged]');
@@ -255,6 +257,7 @@ function buildTradeMenu(playerState, factionKey, quadrantState) {
   }
 
   lines.push('  buy fuel <amount>        — purchase fuel units');
+  lines.push('  buy cells <amount>       — purchase fold cells  (' + playerState.foldCells + ' / 20 aboard)');
   lines.push('  repair hull full         — full hull repair');
   lines.push('  repair hull <amount>     — partial hull repair');
   lines.push('  trade exit               — close trade terminal');
