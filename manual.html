@@ -885,6 +885,14 @@
     <tr>
       <th>Probability</th><th>Outcome</th><th>Consequences</th>
     </tr>
+
+    <h3>Local Movement — Intra-System Transit</h3>
+
+<p>Not all movement requires a fold event. Transit within a single star system — body-to-body navigation — is accomplished using conventional thrusters and sublight drives. These movements consume minimal fuel and power, but require time measured in hours rather than the days spent folding between systems.</p>
+
+<p>Typical intra-system transit ranges from 4 to 12 hours depending on orbital distance, current relative velocity, and approach vectors. The terminal displays local transit time when plotting courses within the current system. Unlike fold jumps, local movement does not advance the day counter significantly, allowing for multiple movements within a single operational period.</p>
+
+<p class="lore">The Fold Drive is a tool for crossing voids. For everything else, there is patience and reaction mass. Guild contractors learn quickly which movements justify the veydrite cost and which do not.</p>
     <tr>
       <td>70%</td>
       <td>Clean fold</td>
@@ -1042,6 +1050,18 @@
   <p>Docking pays the fee, connects shore power (fully recharging your Power Core), and grants access to station services. Faction standing is checked on arrival — HOSTILE standing results in refusal. Standing increases by 1 point upon each successful docking, once per day per station.</p>
 
   <div class="section-divider"></div>
+
+  <div class="section-divider"></div>
+
+<h3>Navigation and Spatial Awareness</h3>
+
+<p>Guild terminals provide two levels of spatial data for operational awareness:</p>
+
+<p><code>where</code> returns local position data. This is a lightweight query focused on your immediate surroundings — the body you occupy, local orbital assets, and navigable destinations within immediate reach. Use this for routine position checks and local situation assessment.</p>
+
+<p><code>system</code> returns full system survey data. This command performs a complete scan of all indexed bodies, stations, hazards, and jump corridors within the current star system. More comprehensive, but draws more terminal processing time. Use when planning longer movements or assessing overall system conditions.</p>
+
+<p class="lore">The distinction exists because not every contractor needs full astrographic context at all times. Local awareness is faster. System awareness is thorough. The Guild designed these commands for efficiency, not comfort.</p>
 
   <h3>Trade Terminal — <code>trade</code></h3>
 

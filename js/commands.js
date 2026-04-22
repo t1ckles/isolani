@@ -2990,7 +2990,7 @@ function cmdSystem() {
   return lines.join('\n');
 }
 
-function cmdWhere() {
+1. function cmdWhere() {
   if (!playerState.location) return '  [STATUS] No location fix.';
   const loc = playerState.location;
   const q = galaxy.quadrants[loc.quadrantIndex];
