@@ -621,6 +621,7 @@ function cmdScan(args) {
 function cmdScanLog() {
   const sys = getCurrentSystem();
   if (!sys) return '  [ERROR] Location data corrupted.';
+  const bodies = normalizeSystemBodies(sys);
   const hasRuin = bodies.some(b => b.hasRuin);
   if (!hasRuin) {
     return ['', '  [SCAN] No ruin sites in this system.', '  Nothing to read.', ''].join('\n');
