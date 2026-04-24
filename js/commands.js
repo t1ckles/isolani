@@ -1885,6 +1885,7 @@ lines.push('  Type "trade" to open the trade terminal.');
   lines.push('  Type "armory" to browse weapons and ammo.');
   lines.push('  Type "repair" for hull and weapon repair.');
   lines.push('  Type "undock" to return to space.');
+  lines.push('  Type "shipyard" to browse available hulls.');
   lines.push('');
   lines.push(renderRepChange(repResult));
   lines.push('');
