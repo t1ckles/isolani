@@ -3489,7 +3489,7 @@ function areaSubsystems(compartmentId, ship, playerState) {
   const cellRow = {
     label: 'Fold Cells',
     value: (playerState.foldCells || 0) + ' / 20',
-    alert: (playerState.foldCells || 0) < 3 ? 'LOW' : null,
+    alert: (playerState.foldCells || 0) === 0 ? 'EMPTY' : (playerState.foldCells || 0) < 3 ? 'LOW' : null,
   };
  
   switch (compartmentId) {
