@@ -3316,7 +3316,7 @@ function cmdPing() {
         const lines = ['', '  [PING] Gravimetric sweep complete.', '  ' + currentContacts.length + ' contact(s) detected.', ''];
         currentContacts.forEach((c, i) => {
           lines.push(c.resolved && !c.xeno
-            ? (c.dark ? '  ◈ [' + (i+1) + '] [NO SIGNATURE] — running dark' : '  ◈ [' + (i+1) + '] ' + c.shipClass + ' — ' + c.registry + (c.shipName ? '\n       "' + c.shipName + '"' : ''))
+            ? (c.dark ? '  ◈ [' + (i+1) + '] [NO SIGNATURE] — running dark' : '  ◈ [' + (i+1) + '] ' + (c.prefix ? c.prefix + ' ' : '') + (c.shipName ? '"' + c.shipName + '" ' : '') + '— ' + c.shipClass + '  [' + c.registry + ']'+ (c.shipName ? '\n       "' + c.shipName + '"' : ''))
             : '  ◈ [' + (i+1) + '] ' + (c.xeno ? 'mass-unknown' : c.mass));
         });
         lines.push('');
@@ -3361,8 +3361,8 @@ function cmdPing() {
       if (c.dark) {
         lines.push('  ◈ [' + (i+1) + '] [NO SIGNATURE] — running dark');
       } else {
-        lines.push('  ◈ [' + (i+1) + '] ' + c.shipClass + ' — ' + c.registry);
-        if (c.shipName) lines.push('       "' + c.shipName + '"');
+          lines.push('  ◈ [' + (i+1) + '] ' + (c.prefix ? c.prefix + ' ' : '') + (c.shipName ? '"' + c.shipName + '"' : c.shipClass) + '  [' + c.registry + ']');
+          if (c.shipName) lines.push('       ' + c.shipClass);
       }
     } else {
       lines.push('  ◈ [' + (i+1) + '] ' + (c.xeno ? 'mass-unknown' : c.mass));
@@ -3395,7 +3395,7 @@ function cmdResolve(args) {
     const lines = ['', '  [RESOLVE] Scanning all contacts...', '  Scan duration: ' + scanDays + ' day(s).  Day: ' + playerState.currentDay, ''];
     currentContacts.forEach((c, i) => {
       if (c.xeno) { lines.push('  ◈ [' + (i+1) + '] [NO SIGNATURE] — does not resolve'); }
-      else { c.resolved = true; lines.push(c.dark ? '  ◈ [' + (i+1) + '] [NO SIGNATURE] — running dark' : '  ◈ [' + (i+1) + '] ' + c.shipClass + ' — ' + c.registry + (c.shipName ? '\n       "' + c.shipName + '"' : '')); }
+      else { c.resolved = true; lines.push(c.dark ? '  ◈ [' + (i+1) + '] [NO SIGNATURE] — running dark' : '  ◈ [' + (i+1) + '] ' + (c.prefix ? c.prefix + ' ' : '') + (c.shipName ? '"' + c.shipName + '" ' : '') + '— ' + c.shipClass + '  [' + c.registry + ']' + (c.shipName ? '\n       "' + c.shipName + '"' : '')); }
     });
     lines.push('');
     updateAuspexTraffic(currentContacts, true);
@@ -4081,6 +4081,37 @@ const REGISTRIES = [
   'unregistered', 'unregistered', 'unregistered',
 ];
 
+function generateVesselPrefix(registry, shipClass) {
+  // Dark/unregistered vessels have no prefix
+  if (!registry || registry === 'unregistered') return null;
+
+  // Class-based prefix pools
+  const classPrefixes = {
+    'Bulk Freighter':  ['HFV','BFV','DFV','PLV','PCF'],
+    'Light Freighter': ['LFV','TCV','ICV','PLV','PFV'],
+    'Prospector':      ['LSV','MSV','IRV','GSV','ORV'],
+    'Fuel Tanker':     ['HFV','BFV','PLV','PTV','TCV'],
+    'Patrol Vessel':   ['CPV','CMV','CSV','CFV','ACV'],
+    'Salvage Hauler':  ['SRV','RCV','MRV','ICV','FRV'],
+    'Survey Craft':    ['LSV','DSV','GSV','ESV','OSV'],
+    'Transport':       ['CTV','TCV','PLV','PTV','ICV'],
+    'Armed Escort':    ['CMV','CPV','CSV','ACV','CFV'],
+    'Courier':         ['IRV','IFV','GSV','GCV','RSV'],
+  };
+
+  // Registry modifier — Guild vessels get Guild prefixes, etc.
+  const registryOverride = {
+    'Guild registry':    ['GSV','GDV','GAV','GCV','GRV','GFV','RAS'],
+    'Pelk registry':     ['PLV','PFV','PTV','PCF','PRV'],
+    'CCC registry':      ['CCV','CMV','CPV','CFV','CTV'],
+    'colonial registry': ['CTV','CMV','CFV','CCV','CPV'],
+    'free registry':     ['ICV','IFV','IRV','FCV','RSV'],
+  };
+
+  const pool = registryOverride[registry] || classPrefixes[shipClass] || ['ICV','IRV','IFV'];
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
 function generateContacts(sys, quadrantState) {
   const traffic   = sys.traffic || 0;
   const xenoTaint = sys.xenoTainted || false;
@@ -4095,8 +4126,8 @@ function generateContacts(sys, quadrantState) {
     const registry     = REGISTRIES[Math.floor(Math.random() * REGISTRIES.length)];
     const isRegistered = registry !== 'unregistered';
     const hasName      = !dark && isRegistered && Math.random() < shipClass.named;
-    const shipName     = hasName ? generateContactName() : null;
-    contacts.push({ shipClass: shipClass.name, mass: shipClass.mass, dark, registry, shipName, resolved: false });
+    const shipName     = hasName ? generateContactName() : null;const prefix = generateVesselPrefix(registry, shipClass.name);
+    contacts.push({ shipClass: shipClass.name, mass: shipClass.mass, dark, registry, shipName, prefix, resolved: false });
   }
 
   if (xenoTaint) {
