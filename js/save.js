@@ -189,8 +189,6 @@ function saveGame(playerState, reputationData, contractData) {
       },
  
       currentCompartment: playerState.currentCompartment || 'bridge',
-      },
-
       economy: {
         credits:         playerState.credits,
         veydrite:        playerState.veydrite,
