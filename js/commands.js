@@ -556,6 +556,7 @@ function cmdHelp() {
     '',
     '  galaxy                    — known quadrant index',
     '  map                       — fold corridor map',
+    '  area                      — current compartment status and available commands',
     '  scan <1-42>               — survey a quadrant',
     '  where                     — current position / local body stack',
     '  system                    — full current system survey',
