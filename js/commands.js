@@ -385,6 +385,7 @@ let playerState = {
   encounter:        null,
   isDead:           false,
   deathCause:       '',
+  currentCompartment: 'bridge',
 };
 
 // ── Init ──────────────────────────────────────
@@ -501,6 +502,7 @@ function handleCommand(raw) {
     case 'jump':      return cmdJump(args);
     case 'where':
     case 'look':      return cmdWhere();
+    case 'move':      return cmdMove(args);
     case 'system':    return cmdSystem();
     case 'dock':      return cmdDock();
     case 'undock':    return cmdUndock();
@@ -4059,6 +4061,300 @@ function xenoFlavor(sys, state) {
   ];
   const index = (sys.name.length + sys.hazard * 3 + (hasRuin ? 7 : 0)) % notes.length;
   return notes[index];
+}
+
+// =============================================================================
+// APHELION — commands.js PATCH
+// Compartment movement system — additions only.
+// Apply these three changes to your existing commands.js.
+// =============================================================================
+ 
+// ─────────────────────────────────────────────────────────────────────────────
+// CHANGE 1 OF 3 — playerState
+// Add currentCompartment to your playerState object.
+// Location: the closing lines of the playerState literal, before the final };
+//
+// ADD this one line anywhere inside the playerState object:
+//
+//   currentCompartment: 'bridge',   // compartment movement system
+//
+// Example — your playerState should end up looking like:
+//
+//   let playerState = {
+//     ...
+//     isDead:             false,
+//     deathCause:         '',
+//     currentCompartment: 'bridge',   // ← ADD THIS
+//   };
+// ─────────────────────────────────────────────────────────────────────────────
+ 
+ 
+// ─────────────────────────────────────────────────────────────────────────────
+// CHANGE 2 OF 3 — handleCommand switch
+// Add the 'move' case to your switch(cmd) block.
+// Location: inside handleCommand(), in the switch block.
+// Place it alongside the other navigation cases (nav, fold, where, etc.)
+//
+// ADD this line:
+//   case 'move':      return cmdMove(args);
+//
+// Example placement in your switch:
+//
+//   case 'where':
+//   case 'look':      return cmdWhere();
+//   case 'move':      return cmdMove(args);   // ← ADD THIS
+//   case 'system':    return cmdSystem();
+// ─────────────────────────────────────────────────────────────────────────────
+ 
+ 
+// ─────────────────────────────────────────────────────────────────────────────
+// CHANGE 3 OF 3 — cmdMove function
+// Paste this entire function block anywhere in commands.js.
+// Recommended: after cmdWhere() / before cmdRep(), or near the bottom
+// before the contact engine section.
+// ─────────────────────────────────────────────────────────────────────────────
+ 
+// ── Move (compartment navigation) ────────────────────────────────────────────
+ 
+// Alias table — maps player input to canonical compartment IDs.
+// All keys are lowercase. Multi-word aliases use the joined args string.
+const COMPARTMENT_ALIASES = {
+  // Bridge
+  'bridge':           'bridge',
+  'br':               'bridge',
+ 
+  // Engineering
+  'engineering':      'engineering',
+  'eng':              'engineering',
+  'engine':           'engineering',
+  'engines':          'engineering',
+ 
+  // Cargo Bay
+  'cargo':            'cargo',
+  'cargo bay':        'cargo',
+  'hold':             'cargo',
+  'bay':              'cargo',
+ 
+  // Crew Quarters
+  'quarters':         'quarters',
+  'crew quarters':    'quarters',
+  'crew':             'quarters',
+  'bunk':             'quarters',
+  'bunks':            'quarters',
+  'berths':           'quarters',
+ 
+  // Airlock
+  'airlock':          'airlock',
+  'lock':             'airlock',
+  'eva':              'airlock',
+  'external':         'airlock',
+ 
+  // Reserve Tank Bay — Light Surveyor exclusive
+  'reserve tank':     'reserve_tank',
+  'reserve_tank':     'reserve_tank',
+  'reserve':          'reserve_tank',
+  'tank':             'reserve_tank',
+  'tank bay':         'reserve_tank',
+ 
+  // Extraction Bay — mining vessels
+  'extraction':       'extraction',
+  'extraction bay':   'extraction',
+  'mining bay':       'extraction',
+  'mine bay':         'extraction',
+ 
+  // Salvage Bay — salvage vessels
+  'salvage bay':      'salvage_bay',
+  'salvage_bay':      'salvage_bay',
+  // NOTE: 'salvage' alone is NOT aliased here — it's an existing field command.
+  // Players must type 'salvage bay' to move to the compartment.
+ 
+  // Refinery — industrial vessels
+  'refinery':         'refinery',
+  'ref':              'refinery',
+ 
+  // Weapons Bay — military vessels
+  'weapons bay':      'weapons_bay',
+  'weapons_bay':      'weapons_bay',
+  'armory bay':       'weapons_bay',
+  // NOTE: 'weapons' and 'armory' alone are existing commands; not aliased here.
+ 
+  // Flight Deck — Escort Carrier only
+  'flight deck':      'flight_deck',
+  'flight_deck':      'flight_deck',
+  'flight':           'flight_deck',
+  'hangar':           'flight_deck',
+  'deck':             'flight_deck',
+};
+ 
+// Display labels for compartment IDs — used in feedback strings.
+const COMPARTMENT_LABELS = {
+  bridge:       'Bridge',
+  engineering:  'Engineering',
+  cargo:        'Cargo Bay',
+  quarters:     'Crew Quarters',
+  airlock:      'Airlock',
+  reserve_tank: 'Reserve Tank Bay',
+  extraction:   'Extraction Bay',
+  salvage_bay:  'Salvage Bay',
+  refinery:     'Refinery',
+  weapons_bay:  'Weapons Bay',
+  flight_deck:  'Flight Deck',
+};
+ 
+// Universal compartments — present on every ship regardless of class.
+const UNIVERSAL_COMPARTMENTS = ['bridge', 'engineering', 'cargo', 'quarters', 'airlock'];
+ 
+// Class-specific compartments — keyed by ship class/designation.
+// Checked against ship.class (e.g. 'surveyor') and ship.designation (e.g. 'Light Surveyor').
+const CLASS_COMPARTMENTS = {
+  // Light Surveyor only
+  'light surveyor':   ['reserve_tank'],
+  // Mining vessels
+  'light mining vessel': ['extraction'],
+  'medium industrial':   ['extraction', 'refinery'],
+  'heavy industrial':    ['extraction', 'refinery'],
+  // Salvage vessels
+  'light salvager':      ['salvage_bay'],
+  'medium salvager':     ['salvage_bay'],
+  // Military vessels
+  'interceptor':         ['weapons_bay'],
+  'corvette':            ['weapons_bay'],
+  'frigate':             ['weapons_bay'],
+  // Escort Carrier
+  'escort carrier':      ['weapons_bay', 'flight_deck'],
+};
+ 
+/**
+ * Get the list of compartments available on the player's current ship.
+ * Falls back to universal compartments if ship data is unavailable.
+ * @returns {string[]} array of compartment IDs
+ */
+function getAvailableCompartments() {
+  const ship = getShip();
+  if (!ship) return UNIVERSAL_COMPARTMENTS;
+ 
+  // ships.js createShipInstance populates ship.compartments directly — use it if present.
+  if (ship.compartments && Array.isArray(ship.compartments)) {
+    return ship.compartments;
+  }
+ 
+  // Fallback: derive from designation or class strings.
+  const designationKey = (ship.designation || '').toLowerCase();
+  const classKey       = (ship.class       || '').toLowerCase();
+ 
+  const extras = CLASS_COMPARTMENTS[designationKey]
+               || CLASS_COMPARTMENTS[classKey]
+               || [];
+ 
+  return [...UNIVERSAL_COMPARTMENTS, ...extras];
+}
+ 
+/**
+ * Resolve a player-typed compartment phrase to a canonical compartment ID.
+ * Returns null if unrecognized.
+ * @param {string[]} args — raw args array from handleCommand (after 'move')
+ * @returns {string|null}
+ */
+function resolveCompartmentInput(args) {
+  if (!args || args.length === 0) return null;
+  const phrase = args.join(' ').toLowerCase().trim();
+  return COMPARTMENT_ALIASES[phrase] ?? null;
+}
+ 
+/**
+ * Main move command handler.
+ * Usage: move <compartment name or alias>
+ */
+function cmdMove(args) {
+  // No destination — list available compartments.
+  if (!args || args.length === 0) {
+    const available  = getAvailableCompartments();
+    const current    = playerState.currentCompartment || 'bridge';
+    const curLabel   = COMPARTMENT_LABELS[current] || current;
+ 
+    const lines = [
+      '',
+      '  [MOVE] Current location: ' + curLabel.toUpperCase(),
+      '',
+      '  Available compartments:',
+      '',
+    ];
+ 
+    available.forEach(id => {
+      const label   = COMPARTMENT_LABELS[id] || id;
+      const marker  = id === current ? '  ►' : '   ';
+      lines.push(marker + ' ' + label.padEnd(22) + 'move ' + id.replace('_', ' '));
+    });
+ 
+    lines.push('');
+    return lines.join('\n');
+  }
+ 
+  // Resolve input to canonical ID.
+  const targetId = resolveCompartmentInput(args);
+ 
+  if (!targetId) {
+    const phrase = args.join(' ');
+    return [
+      '',
+      '  [MOVE] "' + phrase + '" is not a recognized compartment.',
+      '  Type "move" to see available compartments.',
+      '',
+    ].join('\n');
+  }
+ 
+  const available = getAvailableCompartments();
+  const current   = playerState.currentCompartment || 'bridge';
+ 
+  // Already here.
+  if (targetId === current) {
+    const label = COMPARTMENT_LABELS[targetId] || targetId;
+    return [
+      '',
+      '  [MOVE] Already in ' + label + '.',
+      '',
+    ].join('\n');
+  }
+ 
+  // Compartment exists but not on this hull.
+  if (!available.includes(targetId)) {
+    const label = COMPARTMENT_LABELS[targetId] || targetId;
+    const ship  = getShip();
+    return [
+      '',
+      '  [MOVE] ' + label + ' is not installed on this vessel.',
+      '  Hull: ' + (ship ? ship.designation : 'unknown') + '.',
+      '  Type "move" to see available compartments.',
+      '',
+    ].join('\n');
+  }
+ 
+  // Valid move — update state and confirm.
+  playerState.currentCompartment = targetId;
+  const label      = COMPARTMENT_LABELS[targetId] || targetId;
+  const curLabel   = COMPARTMENT_LABELS[current]  || current;
+ 
+  // Compartment-specific arrival messages.
+  const arrivalNotes = {
+    bridge:       'Navigation and sensor arrays online.',
+    engineering:  'Power core nominal. Drive status green.',
+    cargo:        'Hold integrity nominal. Manifest available.',
+    quarters:     'Life support nominal.',
+    airlock:      'External hardpoints accessible. EVA clearance ready.',
+    reserve_tank: 'Reserve tank status: ' + (playerState.reserveVeydrite || 0).toFixed(1) + ' kg / 15 kg.',
+    extraction:   'Auger array standing by.',
+    salvage_bay:  'Harrow unit standing by.',
+    refinery:     'Refinery offline until docked.',
+    weapons_bay:  'Weapons array accessible.',
+    flight_deck:  'Fighter bays accessible.',
+  };
+ 
+  return [
+    '',
+    '  [MOVE] ' + curLabel + '  →  ' + label,
+    '  ' + (arrivalNotes[targetId] || ''),
+    '',
+  ].join('\n');
 }
 
 // ── Contact engine ────────────────────────────
