@@ -492,6 +492,7 @@ function handleCommand(raw) {
     
     switch (cmd) {
     case 'help':      return cmdHelp();
+    case 'shipyard':  return cmdShipyard(args);
     case 'galaxy':    return renderGalaxyOverview(galaxy, playerState.location ? playerState.location.quadrantIndex : 0);
     case 'map':       return renderFoldMap(galaxy, playerState.location.quadrantIndex);
     case 'fold':      return cmdFold(args);
@@ -2392,6 +2393,177 @@ function cmdSystems() {
   return renderSubsystemStatus(ship);
 }
 
+// ── Shipyard ──────────────────────────────────
+ 
+// Tracks the current shipyard browsing session so <#> indices are stable
+// across shipyard, shipyard info, and shipyard buy commands.
+let shipyardSession = null;
+ 
+/**
+ * Build the shipyard session for the current station.
+ * Returns null if no market is available here.
+ */
+function buildShipyardSession() {
+  if (!playerState.docked) return null;
+ 
+  const loc     = playerState.location;
+  const q       = galaxy.quadrants[loc.quadrantIndex];
+  const cluster = loc.clusterName
+    ? q.clusters.find(c => c.name === loc.clusterName)
+    : q.clusters[loc.clusterIndex || 0];
+  const sys     = cluster && cluster.systems.find(s => s.name === loc.systemName);
+  if (!sys) return null;
+ 
+  const body = normalizeSystemBodies(sys).find(b => b.hasStation);
+  if (!body) return null;
+ 
+  const factionKey = playerState.dockedFactionKey;
+  const rep        = getRep(factionKey);
+  const tier       = rep !== null ? repTier(rep) : 'UNKNOWN';
+ 
+  // Only Established and Contested stations run ship markets.
+  // Feral and Forbidden never do.
+  const noMarket = ['feral', 'forbidden'].includes(factionKey)
+    || ['Collapsed', 'Forbidden'].includes(q.state);
+ 
+  if (noMarket) return null;
+ 
+  const market = (typeof getShipMarket === 'function')
+    ? getShipMarket(factionKey, q.state, tier)
+    : [];
+ 
+  return {
+    factionKey,
+    quadrantState: q.state,
+    tier,
+    market,         // [{ def, price }] sorted by price
+    stationName: playerState.dockedAt,
+  };
+}
+ 
+function cmdShipyard(args) {
+  if (!playerState.docked) {
+    return [
+      '',
+      '  [SHIPYARD] You must be docked to access the shipyard.',
+      '',
+    ].join('\n');
+  }
+ 
+  // Refresh session on every bare 'shipyard' call so prices stay current.
+  if (!args || args.length === 0) {
+    shipyardSession = buildShipyardSession();
+ 
+    if (!shipyardSession || shipyardSession.market.length === 0) {
+      return [
+        '',
+        '  [SHIPYARD] No hull market at this station.',
+        '  Ship markets operate at Established and Contested installations.',
+        '  Feral and Forbidden space do not maintain registered shipyards.',
+        '',
+      ].join('\n');
+    }
+ 
+    return renderShipMarket(
+      shipyardSession.factionKey,
+      shipyardSession.quadrantState,
+      shipyardSession.tier,
+      playerState.credits,
+      playerState.ship
+    );
+  }
+ 
+  const sub = args[0].toLowerCase();
+ 
+  // ── shipyard info <#> ──────────────────────
+  if (sub === 'info') {
+    if (!shipyardSession) shipyardSession = buildShipyardSession();
+    if (!shipyardSession || shipyardSession.market.length === 0) {
+      return '  [SHIPYARD] No market data. Type "shipyard" first.';
+    }
+ 
+    const index = parseInt(args[1]) - 1;
+    if (isNaN(index) || index < 0 || index >= shipyardSession.market.length) {
+      return [
+        '',
+        '  [SHIPYARD] Usage: shipyard info <1-' + shipyardSession.market.length + '>',
+        '  Type "shipyard" to see the hull list.',
+        '',
+      ].join('\n');
+    }
+ 
+    const { def, price } = shipyardSession.market[index];
+    return renderShipSpec(def, price);
+  }
+ 
+  // ── shipyard buy <#> ───────────────────────
+  if (sub === 'buy') {
+    if (!shipyardSession) shipyardSession = buildShipyardSession();
+    if (!shipyardSession || shipyardSession.market.length === 0) {
+      return '  [SHIPYARD] No market data. Type "shipyard" first.';
+    }
+ 
+    const index = parseInt(args[1]) - 1;
+    if (isNaN(index) || index < 0 || index >= shipyardSession.market.length) {
+      return [
+        '',
+        '  [SHIPYARD] Usage: shipyard buy <1-' + shipyardSession.market.length + '>',
+        '  Type "shipyard" to see the hull list.',
+        '',
+      ].join('\n');
+    }
+ 
+    const { def, price } = shipyardSession.market[index];
+ 
+    // Affordability check
+    if (playerState.credits < price) {
+      return [
+        '',
+        '  [SHIPYARD] Insufficient scrip.',
+        '  ' + def.name + ' costs ' + price + ' CR.',
+        '  You have: ' + playerState.credits + ' CR.',
+        '',
+      ].join('\n');
+    }
+ 
+    // Confirmation prompt — this is a big, irreversible decision.
+    playerState.pendingTx = {
+      type:   'buy_ship',
+      shipId: def.id,
+      price,
+      def,
+    };
+ 
+    const currentHull = playerState.ship ? playerState.ship.designation : 'unknown';
+ 
+    return [
+      '',
+      '  [SHIPYARD] Confirm hull purchase?',
+      '',
+      '  New hull     : ' + def.name + '  (' + def.designation + ')',
+      '  Current hull : ' + currentHull,
+      '  Cost         : ' + price + ' CR',
+      '  Scrip after  : ' + (playerState.credits - price) + ' CR',
+      '',
+      '  Your current weapons and tools will be transferred to',
+      '  the new vessel\'s cargo hold where possible.',
+      '',
+      '  This action cannot be undone.',
+      '  The Guild does not offer trade-in credit.',
+      '',
+      '  Type "yes" to confirm or anything else to cancel.',
+      '',
+    ].join('\n');
+  }
+ 
+  return [
+    '',
+    '  [SHIPYARD] Unknown command.',
+    '  Usage: shipyard  |  shipyard info <#>  |  shipyard buy <#>',
+    '',
+  ].join('\n');
+}
+
 // ── Armory ────────────────────────────────────
 
 function getArmoryContext() {
@@ -2440,6 +2612,7 @@ function handleArmoryCommand(cmd, args) {
   if (cmd === 'buy')       return cmdBuy(args);
   if (cmd === 'sell')      return cmdSell(args);
   if (cmd === 'repair')    return cmdRepair(args);
+  if (cmd === 'shipyard')  return cmdShipyard(args);
   if (cmd === 'install')   return cmdInstall(args);
   if (cmd === 'uninstall') return cmdUninstall(args);
   if (cmd === 'status')    return cmdStatus();
