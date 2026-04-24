@@ -4162,8 +4162,8 @@ function cmdMenu() {
 function stationServices(attitude) {
   const services = {
     neutral:    'Fuel exchange  |  Cargo hold  |  Assay terminal  |  Armory  |  Bulletin board',
-    commercial: 'Fuel exchange  |  Cargo trading  |  Armory  |  Pelk contract board  |  Repair bay',
-    military:   'Fuel exchange  |  Restricted cargo only  |  Military armory  |  CCC contract board',
+    commercial: 'Fuel exchange  |  Cargo trading  |  Armory  |  Shipyard  |  Pelk contract board  |  Repair bay',
+    military:   'Fuel exchange  |  Restricted cargo only  |  Military armory  |  Shipyard  |  CCC contract board',
     hostile:    'Fuel (price negotiable)  |  No formal services  |  Watch your cargo',
     unknown:    'Services unknown  |  Proceed with caution',
   };
