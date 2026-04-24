@@ -148,6 +148,152 @@ const WEAPON_DEFS = {
     massPerRound:  { rocket_df: 8 },
     reloadTime:    0,
   },
+    hmg: {
+    name:           'HMG-8 Heavy Machinegun',
+    category:       'kinetic',
+    burstMin:       8,
+    burstMax:       16,
+    damagePerRound: 2,
+    armorPen:       3,    // poor vs armor — good against light hulls only
+    powerPerBurst:  0,
+    conditionDecayPerBurst: 2,
+    compatibleAmmo: ['AP', 'HE', 'Frag', 'Tracer', 'Depleted'],
+    massPerRound:   { AP: 0.15, HE: 0.18, Frag: 0.12, Tracer: 0.15, Depleted: 0.12 },
+    reloadTime:     0,
+  },
+ 
+  railgun_medium: {
+    name:           'RG-20 Railgun',
+    category:       'kinetic',
+    burstMin:       1,
+    burstMax:       1,
+    damagePerRound: 38,
+    armorPen:       45,   // better than LR-12, below RG-40
+    powerPerBurst:  0,
+    conditionDecayPerBurst: 2,
+    compatibleAmmo: ['AP', 'Sabot', 'Depleted'],
+    massPerRound:   { AP: 3.0, Sabot: 2.8, Depleted: 2.5 },
+    reloadTime:     0,
+  },
+ 
+  railgun_capital: {
+    name:           'RG-40 Heavy Railgun',
+    category:       'kinetic',
+    burstMin:       1,
+    burstMax:       1,
+    damagePerRound: 80,
+    armorPen:       90,   // capital class — frigate minimum hull required
+    powerPerBurst:  0,
+    conditionDecayPerBurst: 4,
+    compatibleAmmo: ['AP', 'Sabot', 'Depleted'],
+    massPerRound:   { AP: 8.0, Sabot: 7.5, Depleted: 7.0 },
+    reloadTime:     0,
+    hullRequirement: 'frigate',   // flagged for future slot-validation system
+  },
+ 
+  torpedo_capital: {
+    name:           'TC-12 Torpedo',
+    category:       'guided',
+    burstMin:       1,
+    burstMax:       1,
+    damagePerRound: 350,  // slow, high damage, capital targets
+    armorPen:       80,
+    powerPerBurst:  25,
+    conditionDecayPerBurst: 1,
+    compatibleAmmo: ['torpedo_tc12'],
+    massPerRound:   { torpedo_tc12: 120 },
+    reloadTime:     0,
+  },
+ 
+  grapeshot: {
+    name:           'GC-4 Grapeshot Cannon',
+    category:       'kinetic',
+    burstMin:       1,
+    burstMax:       1,
+    damagePerRound: 60,   // short range, devastating burst
+    armorPen:       10,
+    powerPerBurst:  0,
+    conditionDecayPerBurst: 3,
+    compatibleAmmo: ['Frag', 'HE', 'Depleted'],
+    massPerRound:   { Frag: 4.0, HE: 4.5, Depleted: 3.5 },
+    reloadTime:     0,
+    rangeTag:       'short',  // future range system hook
+  },
+ 
+  flechette_mine: {
+    name:           'FM-6 Flechette Mine',
+    category:       'deployable',
+    burstMin:       1,
+    burstMax:       1,
+    damagePerRound: 40,   // area denial — damages anything passing through
+    armorPen:       5,
+    powerPerBurst:  5,
+    conditionDecayPerBurst: 1,
+    compatibleAmmo: ['mine_fm6'],
+    massPerRound:   { mine_fm6: 20 },
+    reloadTime:     0,
+    areaDenial:     true,  // future area-denial system hook
+  },
+ 
+  penetrator: {
+    name:           'PC-2 Penetrator Cannon',
+    category:       'kinetic',
+    burstMin:       1,
+    burstMax:       1,
+    damagePerRound: 30,
+    armorPen:       70,   // armor piercing specialist
+    powerPerBurst:  0,
+    conditionDecayPerBurst: 2,
+    compatibleAmmo: ['Sabot', 'AP', 'EMP_Round'],
+    massPerRound:   { Sabot: 2.0, AP: 2.2, EMP_Round: 2.0 },
+    reloadTime:     0,
+  },
+ 
+  emp_emitter: {
+    name:           'EMP-1 Pulse Emitter',
+    category:       'utility_weapon',
+    burstMin:       1,
+    burstMax:       1,
+    damagePerRound: 0,    // no hull damage — disables enemy systems only
+    armorPen:       0,
+    powerPerBurst:  40,   // high power cost
+    conditionDecayPerBurst: 2,
+    compatibleAmmo: ['emp_pulse'],
+    massPerRound:   { emp_pulse: 5 },
+    reloadTime:     0,
+    systemsOnly:    true, // future: capture scenarios
+  },
+ 
+  tow_beam: {
+    name:           'TB-4 Tow Beam',
+    category:       'utility_weapon',
+    burstMin:       1,
+    burstMax:       1,
+    damagePerRound: 8,    // works as weapon in a pinch
+    armorPen:       0,
+    powerPerBurst:  20,
+    conditionDecayPerBurst: 1,
+    compatibleAmmo: ['tow_charge'],
+    massPerRound:   { tow_charge: 3 },
+    reloadTime:     0,
+    salvageTool:    true, // also functions as salvage assist
+  },
+ 
+  debris_net: {
+    name:           'NET-1 Debris Net',
+    category:       'utility_weapon',
+    burstMin:       1,
+    burstMax:       1,
+    damagePerRound: 0,
+    armorPen:       0,
+    powerPerBurst:  10,
+    conditionDecayPerBurst: 2,
+    compatibleAmmo: ['net_canister'],
+    massPerRound:   { net_canister: 8 },
+    reloadTime:     0,
+    areaDenial:     true,
+    slowsContacts:  true, // future: contact movement penalty
+  },
 };
 
 // ── Utility tool definitions ──────────────────
@@ -179,6 +325,17 @@ const AMMO_DEFS = {
   missile_srm:   { name: 'SRM Warhead',       armorPenBonus: 20, damageBonus: 0,   systemsDamage: 20  },
   torpedo_mk9:   { name: 'Mk.9 Warhead',      armorPenBonus: 50, damageBonus: 0,   systemsDamage: 50  },
   rocket_df:     { name: 'Dumbfire Warhead',  armorPenBonus: 15, damageBonus: 0,   systemsDamage: 15  },
+  Sabot:       { name: 'Sabot',          armorPenBonus: 25,  damageBonus: -5,  systemsDamage: 0   },
+  Hollow_Point:{ name: 'Hollow Point',   armorPenBonus: -10, damageBonus: 8,   systemsDamage: 0,  antipersonnel: true },
+  Tracer:      { name: 'Tracer',         armorPenBonus: 0,   damageBonus: 0,   systemsDamage: 0,  accuracyBonus: 0.08, revealsPosition: true },
+  Depleted:    { name: 'Depleted',       armorPenBonus: -5,  damageBonus: -3,  systemsDamage: 0,  universallyAvailable: true },
+  EMP_Round:   { name: 'EMP Round',      armorPenBonus: -15, damageBonus: -10, systemsDamage: 15, empEffect: true },
+ 
+  torpedo_tc12:{ name: 'TC-12 Warhead',  armorPenBonus: 80,  damageBonus: 0,   systemsDamage: 80  },
+  mine_fm6:    { name: 'FM-6 Mine',      armorPenBonus: 5,   damageBonus: 0,   systemsDamage: 10  },
+  emp_pulse:   { name: 'EMP Pulse',      armorPenBonus: 0,   damageBonus: 0,   systemsDamage: 40, empEffect: true },
+  tow_charge:  { name: 'Tow Charge',     armorPenBonus: 0,   damageBonus: 8,   systemsDamage: 0   },
+  net_canister:{ name: 'Net Canister',   armorPenBonus: 0,   damageBonus: 0,   systemsDamage: 0   },
 };
 
 // ── Condition Thresholds ──────────────────────
@@ -599,6 +756,16 @@ const WEAPON_PRICES = {
   missile_short:  1800,
   torpedo:        5000,
   dumbfire_rocket: 900,
+  hmg:              1100,
+  railgun_medium:   3200,
+  railgun_capital:  7500,
+  torpedo_capital:  8000,
+  grapeshot:        1600,
+  flechette_mine:   2000,
+  penetrator:       2800,
+  emp_emitter:      3500,
+  tow_beam:         1200,
+  debris_net:       900,
 };
 
 const AMMO_PRICES = {
@@ -609,34 +776,49 @@ const AMMO_PRICES = {
   missile_srm:  80,
   torpedo_mk9:  400,
   rocket_df:    35,
+  Sabot:        4,
+  Hollow_Point: 3,
+  Tracer:       2.5,
+  Depleted:     1,
+  EMP_Round:    5,
+  torpedo_tc12: 600,
+  mine_fm6:     45,
+  emp_pulse:    30,
+  tow_charge:   15,
+  net_canister: 20,
 };
 
 const FACTION_STOCK = {
   guild: {
-    weapons: ['autoturret', 'dumbfire_rocket'],
-    ammo:    ['AP', 'HE', 'Frag', 'Incendiary', 'rocket_df'],
+    weapons: ['autoturret', 'dumbfire_rocket', 'tow_beam', 'debris_net'],
+    ammo:    ['AP', 'HE', 'Frag', 'Incendiary', 'rocket_df', 'Depleted', 'tow_charge', 'net_canister'],
     repair:  true,
   },
   pelk: {
-    weapons: ['autoturret', 'autocannon', 'railgun_light', 'missile_short', 'dumbfire_rocket'],
-    ammo:    ['AP', 'HE', 'Frag', 'Incendiary', 'missile_srm', 'rocket_df'],
+    weapons: ['autoturret', 'autocannon', 'hmg', 'railgun_light', 'railgun_medium',
+              'missile_short', 'dumbfire_rocket', 'grapeshot'],
+    ammo:    ['AP', 'HE', 'Frag', 'Incendiary', 'Tracer', 'Depleted', 'Sabot',
+              'missile_srm', 'rocket_df'],
     repair:  true,
   },
   colonial: {
-    weapons: ['autocannon', 'railgun_light', 'railgun_heavy', 'missile_short', 'torpedo'],
-    ammo:    ['AP', 'HE', 'missile_srm', 'torpedo_mk9'],
+    weapons: ['autocannon', 'railgun_light', 'railgun_medium', 'railgun_heavy',
+              'railgun_capital', 'missile_short', 'torpedo', 'torpedo_capital',
+              'emp_emitter', 'flechette_mine'],
+    ammo:    ['AP', 'HE', 'Sabot', 'Tracer', 'Depleted', 'EMP_Round',
+              'missile_srm', 'torpedo_mk9', 'torpedo_tc12', 'emp_pulse', 'mine_fm6'],
     repair:  true,
     repRequired: 'KNOWN',
   },
   feral: {
-    weapons: [],   // randomized on visit
+    weapons: [],   // randomized on visit — black market
     ammo:    [],
     repair:  false,
     blackMarket: true,
   },
   independent: {
-    weapons: ['autoturret', 'dumbfire_rocket'],
-    ammo:    ['AP', 'HE', 'Frag'],
+    weapons: ['autoturret', 'dumbfire_rocket', 'hmg', 'grapeshot', 'tow_beam'],
+    ammo:    ['AP', 'HE', 'Frag', 'Depleted', 'rocket_df', 'tow_charge'],
     repair:  true,
   },
   forbidden: {
