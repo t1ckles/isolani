@@ -3396,7 +3396,7 @@ function cmdResolve(args) {
     const lines = ['', '  [RESOLVE] Scanning all contacts...', '  Scan duration: ' + scanDays + ' day(s).  Day: ' + playerState.currentDay, ''];
     currentContacts.forEach((c, i) => {
       if (c.xeno) { lines.push('  ◈ [' + (i+1) + '] [NO SIGNATURE] — does not resolve'); }
-      else { c.resolved = true; lines.push(c.dark ? '  ◈ [' + (i+1) + '] ' + (c.prefix ? c.prefix + ' ' : '') + (c.shipName ? '"' + c.shipName + '" — ' : '') + c.shipClass + '  [' + c.registry + ']'); }
+      else { c.resolved = true; lines.push(c.dark ? '  ◈ [' + (i+1) + '] [NO SIGNATURE] — running dark' : '  ◈ [' + (i+1) + '] ' + (c.prefix ? c.prefix + ' ' : '') + (c.shipName ? '"' + c.shipName + '" — ' : '') + c.shipClass + '  [' + c.registry + ']'); }
     });
     lines.push('');
     updateAuspexTraffic(currentContacts, true);
