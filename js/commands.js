@@ -1807,6 +1807,7 @@ function cmdDock() {
   const sys     = cluster && cluster.systems.find(s => s.name === loc.systemName);
   if (!sys) return '  [ERROR] Location data corrupted.';
 
+  const bodies = normalizeSystemBodies(sys);
   const stationBodies = bodies.filter(b => b.hasStation);
   if (stationBodies.length === 0) {
     return ['', '  [DOCK] No station in ' + sys.name + '.', ''].join('\n');
