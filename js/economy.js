@@ -791,3 +791,410 @@ function oreMarketPrice(oreKey, quadrantState) {
 
 
 // Phase 1 hierarchy note: resource assignment functions should treat system.bodies as a flattened body index when present.
+// =============================================================================
+// APHELION — economy.js PATCH
+// Ship purchase system — append this entire block to the bottom of economy.js.
+// Depends on: ships.js (SHIP_DEFS, FACTION, STANDING, FOLD_EFFICIENCY)
+// =============================================================================
+
+// ── Ship Market Pricing ───────────────────────
+//
+// Base prices live in SHIP_DEFS (ships.js).
+// These functions apply quadrant-state modifiers, reputation discounts,
+// and handle commission-only vessels (Escort Carrier).
+
+const SHIP_PRICE_STATE_MOD = {
+  Established: 1.00,
+  Contested:   1.10,
+  Declining:   1.20,
+  Collapsed:   1.50,  // rare to find a ship market here at all
+  Isolated:    1.30,
+  Forbidden:   1.60,
+};
+
+// Reputation discount/surcharge applied to ship prices.
+// Only the purchasing faction's standing matters.
+const SHIP_PRICE_REP_MOD = {
+  TRUSTED:  0.90,  // 10% discount
+  KNOWN:    1.00,  // standard rate
+  WATCHED:  1.15,  // surcharge
+  HOSTILE:  null,  // refused — faction will not sell
+};
+
+/**
+ * Calculate the final purchase price for a ship hull at a given station.
+ * Returns null if the faction refuses to sell (standing too low, or
+ * ship not in faction's access list).
+ *
+ * @param {string}      shipId        — SHIP_DEFS key e.g. 'light_freighter'
+ * @param {string}      factionKey    — selling faction e.g. 'pelk'
+ * @param {string}      quadrantState — e.g. 'Established'
+ * @param {string}      repTier       — player's standing with this faction
+ * @returns {number|null}
+ */
+function shipPurchasePrice(shipId, factionKey, quadrantState, repTier) {
+  const def = (typeof getShipDef === 'function') ? getShipDef(shipId) : null;
+  if (!def)            return null;
+  if (def.price === 0) return null;  // not purchasable (starting ship or commission-only)
+
+  // Check faction sells this hull
+  if (!def.factionAccess.includes(factionKey)) return null;
+
+  // Check standing requirement for the hull itself
+  if (def.standingReq === 'trusted' && repTier !== 'TRUSTED') return null;
+  if (def.standingReq === 'known'   && repTier === 'WATCHED')  return null;
+  if (def.standingReq === 'known'   && repTier === 'HOSTILE')  return null;
+
+  // Check faction rep allows purchase
+  const repMod = SHIP_PRICE_REP_MOD[repTier];
+  if (repMod === null) return null;  // faction refuses
+
+  const stateMod = SHIP_PRICE_STATE_MOD[quadrantState] || 1.0;
+
+  return Math.round(def.price * stateMod * repMod);
+}
+
+/**
+ * Get all ships available for purchase at a given station.
+ * Returns an array of { def, price } objects, sorted by price ascending.
+ *
+ * @param {string} factionKey
+ * @param {string} quadrantState
+ * @param {string} repTier
+ * @returns {Array<{ def: object, price: number }>}
+ */
+function getShipMarket(factionKey, quadrantState, repTier) {
+  if (typeof SHIP_DEFS === 'undefined') return [];
+
+  return Object.values(SHIP_DEFS)
+    .filter(def => {
+      if (def.price === 0)                          return false;
+      if (def.features && def.features.commissionOnly) return false;
+      if (!def.factionAccess.includes(factionKey)) return false;
+      return true;
+    })
+    .map(def => ({
+      def,
+      price: shipPurchasePrice(def.id, factionKey, quadrantState, repTier),
+    }))
+    .filter(entry => entry.price !== null)
+    .sort((a, b) => a.price - b.price);
+}
+
+/**
+ * Render the ship market terminal output for a station.
+ *
+ * @param {string} factionKey
+ * @param {string} quadrantState
+ * @param {string} repTier
+ * @param {number} playerCredits
+ * @param {object} currentShip    — player's current ship object
+ * @returns {string}
+ */
+function renderShipMarket(factionKey, quadrantState, repTier, playerCredits, currentShip) {
+  const market = getShipMarket(factionKey, quadrantState, repTier);
+
+  if (market.length === 0) {
+    return [
+      '',
+      '  [SHIPYARD] No hulls available at this station.',
+      '  Ship markets operate at Established and Contested installations only.',
+      '',
+    ].join('\n');
+  }
+
+  const lines = [
+    '',
+    '  ── SHIPYARD TERMINAL ─────────────────────────────────────────',
+    '',
+    '  Your scrip   : ' + playerCredits + ' CR',
+    '  Current hull : ' + (currentShip ? currentShip.designation : '—'),
+    '',
+    '  Available hulls:',
+    '',
+  ];
+
+  market.forEach((entry, i) => {
+    const { def, price } = entry;
+    const canAfford = playerCredits >= price ? '' : '  [insufficient scrip]';
+    const tag       = price <= playerCredits ? '' : ' ✗';
+
+    lines.push(
+      '  [' + (i + 1) + '] ' + def.name.padEnd(24) +
+      (price + ' CR').padEnd(14) +
+      def.role
+    );
+    lines.push(
+      '       Hull ' + def.hull +
+      '  Power ' + def.powerMax +
+      '  Weapons ' + def.weaponSlots +
+      '  Utility ' + def.utilitySlots +
+      '  Pods ' + def.podHardpoints +
+      (canAfford ? '   ' + canAfford : '')
+    );
+    lines.push('');
+  });
+
+  lines.push('  shipyard info <#>     — full spec sheet for a hull');
+  lines.push('  shipyard buy <#>      — purchase and transfer to new hull');
+  lines.push('');
+
+  return lines.join('\n');
+}
+
+/**
+ * Render a full spec sheet for a single hull (shipyard info <#>).
+ *
+ * @param {object} def   — ship definition from SHIP_DEFS
+ * @param {number} price — calculated purchase price
+ * @returns {string}
+ */
+function renderShipSpec(def, price) {
+  const foldLabel = {
+    '-2': 'Excellent',
+    '-1': 'Above average',
+     '0': 'Standard',
+     '1': 'Below standard (+1 cell/fold)',
+     '2': 'Poor (+2 cells/fold)',
+     '4': 'Very poor (+4 cells/fold)',
+  }[String(def.foldCostMod)] || 'Standard';
+
+  const compartmentList = def.compartments
+    .map(c => {
+      const labels = {
+        bridge: 'Bridge', engineering: 'Engineering', cargo: 'Cargo Bay',
+        quarters: 'Crew Quarters', airlock: 'Airlock',
+        reserve_tank: 'Reserve Tank Bay', extraction: 'Extraction Bay',
+        salvage_bay: 'Salvage Bay', refinery: 'Refinery',
+        weapons_bay: 'Weapons Bay', flight_deck: 'Flight Deck',
+      };
+      return labels[c] || c;
+    })
+    .join(', ');
+
+  const featureLines = [];
+  if (def.emergencyTank > 0)  featureLines.push('Emergency reserve tank: ' + def.emergencyTank + ' kg raw veydrite  [CLASS EXCLUSIVE]');
+  if (def.scannerBonus > 0)   featureLines.push('Scanner bonus: +' + Math.round(def.scannerBonus * 100) + '% survey resolution  [CLASS EXCLUSIVE]');
+  if (def.features) {
+    if (def.features.onboardRefinery)   featureLines.push('Onboard refinery: ' + def.features.onboardRefinery + ' grade  [CLASS FEATURE]');
+    if (def.features.enhancedDataStorage) featureLines.push('Enhanced data storage: astrographic capacity ×2  [CLASS FEATURE]');
+    if (def.features.shieldedCargoHold)  featureLines.push('Shielded cargo hold: harder to inspect  [CLASS FEATURE]');
+    if (def.features.fighterBays)        featureLines.push('Fighter bays: ' + def.features.fighterBays + '  [CLASS FEATURE]');
+    if (def.features.commissionOnly)     featureLines.push('Commission only — cannot be purchased directly');
+  }
+
+  const lines = [
+    '',
+    '  ── HULL SPEC: ' + def.name.toUpperCase() + ' (' + def.designation + ') ─────────────────────',
+    '',
+    '  Role         : ' + def.role,
+    '  Line         : ' + def.line.charAt(0).toUpperCase() + def.line.slice(1),
+    '',
+    '  ── CORE STATS ───────────────────────────────────────────────',
+    '',
+    '  Hull         : ' + def.hull + ' / ' + def.hull,
+    '  Armor        : ' + def.armor,
+    '  Power core   : ' + def.powerMax + ' max  |  ' + def.powerRecharge + '/tick recharge',
+    '  Fuel         : ' + def.fuelMax + ' max',
+    '  Fold cells   : ' + def.cellMagazine + ' max magazine',
+    '  Fold eff.    : ' + foldLabel,
+    '',
+    '  ── SLOTS ────────────────────────────────────────────────────',
+    '',
+    '  Weapon slots : ' + def.weaponSlots,
+    '  Utility slots: ' + def.utilitySlots,
+    '  Pod hardpoints: ' + def.podHardpoints,
+    '  Cargo hold   : ' + def.cargoSize.charAt(0).toUpperCase() + def.cargoSize.slice(1),
+    '  Crew         : ' + def.crewMin + ' – ' + def.crewMax,
+    '',
+    '  ── COMPARTMENTS ─────────────────────────────────────────────',
+    '',
+    '  ' + compartmentList,
+    '',
+  ];
+
+  if (featureLines.length > 0) {
+    lines.push('  ── CLASS FEATURES ───────────────────────────────────────────');
+    lines.push('');
+    featureLines.forEach(f => lines.push('  ' + f));
+    lines.push('');
+  }
+
+  lines.push('  ── NOTES ────────────────────────────────────────────────────');
+  lines.push('');
+  lines.push('  ' + def.notes);
+  lines.push('');
+  lines.push('  Purchase price : ' + (price !== null ? price + ' CR' : 'not available'));
+  lines.push('');
+
+  return lines.join('\n');
+}
+
+/**
+ * Execute a ship purchase.
+ * Transfers the player to the new hull, moves weapons/tools to cargo where possible,
+ * and deducts credits.
+ *
+ * NOTE: The old ship is lost — players are warned before confirming.
+ * Weapons in slots are moved to the new ship's cargo if slots allow,
+ * otherwise they are forfeited (shown in the output).
+ *
+ * @param {object} playerState
+ * @param {string} shipId        — SHIP_DEFS key of new hull
+ * @param {number} price         — final purchase price (already calculated)
+ * @returns {string}             — terminal output
+ */
+function executeShipPurchase(playerState, shipId, price) {
+  if (typeof createShipInstance !== 'function') {
+    return '  [ERROR] Ship registry unavailable. ships.js not loaded.';
+  }
+
+  const newShip  = createShipInstance(shipId);
+  if (!newShip) return '  [ERROR] Hull definition not found: ' + shipId;
+
+  const oldShip  = playerState.ship;
+  const lines    = [
+    '',
+    '  ── HULL TRANSFER ─────────────────────────────────────────────',
+    '',
+    '  New hull     : ' + newShip.name + '  (' + newShip.designation + ')',
+  ];
+
+  // Transfer weapons to cargo on new ship where possible
+  const forfeitedWeapons = [];
+  if (oldShip && oldShip.weaponSlots) {
+    if (!newShip.cargoWeapons) newShip.cargoWeapons = [];
+    oldShip.weaponSlots.forEach(slot => {
+      if (slot.type) {
+        newShip.cargoWeapons.push({
+          weaponType:   slot.type,
+          name:         slot.name,
+          condition:    slot.condition,
+          conditionMax: slot.conditionMax,
+          ammo:         slot.ammo || {},
+          activeAmmo:   slot.activeAmmo,
+          massPerRound: slot.massPerRound || {},
+        });
+      }
+    });
+    if (newShip.cargoWeapons.length > 0) {
+      lines.push('  Weapons      : ' + newShip.cargoWeapons.length + ' transferred to cargo hold');
+    }
+  }
+
+  // Transfer utility tools to cargo on new ship
+  if (oldShip && oldShip.utilitySlots) {
+    if (!newShip.cargoTools) newShip.cargoTools = [];
+    oldShip.utilitySlots.forEach(slot => {
+      if (slot.type) {
+        newShip.cargoTools.push({
+          name:      slot.name,
+          type:      slot.type,
+          powerCost: slot.powerCost,
+        });
+      }
+    });
+    if (newShip.cargoTools.length > 0) {
+      lines.push('  Tools        : ' + newShip.cargoTools.length + ' transferred to cargo hold');
+    }
+  }
+
+  // Transfer existing cargo tools from old ship
+  if (oldShip && oldShip.cargoTools) {
+    if (!newShip.cargoTools) newShip.cargoTools = [];
+    newShip.cargoTools.push(...oldShip.cargoTools);
+  }
+  if (oldShip && oldShip.cargoWeapons) {
+    if (!newShip.cargoWeapons) newShip.cargoWeapons = [];
+    newShip.cargoWeapons.push(...oldShip.cargoWeapons);
+  }
+
+  // Deduct credits and assign ship
+  playerState.credits -= price;
+  playerState.ship     = newShip;
+
+  // Reset compartment to bridge on new hull
+  playerState.currentCompartment = 'bridge';
+
+  lines.push('  Cost         : ' + price + ' CR');
+  lines.push('  Scrip after  : ' + playerState.credits + ' CR');
+  lines.push('');
+
+  if (forfeitedWeapons.length > 0) {
+    lines.push('  [!] Forfeited (no cargo space): ' + forfeitedWeapons.join(', '));
+    lines.push('');
+  }
+
+  lines.push('  Transfer complete. Welcome aboard, Captain.');
+  lines.push('  Type "status" to review your new hull.');
+  lines.push('');
+
+  return lines.join('\n');
+}
+
+// ── Commission system (Escort Carrier) ───────────//
+// Commission is not a purchase — it's a standing-gated event.
+// These functions support future commission quest implementation.
+
+/**
+ * Check if a player meets the requirements to commission an Escort Carrier.
+ *
+ * @param {object} playerState
+ * @param {object} reputation   — faction reputation object
+ * @returns {{ eligible: boolean, reasons: string[] }}
+ */
+function checkCommissionEligibility(playerState, reputation) {
+  const reasons  = [];
+  const def      = (typeof getShipDef === 'function') ? getShipDef('escort_carrier') : null;
+  if (!def) return { eligible: false, reasons: ['Ship registry unavailable.'] };
+
+  // Crew requirement
+  if ((playerState.ship && playerState.ship.crewCurrent || 0) < def.crewMin) {
+    reasons.push('Crew requirement: minimum ' + def.crewMin + ' crew members.');
+  }
+
+  // Standing requirement — TRUSTED with at least one major faction
+  const majorFactions = ['guild', 'pelk', 'colonial'];
+  const hasTrusted    = majorFactions.some(fk => {
+    const rep = reputation && reputation[fk];
+    return rep && rep >= 60;  // TRUSTED threshold
+  });
+
+  if (!hasTrusted) {
+    reasons.push('Standing requirement: TRUSTED with at least one major faction (Guild, Pelk, CCC).');
+  }
+
+  // Credits — commission is expensive even if not a direct purchase
+  const commissionDeposit = 2_000_000;
+  if (playerState.credits < commissionDeposit) {
+    reasons.push('Commission deposit: ' + commissionDeposit + ' CR required.');
+  }
+
+  return {
+    eligible: reasons.length === 0,
+    reasons,
+  };
+}
+
+// =============================================================================
+// HOW TO APPLY THIS PATCH
+// =============================================================================
+//
+// Paste this entire block at the very bottom of your economy.js file.
+// No existing functions are modified.
+//
+// New functions added:
+//   shipPurchasePrice(shipId, factionKey, quadrantState, repTier)
+//   getShipMarket(factionKey, quadrantState, repTier)
+//   renderShipMarket(factionKey, quadrantState, repTier, playerCredits, currentShip)
+//   renderShipSpec(def, price)
+//   executeShipPurchase(playerState, shipId, price)
+//   checkCommissionEligibility(playerState, reputation)
+//
+// To wire these into commands.js, add:
+//   case 'shipyard':  return cmdShipyard(args);
+// ...and implement cmdShipyard() handling:
+//   shipyard            — renders ship market
+//   shipyard info <#>   — renders spec sheet
+//   shipyard buy <#>    — confirms and executes purchase
+// =============================================================================
