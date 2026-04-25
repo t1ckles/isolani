@@ -405,7 +405,7 @@ function initCommands(seed) {
       q.clusters.forEach(cluster => {
         cluster.systems.forEach(sys => {
           let stationIndex = 0;
-          normalizeSystemBodies(sys).forEach(body => {
+          sys.bodies.forEach(body => {
             if (body.hasStation) {
               body.factionKey = body.factionKey || assignFaction(q.state, stationRng);
               body.faction = body.faction || FACTIONS[body.factionKey] || FACTIONS.independent;
