@@ -165,28 +165,6 @@ function generateStationName(systemName, factionKey, index, rng) {
   return [prefix, tag, suffix].filter(Boolean).join(' ');
 }
 
-function generateStationName(systemName, factionKey, index, rng) {
-  const prefixes = {
-    guild: ["Assay Point", "Survey Station", "Guild Relay", "Assessment Post"],
-    pelk: ["Pelk Depot", "Transit Hub", "Pelk Waystation", "Logistics Post"],
-    colonial: ["CCC Outpost", "Colonial Station", "Forward Base", "CCC Relay"],
-    feral: ["The Hulk", "Scratch Station", "The Nail", "Drift Post"],
-    independent: ["Free Berth", "Open Dock", "The Anchorage", "Waypoint"],
-    forbidden: ["Installation", "Unknown Station", "Sealed Platform"]
-  };
-
-  const suffixes = ["Alpha", "Beta", "Prime", "Secondary", "Auxiliary", "I", "II", "III", "IV", "V"];
-  const pool = prefixes[factionKey] || prefixes.independent;
-  const roll = rng && typeof rng.next === 'function' ? rng.next() : Math.random();
-  const prefix = pool[Math.floor(roll * pool.length)];
-  const tag = String(systemName || "Station").split(" ")[0];
-  const suffix = index > 0 ? suffixes[Math.min(index, suffixes.length - 1)] : "";
-
-  const result = [prefix, tag, suffix].filter(Boolean).join(" ");  // ← Build result first
-  
-  return result;
-}
-
 // ── Ship initialization ───────────────────────
 
 function createStartingShip(shipName) {
