@@ -108,10 +108,14 @@ function generateSystem(rng, quadrantState, naming) {
   const bodyCount = 1 + Math.floor(rng.next() * 5);
   const bodies = [];
 
-  for (let i = 0; i < bodyCount; i++) {
-    const type = BODY_TYPES[Math.floor(rng.next() * BODY_TYPES.length)];
-    bodies.push(buildNamedBody(rng, quadrantState, starClass, naming, type, i + 1, systemName));
-  }
+const systemName = naming.starSystem
+  ? naming.starSystem(rng, 'ancient')
+  : ('System-' + Math.floor(rng.next() * 9999));
+
+for (let i = 0; i < bodyCount; i++) {
+  const type = BODY_TYPES[Math.floor(rng.next() * BODY_TYPES.length)];
+  bodies.push(buildNamedBody(rng, quadrantState, starClass, naming, type, i + 1, systemName));
+}
 
   const xenoChance = { Collapsed: 0.14, Forbidden: 0.12,
                        Isolated: 0.09, Declining: 0.07,
@@ -125,9 +129,11 @@ function generateSystem(rng, quadrantState, naming) {
     name: systemName,
     starClass,
     bodies,
+    jumpPoints: 1 + Math.floor(rng.next() * 3),
+    hazard: hazardLevel(quadrantState, rng),
+    traffic: trafficLevel(quadrantState, rng),
     xenoTainted,
     hasBeacon,
-    ...
   };
 }
 
