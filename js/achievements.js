@@ -515,7 +515,7 @@ const ACHIEVEMENT_DEFS = {
     title:    'Quarantine Period Completed',
     detail:   'Vessel completed mandatory quarantine period at frontier installation.',
   },
-
+};
 // ── Award function ────────────────────────────
 
 function awardAchievement(id, playerState, extraDetail) {
