@@ -160,8 +160,6 @@ function assignFaction(state, rng) {
   return pool[Math.floor(rng.next() * pool.length)];
 }
 
-// ── Station name generator ────────────────────
-
 function generateStationName(systemName, factionKey, index, rng) {
   const prefixes = {
     guild: ["Assay Point", "Survey Station", "Guild Relay", "Assessment Post"],
@@ -179,7 +177,9 @@ function generateStationName(systemName, factionKey, index, rng) {
   const tag = String(systemName || "Station").split(" ")[0];
   const suffix = index > 0 ? suffixes[Math.min(index, suffixes.length - 1)] : "";
 
-  console.log('generateStationName DEBUG:', {
+  const result = [prefix, tag, suffix].filter(Boolean).join(" ");  // ← Build result first
+  
+  console.log('generateStationName DEBUG:', {  // ← Then log it
     systemName,
     factionKey,
     index,
@@ -190,9 +190,8 @@ function generateStationName(systemName, factionKey, index, rng) {
     resultType: typeof result
   });
   
-  return [prefix, tag, suffix].filter(Boolean).join(" ");
+  return result;
 }
-
 // ── Ship initialization ───────────────────────
 
 function createStartingShip(shipName) {
