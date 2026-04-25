@@ -2600,18 +2600,24 @@ function cmdShipyard(args) {
 
 function getArmoryContext() {
   if (!playerState.docked) return null;
-  const loc   = playerState.location;
-  const q     = galaxy.quadrants[loc.quadrantIndex];
+  const loc = playerState.location;
+  const q = galaxy.quadrants[loc.quadrantIndex];
   const cluster = loc.clusterName
     ? q.clusters.find(c => c.name === loc.clusterName)
     : q.clusters[loc.clusterIndex || 0];
-  const sys   = cluster && cluster.systems.find(s => s.name === loc.systemName);
+  const sys = cluster?.systems.find(s => s.name === loc.systemName);
   if (!sys) return null;
-  const body  = normalizeSystemBodies(sys).find(b => b.hasStation);
-  if (!body)  return null;
-  const rep   = getRep(body.factionKey);
-  const tier  = rep !== null ? repTier(rep) : 'UNKNOWN';
+
+  const bodies = normalizeSystemBodies(sys);
+  const body = bodies.find(b => b.hasStation && b.stationName === playerState.dockedAt)
+    || bodies.find(b => b.hasStation);
+
+  if (!body) return null;
+
+  const rep = getRep(body.factionKey);
+  const tier = rep != null ? repTier(rep) : "UNKNOWN";
   const stock = getArmoryStock(body.factionKey, q.state, rep);
+
   return { q, sys, body, rep, tier, stock };
 }
 
