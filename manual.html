@@ -518,7 +518,7 @@
 
     [id] { scroll-margin-top: 40px; }
 
-  <!-- ── Ship link style ────────────────────────────────────────────────────────── -->
+  
     
     .ship-link {
       cursor: pointer;
@@ -531,7 +531,7 @@
       text-shadow: 0 0 6px rgba(0,255,65,0.5);
     }
 
-  <!--── Modal overlay ───────────────────────────────────────────────────────────── -->
+  
 .ship-modal-overlay {
   display: none;
   position: fixed;
@@ -551,7 +551,6 @@
   from { opacity: 0; }
   to   { opacity: 1; }
 }
-  <!-- ── Modal box ───────────────────────────────────────────────────────────────── -->
 .ship-modal {
   background: var(--bg);
   border: 1px solid var(--green-dark);
@@ -561,7 +560,7 @@
   overflow-y: auto;
   position: relative;
   animation: modalSlideIn 0.2s ease;
-  <!-- CRT outer glow -->
+
   box-shadow:
     0 0 0 1px var(--green-deep),
     0 0 30px rgba(0,255,65,0.08),
@@ -573,7 +572,7 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
-<!-- scanline overlay on the modal itself -->
+
 .ship-modal::after {
   content: '';
   position: absolute;
@@ -587,7 +586,7 @@
   );
   z-index: 1;
 }
-  <!-- ── Modal close button ──────────────────────────────────────────────────────── -->
+ 
 .ship-modal-close {
   position: absolute;
   top: 16px; right: 20px;
@@ -606,7 +605,7 @@
   color: var(--green);
   border-color: var(--green-mid);
 }
-  <!-- ── Modal image area ────────────────────────────────────────────────────────── -->
+ 
 .ship-modal-image {
   position: relative;
   width: 100%;
@@ -623,7 +622,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  <!-- CRT/scanline/faded treatment -->
+
   filter:
     grayscale(60%)
     brightness(0.55)
@@ -632,7 +631,7 @@
   mix-blend-mode: screen;
   opacity: 0.75;
 }
-<!-- green tint overlay on image -->
+
 .ship-modal-image::before {
   content: '';
   position: absolute;
@@ -642,7 +641,7 @@
   z-index: 1;
   pointer-events: none;
 }
-<!-- vignette -->
+
 .ship-modal-image::after {
   content: '';
   position: absolute;
@@ -656,7 +655,7 @@
   z-index: 2;
   pointer-events: none;
 }
-<!-- placeholder shown when no image -->
+
 .ship-modal-image-placeholder {
   position: relative;
   z-index: 3;
@@ -675,7 +674,7 @@
   margin-bottom: 8px;
   text-shadow: 0 0 12px rgba(0,255,65,0.15);
 }
-  <!-- ── Modal content ───────────────────────────────────────────────────────────── -->
+
 .ship-modal-content {
   padding: 32px 36px 40px;
   position: relative;
