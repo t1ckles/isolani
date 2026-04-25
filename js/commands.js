@@ -3871,7 +3871,8 @@ function cmdClusterDeepscan(args) {
   const loc  = playerState.location;
   const q    = galaxy.quadrants[loc.quadrantIndex];
   if (!q) return '  [ERROR] Location data unavailable.';
-
+  if (!playerState.location) return '  [STATUS] No location fix.';
+  
   const query = args.join(' ').toLowerCase().trim();
   if (!query) return '  [CLUSTERDEEPSCAN] Usage: clusterdeepscan <cluster name>';
 
@@ -4357,6 +4358,7 @@ function cmdDeepscan(args) {
   const loc  = playerState.location;
   const q    = galaxy.quadrants[loc.quadrantIndex];
   if (!q) return '  [ERROR] Location data unavailable.';
+  if (!playerState.location) return '  [STATUS] No location fix.';
 
   // Find target system in current quadrant only
   const query = args.join(' ').toLowerCase().trim();
