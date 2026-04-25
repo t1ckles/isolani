@@ -392,46 +392,54 @@ let playerState = {
 // ── Init ──────────────────────────────────────
 
 function initCommands(seed) {
-  galaxy = generateGalaxy(seed, Naming);
   playerState.galaxySeed = seed;
+
+  // Only generate the galaxy once per run/load.
+  if (!galaxy) {
+    galaxy = generateGalaxy(seed, Naming);
+
+    // Use seeded RNG for station generation so stations are always the same
+    const stationRng = new RNG(RNG.hashSeed(seed + '-stations'));
+
+    galaxy.quadrants.forEach(q => {
+      q.clusters.forEach(cluster => {
+        cluster.systems.forEach(sys => {
+          let stationIndex = 0;
+          sys.bodies.forEach(body => {
+            if (body.hasStation) {
+              body.factionKey = body.factionKey || assignFaction(q.state, stationRng);
+              body.faction = body.faction || FACTIONS[body.factionKey] || FACTIONS.independent;
+              body.stationName = body.stationName || generateStationName(sys.name, body.factionKey, stationIndex, stationRng);
+              body.hasRefinery = (body.hasRefinery !== undefined) ? body.hasRefinery : hasRefinery(body.factionKey);
+              body.refineryGrade = body.refineryGrade || refineryGrade(body.factionKey);
+              body.yieldShare = (body.yieldShare !== undefined)
+                ? body.yieldShare
+                : (body.hasRefinery ? refineryYieldShare(body.factionKey, stationRng) : null);
+              stationIndex++;
+            }
+          });
+        });
+      });
+    });
+  }
 
   // Initialize ship if not already set
   if (!playerState.ship) {
     playerState.ship = createStartingShip(playerState.shipName || 'The Unspoken');
   }
 
-// Use seeded RNG for station generation so stations are always the same
-  const stationRng = new RNG(RNG.hashSeed(seed + '-stations'));
+  // Only set a default location if one does not already exist
+  if (!playerState.location) {
+    const q0      = galaxy.quadrants[0];
+    const cluster = q0.clusters[0];
+    const system  = cluster.systems.find(s => s.isAnchor) ?? cluster.systems[0];
 
-  galaxy.quadrants.forEach(q => {
-    q.clusters.forEach(cluster => {
-      cluster.systems.forEach(sys => {
-        let stationIndex = 0;
-        sys.bodies.forEach(body => {
-          if (body.hasStation) {
-            body.factionKey    = assignFaction(q.state, stationRng);
-            body.faction       = FACTIONS[body.factionKey] || FACTIONS.independent;
-            body.stationName   = generateStationName(sys.name, body.factionKey, stationIndex++, stationRng);
-            body.hasRefinery   = hasRefinery(body.factionKey);
-            body.refineryGrade = refineryGrade(body.factionKey);
-            body.yieldShare    = body.hasRefinery
-              ? refineryYieldShare(body.factionKey, stationRng)
-              : null;
-          }
-        });
-      });
-    });
-  });
-
-  const q0      = galaxy.quadrants[0];
-  const cluster = q0.clusters[0];
-  const system  = cluster.systems.find(s => s.isAnchor) ?? cluster.systems[0];
-
-  playerState.location = {
-    quadrantIndex: 0,
-    clusterName:   cluster.name,
-    systemName:    system.name,
-  };
+    playerState.location = {
+      quadrantIndex: 0,
+      clusterName: cluster.name,
+      systemName: system.name,
+    };
+  }
 }
 
 // ── Helpers ───────────────────────────────────
