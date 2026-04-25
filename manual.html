@@ -2935,9 +2935,11 @@ overlay.addEventListener('click', function(e) {
 });
 
 // Wire up all ship-link elements
-document.querySelectorAll('.ship-link').forEach(el => {
-  el.addEventListener('click', function() {
-    openShipModal(this.dataset.ship);
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.ship-link').forEach(el => {
+    el.addEventListener('click', function() {
+      openShipModal(this.dataset.ship);
+    });
   });
 });
 </script>
