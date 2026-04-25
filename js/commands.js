@@ -2512,116 +2512,112 @@ function cmdShipyard(args) {
     "SHIPYARD You must be docked to access the shipyard.",
     ""
   ].join("\n");
-  
-// Refresh session on every bare shipyard call so prices stay current.
-  if (!args || args.length === 0) shipyardSession = buildShipyardSession();
 
-  if (!shipyardSession || shipyardSession.market.length === 0) return [
-    "SHIPYARD No hull market at this station.",
-    "Ship markets operate at Established and Contested installations.",
-    "Feral and Forbidden space do not maintain registered shipyards.",
-    ""
-  ].join("\n");
-
-  return renderShipMarket(
-    shipyardSession.market,
-    shipyardSession.factionKey,
-    shipyardSession.quadrantState,
-    shipyardSession.tier,
-    playerState.credits,
-    playerState.ship
-  );
+  if (args && args[0] && args[0].toLowerCase() === "exit") {
+    shipyardSession = null;
+    return [
+      "SHIPYARD",
+      "",
+      "Terminal closed."
+    ].join("\n");
   }
- 
+
+  if (!args || args.length === 0) {
+    shipyardSession = buildShipyardSession();
+
+    if (!shipyardSession || shipyardSession.market.length === 0) return [
+      "SHIPYARD No hull market at this station.",
+      "Ship markets operate at Established and Contested installations.",
+      "Feral and Forbidden space do not maintain registered shipyards.",
+      ""
+    ].join("\n");
+
+    return renderShipMarket(
+      shipyardSession.market,
+      shipyardSession.factionKey,
+      shipyardSession.quadrantState,
+      shipyardSession.tier,
+      playerState.credits,
+      playerState.ship
+    );
+  }
+
   const sub = args[0].toLowerCase();
- 
-  // ── shipyard info <#> ──────────────────────
-  if (sub === 'info') {
+
+  if (sub === "info") {
     if (!shipyardSession) shipyardSession = buildShipyardSession();
     if (!shipyardSession || shipyardSession.market.length === 0) {
-      return '  [SHIPYARD] No market data. Type "shipyard" first.';
+      return "SHIPYARD No market data. Type shipyard first.";
     }
- 
-    const index = parseInt(args[1]) - 1;
-    if (isNaN(index) || index < 0 || index >= shipyardSession.market.length) {
-      return [
-        '',
-        '  [SHIPYARD] Usage: shipyard info <1-' + shipyardSession.market.length + '>',
-        '  Type "shipyard" to see the hull list.',
-        '',
-      ].join('\n');
-    }
- 
-    const { def, price } = shipyardSession.market[index];
-    return renderShipSpec(def, price);
+
+    const index = parseInt(args[1], 10) - 1;
+    if (isNaN(index) || index < 0 || index >= shipyardSession.market.length) return [
+      `SHIPYARD Usage shipyard info 1-${shipyardSession.market.length}`,
+      "Type shipyard to see the hull list.",
+      ""
+    ].join("\n");
+
+    const offer = shipyardSession.market[index];
+    return renderShipSpec(offer.def, offer.price);
   }
- 
-  // ── shipyard buy <#> ───────────────────────
-  if (sub === 'buy') {
+
+  if (sub === "buy") {
     if (!shipyardSession) shipyardSession = buildShipyardSession();
     if (!shipyardSession || shipyardSession.market.length === 0) {
-      return '  [SHIPYARD] No market data. Type "shipyard" first.';
+      return "SHIPYARD No market data. Type shipyard first.";
     }
- 
-    const index = parseInt(args[1]) - 1;
-    if (isNaN(index) || index < 0 || index >= shipyardSession.market.length) {
-      return [
-        '',
-        '  [SHIPYARD] Usage: shipyard buy <1-' + shipyardSession.market.length + '>',
-        '  Type "shipyard" to see the hull list.',
-        '',
-      ].join('\n');
-    }
- 
-    const { def, price } = shipyardSession.market[index];
- 
-    // Affordability check
-    if (playerState.credits < price) {
-      return [
-        '',
-        '  [SHIPYARD] Insufficient scrip.',
-        '  ' + def.name + ' costs ' + price + ' CR.',
-        '  You have: ' + playerState.credits + ' CR.',
-        '',
-      ].join('\n');
-    }
- 
-    // Confirmation prompt — this is a big, irreversible decision.
+
+    const index = parseInt(args[1], 10) - 1;
+    if (isNaN(index) || index < 0 || index >= shipyardSession.market.length) return [
+      `SHIPYARD Usage shipyard buy 1-${shipyardSession.market.length}`,
+      "Type shipyard to see the hull list.",
+      ""
+    ].join("\n");
+
+    const offer = shipyardSession.market[index];
+    const def = offer.def;
+    const price = offer.price;
+
+    if (playerState.credits < price) return [
+      "SHIPYARD Insufficient scrip.",
+      `${def.name} costs ${price} CR.`,
+      `You have ${playerState.credits} CR.`,
+      ""
+    ].join("\n");
+
     playerState.pendingTx = {
-      type:   'buy_ship',
+      type: "buyship",
       shipId: def.id,
       price,
-      def,
+      def
     };
- 
-    const currentHull = playerState.ship ? playerState.ship.designation : 'unknown';
- 
+
+    const currentHull = playerState.ship ? playerState.ship.designation : "unknown";
+
     return [
-      '',
-      '  [SHIPYARD] Confirm hull purchase?',
-      '',
-      '  New hull     : ' + def.name + '  (' + def.designation + ')',
-      '  Current hull : ' + currentHull,
-      '  Cost         : ' + price + ' CR',
-      '  Scrip after  : ' + (playerState.credits - price) + ' CR',
-      '',
-      '  Your current weapons and tools will be transferred to',
-      '  the new vessel\'s cargo hold where possible.',
-      '',
-      '  This action cannot be undone.',
-      '  The Guild does not offer trade-in credit.',
-      '',
-      '  Type "yes" to confirm or anything else to cancel.',
-      '',
-    ].join('\n');
+      "SHIPYARD Confirm hull purchase?",
+      "",
+      `New hull ${def.name} (${def.designation})`,
+      `Current hull ${currentHull}`,
+      `Cost ${price} CR`,
+      `Scrip after ${playerState.credits - price} CR`,
+      "",
+      "Your current weapons and tools will be transferred to",
+      "the new vessel's cargo hold where possible.",
+      "",
+      "This action cannot be undone.",
+      "The Guild does not offer trade-in credit.",
+      "",
+      "Type yes to confirm or anything else to cancel.",
+      ""
+    ].join("\n");
   }
- 
+
   return [
-    '',
-    '  [SHIPYARD] Unknown command.',
-    '  Usage: shipyard  |  shipyard info <#>  |  shipyard buy <#>',
-    '',
-  ].join('\n');
+    "SHIPYARD Unknown command.",
+    "Usage: shipyard, shipyard info n, shipyard buy n, shipyard exit",
+    ""
+  ].join("\n");
 }
 
 // ── Armory ────────────────────────────────────
