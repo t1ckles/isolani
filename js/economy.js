@@ -870,7 +870,9 @@ function getShipMarket(factionKey, quadrantState, repTier) {
     .filter(def => {
       if (def.price === 0)                          return false;
       if (def.features && def.features.commissionOnly) return false;
-      if (!def.factionAccess.includes(factionKey)) return false;
+      // Allow ships that match the faction OR are available to independents
+      const hasAccess = def.factionAccess.includes(factionKey) || def.factionAccess.includes('independent');
+      if (!hasAccess) return false;
       return true;
     })
     .map(def => ({
