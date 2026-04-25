@@ -1,0 +1,1178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>APHELION — Galactic Archive</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="icon" type="image/png" href="https://t1ckles.github.io/aphelion/flavicon.png">
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Share+Tech&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --green:      #00ff41;
+      --green-mid:  #00aa2a;
+      --green-dim:  #006618;
+      --green-dark: #003310;
+      --green-deep: #001a08;
+      --orange:     #ff8800;
+      --cyan:       #00e5ff;
+      --bg:         #0a0a0a;
+      --bg-card:    #0d120d;
+      --sidebar-w:  280px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--green-mid);
+      font-family: 'Share Tech Mono', 'Courier New', monospace;
+      font-size: 14px;
+      line-height: 1.8;
+      display: flex;
+      min-height: 100vh;
+      animation: flicker 14s infinite;
+    }
+
+    @keyframes flicker {
+      0%,91%,95%,100% { opacity: 1; }
+      92% { opacity: 0.97; }
+      94% { opacity: 0.99; }
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 9999;
+      background: repeating-linear-gradient(
+        to bottom,
+        transparent 0px, transparent 3px,
+        rgba(0,0,0,0.12) 3px, rgba(0,0,0,0.12) 4px
+      );
+    }
+
+    /* ── Sidebar ─────────────────────────────────────────────── */
+
+    .sidebar {
+      width: var(--sidebar-w);
+      min-height: 100vh;
+      background: var(--bg-card);
+      border-right: 1px solid var(--green-dark);
+      position: fixed;
+      top: 0; left: 0;
+      overflow-y: auto;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar::-webkit-scrollbar { width: 4px; }
+    .sidebar::-webkit-scrollbar-track { background: var(--bg); }
+    .sidebar::-webkit-scrollbar-thumb { background: var(--green-dark); }
+
+    .sidebar-header {
+      padding: 28px 24px 20px;
+      border-bottom: 1px solid var(--green-dark);
+    }
+
+    .sidebar-title {
+      font-size: 18px;
+      letter-spacing: 8px;
+      color: var(--green);
+      text-shadow: 0 0 8px rgba(0,255,65,0.6);
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .sidebar-subtitle {
+      font-size: 9px;
+      letter-spacing: 0.25em;
+      color: var(--green-dark);
+      text-transform: uppercase;
+    }
+
+    .sidebar-nav { padding: 16px 0; flex: 1; }
+
+    .nav-section-label {
+      font-size: 9px;
+      letter-spacing: 0.35em;
+      color: var(--green-dark);
+      text-transform: uppercase;
+      padding: 12px 24px 4px;
+      display: block;
+    }
+
+    .nav-item {
+      display: block;
+      padding: 7px 24px;
+      color: var(--green-dim);
+      text-decoration: none;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      border-left: 2px solid transparent;
+      transition: color 0.15s, border-color 0.15s, background 0.15s;
+      cursor: pointer;
+    }
+
+    .nav-item:hover {
+      color: var(--green-mid);
+      border-left-color: var(--green-dim);
+      background: rgba(0,255,65,0.03);
+    }
+
+    .nav-item.active {
+      color: var(--green);
+      border-left-color: var(--green);
+      background: rgba(0,255,65,0.05);
+    }
+
+    .nav-item .nav-num {
+      color: var(--green-dark);
+      margin-right: 8px;
+      font-size: 10px;
+    }
+
+    .sidebar-footer {
+      padding: 16px 24px;
+      border-top: 1px solid var(--green-dark);
+      font-size: 9px;
+      color: var(--green-dark);
+      letter-spacing: 0.1em;
+      line-height: 1.8;
+    }
+
+    /* ── Main content ────────────────────────────────────────── */
+
+    .main {
+      margin-left: var(--sidebar-w);
+      flex: 1;
+      min-height: 100vh;
+    }
+
+    .chapter {
+      display: none;
+      max-width: 820px;
+      padding: 60px 60px 100px;
+      animation: chapterFade 0.3s ease;
+    }
+
+    .chapter.active { display: block; }
+
+    @keyframes chapterFade {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .chapter-header {
+      border-bottom: 1px solid var(--green-dark);
+      padding-bottom: 28px;
+      margin-bottom: 48px;
+    }
+
+    .chapter-num {
+      font-size: 10px;
+      letter-spacing: 0.4em;
+      color: var(--green-dark);
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .chapter-title {
+      font-size: 28px;
+      letter-spacing: 7px;
+      color: var(--green);
+      text-shadow: 0 0 8px rgba(0,255,65,0.35);
+      text-transform: uppercase;
+      line-height: 1.2;
+      margin-bottom: 12px;
+    }
+
+    .chapter-sub {
+      font-size: 12px;
+      color: var(--green-dim);
+      letter-spacing: 0.1em;
+      font-style: italic;
+    }
+
+    h2 {
+      font-size: 13px;
+      letter-spacing: 0.3em;
+      color: var(--green);
+      text-transform: uppercase;
+      margin: 48px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--green-deep);
+    }
+
+    h3 {
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      color: var(--orange);
+      text-transform: uppercase;
+      margin: 32px 0 10px;
+    }
+
+    p {
+      color: var(--green-mid);
+      font-size: 13px;
+      line-height: 2;
+      max-width: 680px;
+      margin-bottom: 16px;
+    }
+
+    .lore {
+      color: var(--green-dim);
+      font-style: italic;
+      border-left: 2px solid var(--green-dark);
+      padding: 12px 20px;
+      margin: 24px 0;
+      font-size: 12px;
+      line-height: 1.9;
+      max-width: 640px;
+    }
+
+    .classified {
+      color: var(--orange);
+      border-left: 2px solid var(--orange);
+      padding: 12px 20px;
+      margin: 24px 0;
+      font-size: 12px;
+      line-height: 1.8;
+      max-width: 640px;
+    }
+
+    .classified strong {
+      display: block;
+      letter-spacing: 0.15em;
+      margin-bottom: 6px;
+    }
+
+    .divider {
+      border-top: 1px solid var(--green-dark);
+      margin: 40px 0;
+    }
+
+    .data-block {
+      background: var(--bg-card);
+      border: 1px solid var(--green-dark);
+      padding: 20px 24px;
+      margin: 20px 0;
+      font-size: 12px;
+      max-width: 640px;
+    }
+
+    .data-block .data-title {
+      font-size: 10px;
+      letter-spacing: 0.3em;
+      color: var(--green);
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    .data-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+      border-bottom: 1px solid var(--green-deep);
+      color: var(--green-dim);
+    }
+
+    .data-row:last-child { border-bottom: none; }
+    .data-row span:last-child { color: var(--green-mid); }
+
+    .timeline {
+      margin: 24px 0;
+      max-width: 680px;
+    }
+
+    .timeline-entry {
+      display: flex;
+      gap: 24px;
+      margin-bottom: 20px;
+      align-items: flex-start;
+    }
+
+    .timeline-year {
+      font-size: 11px;
+      color: var(--cyan);
+      letter-spacing: 0.1em;
+      min-width: 80px;
+      padding-top: 2px;
+      flex-shrink: 0;
+    }
+
+    .timeline-content {
+      font-size: 12px;
+      color: var(--green-dim);
+      line-height: 1.8;
+      border-left: 1px solid var(--green-dark);
+      padding-left: 20px;
+    }
+
+    .timeline-content strong {
+      color: var(--green-mid);
+      display: block;
+      margin-bottom: 2px;
+      letter-spacing: 0.05em;
+    }
+
+    .faction-entry {
+      border: 1px solid var(--green-dark);
+      padding: 20px 24px;
+      margin: 16px 0;
+      max-width: 680px;
+    }
+
+    .faction-entry .fe-name {
+      font-size: 12px;
+      letter-spacing: 0.2em;
+      color: var(--green);
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .faction-entry .fe-tag {
+      font-size: 10px;
+      color: var(--orange);
+      letter-spacing: 0.2em;
+      margin-bottom: 14px;
+    }
+
+    .faction-entry p {
+      font-size: 12px;
+      color: var(--green-dim);
+      max-width: none;
+      margin-bottom: 8px;
+    }
+
+    code {
+      color: var(--cyan);
+      font-family: 'Share Tech Mono', monospace;
+    }
+
+    /* scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--green-dark); }
+    ::-webkit-scrollbar-thumb:hover { background: var(--green-dim); }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════ SIDEBAR -->
+
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <span class="sidebar-title">APHELION</span>
+    <span class="sidebar-subtitle">Galactic Archive — Restricted Distribution</span>
+  </div>
+
+  <nav class="sidebar-nav">
+
+    <span class="nav-section-label">Cosmology</span>
+    <a class="nav-item active" onclick="showChapter('c1')">
+      <span class="nav-num">01</span>In the Beginning, Collapse
+    </a>
+    <a class="nav-item" onclick="showChapter('c2')">
+      <span class="nav-num">02</span>The Structure of Known Space
+    </a>
+    <a class="nav-item" onclick="showChapter('c3')">
+      <span class="nav-num">03</span>Veydrite and the Fold
+    </a>
+
+    <span class="nav-section-label">History</span>
+    <a class="nav-item" onclick="showChapter('c4')">
+      <span class="nav-num">04</span>The Founding Era
+    </a>
+    <a class="nav-item" onclick="showChapter('c5')">
+      <span class="nav-num">05</span>The Collapse Cycles
+    </a>
+    <a class="nav-item" onclick="showChapter('c6')">
+      <span class="nav-num">06</span>The Current Age
+    </a>
+
+    <span class="nav-section-label">Factions</span>
+    <a class="nav-item" onclick="showChapter('c7')">
+      <span class="nav-num">07</span>The Assayer's Guild
+    </a>
+    <a class="nav-item" onclick="showChapter('c8')">
+      <span class="nav-num">08</span>Pelk Logistics
+    </a>
+    <a class="nav-item" onclick="showChapter('c9')">
+      <span class="nav-num">09</span>Colonial Colonies Command
+    </a>
+    <a class="nav-item" onclick="showChapter('c10')">
+      <span class="nav-num">10</span>The Feral Question
+    </a>
+
+    <span class="nav-section-label">Belief & Culture</span>
+    <a class="nav-item" onclick="showChapter('c11')">
+      <span class="nav-num">11</span>Religion and the Void
+    </a>
+    <a class="nav-item" onclick="showChapter('c12')">
+      <span class="nav-num">12</span>Contractor Culture
+    </a>
+    <a class="nav-item" onclick="showChapter('c13')">
+      <span class="nav-num">13</span>Language and Naming
+    </a>
+
+    <span class="nav-section-label">The Unknown</span>
+    <a class="nav-item" onclick="showChapter('c14')">
+      <span class="nav-num">14</span>The Xeno Record
+    </a>
+    <a class="nav-item" onclick="showChapter('c15')">
+      <span class="nav-num">15</span>Forbidden Space
+    </a>
+    <a class="nav-item" onclick="showChapter('c16')">
+      <span class="nav-num">16</span>Notable Wrecks & Stations
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    VEYDRITE ASSAYER'S GUILD<br>
+    Galactic Archive Division<br>
+    Guild Standard Year 2302<br>
+    Classification: Contractor Access
+  </div>
+</aside>
+
+<!-- ═══════════════════════════════ MAIN CONTENT -->
+
+<main class="main">
+
+  <!-- ═══ CHAPTER 1 ═══ -->
+  <div class="chapter active" id="c1">
+    <div class="chapter-header">
+      <div class="chapter-num">CHAPTER 01 — COSMOLOGY</div>
+      <div class="chapter-title">In the Beginning,<br>Collapse</div>
+      <div class="chapter-sub">On the nature of civilization in a decaying universe</div>
+    </div>
+
+    <p>The galaxy does not end. This is the first and most important thing to understand about the current age. The galaxy does not end — it contracts. It pulls inward. Systems go dark not because they are destroyed but because they are forgotten, because the infrastructure that connected them to the network has failed or been abandoned, because the people who maintained it have moved on or died or simply stopped.</p>
+
+    <p>This is not catastrophe. Catastrophe is sudden. What is happening to known space is geological — slow, grinding, and essentially irreversible on any timescale a person can meaningfully inhabit. The Guild has been measuring it for two centuries. The trend line does not change.</p>
+
+    <div class="lore">The first thing a new assessor learns at the Guild training facility on Solace Reach is how to read a decay curve. The second thing they learn is that the decay curve for the current cycle matches the decay curve for the previous cycle, and the one before that, with a margin of error so small that the senior assessors stopped publishing it in 2287 because it was making the junior assessors despondent. The third thing they learn is that this is considered normal, and that their job is to document it accurately, not to fix it.</div>
+
+    <div class="divider"></div>
+
+    <h2>What Collapse Actually Means</h2>
+
+    <p>Collapse is a quadrant state designation, not a description of catastrophic failure. A Collapsed quadrant still has stars. It still has planets. It may still have people — feral settlements scratching existence from the margins, independent operators running routes that no longer appear on official charts, small communities that have opted out of the network entirely and are, by most measures, managing. What it does not have is infrastructure. No Guild stations. No Pelk depots. No CCC patrol presence. No fold cell supply chain. No official anything.</p>
+
+    <p>The quadrant state system runs from Established through Contested, Declining, and Collapsed, with Isolated and Forbidden as edge cases that the standard model does not handle cleanly. Established space has everything. Collapsed space has salvage. Everything in between is a gradient of decay measured in station operational status, encounter frequency, and the price of fuel.</p>
+
+    <div class="data-block">
+      <div class="data-title">Quadrant State Progression — Observed Rates</div>
+      <div class="data-row"><span>Established → Contested</span><span>12% per generation, pressure-dependent</span></div>
+      <div class="data-row"><span>Contested → Declining</span><span>28% per generation</span></div>
+      <div class="data-row"><span>Declining → Collapsed</span><span>40% per generation (Collapsed neighbor present)</span></div>
+      <div class="data-row"><span>Collapsed → Declining</span><span>3% per generation (recovery, rare)</span></div>
+      <div class="data-row"><span>Isolated → any state</span><span>unknown — insufficient data</span></div>
+    </div>
+
+    <p>The acceleration effect is the thing that makes the collapse cycle self-sustaining. A Collapsed quadrant does not just sit there and be collapsed. It pulls. The gravitational metaphor is Guild shorthand that has become standard: collapse creates a gravity well in the civilization map that draws neighboring states toward it. Declining space declines faster when it borders Collapsed space. Contested space destabilizes faster when Declining neighbors begin to tip.</p>
+
+    <div class="divider"></div>
+
+    <h2>The Recovery Problem</h2>
+
+    <p>The question that Guild economists have been failing to answer for approximately eighty years is why recovery does not happen at a meaningful rate. The mechanisms are understood. New stations can be built. Fold cell supply chains can be re-established. Feral settlements can be brought back into the network. All of this is technically possible. None of it happens at the rate required to reverse the trend.</p>
+
+    <p>The answer, when the economists are being honest about it, is capital. Rebuilding infrastructure in Collapsed space requires more investment than the rebuilt infrastructure can return in any reasonable timeframe. The galaxy is not getting poorer — wealth still exists, still concentrates, still moves through the network. But the people who have it have run the numbers, and the numbers say that investment in Established space generates better returns than investment in Collapsed space, and that is where the capital goes.</p>
+
+    <div class="lore">A senior Guild economist named Veth Orandis published a paper in 2291 arguing that the collapse cycle was not a failure of will or resources but a failure of incentive structure — that the galaxy was, in a meaningful sense, choosing to collapse because the alternative was less profitable. The paper was peer-reviewed and accepted. It is the most widely cited economic document in Guild archive history. Nothing has changed as a result of it. Orandis retired in 2298 and filed no further papers.</div>
+
+    <div class="divider"></div>
+
+    <h2>Why Contractors Exist</h2>
+
+    <p>The gap between what large institutions can efficiently reach and what the network needs to survive is exactly the gap that independent contractors fill. A Guild survey vessel operating on institutional budget can cover Established and Contested space. It cannot operate economically in Declining space, where the return on survey data does not justify the operational cost. It certainly cannot operate in Collapsed space, where the risk profile exceeds any institutional mandate.</p>
+
+    <p>An independent contractor operating on their own account has different math. Their costs are lower. Their risk tolerance is, by self-selection, higher. And they carry all the operational risk themselves, which means the Guild carries none of it. From the Guild's perspective, independent contractors are an extraordinarily efficient way to gather data and commodities from the parts of the galaxy that institutional operations cannot reach. From the contractor's perspective, the Guild is a buyer who never runs out of things to buy.</p>
+
+    <p>This arrangement has persisted for forty years. It will persist until the galaxy stabilizes or until there are no more contractors. The Guild considers both outcomes equally unlikely in the near term.</p>
+  </div>
+
+  <!-- ═══ CHAPTER 2 ═══ -->
+  <div class="chapter" id="c2">
+    <div class="chapter-header">
+      <div class="chapter-num">CHAPTER 02 — COSMOLOGY</div>
+      <div class="chapter-title">The Structure<br>of Known Space</div>
+      <div class="chapter-sub">Quadrants, clusters, systems, and the corridors between them</div>
+    </div>
+
+    <p>Known space is not a map. It is a record of what has been found. The distinction matters. A map implies completeness — edges, boundaries, a claim that what is shown is what exists. The Guild's astrographic record makes no such claim. It shows what has been surveyed, what has been confirmed, what has been named. The rest of the galaxy exists whether it appears in the record or not.</p>
+
+    <div class="divider"></div>
+
+    <h2>The Quadrant System</h2>
+
+    <p>The 42 registered quadrants are not geometric divisions of space. They are administrative designations — clusters of star systems near enough to each other and connected by enough fold corridors to be treated as a coherent region for economic and governance purposes. Some quadrants contain dozens of systems across multiple clusters. Some contain fewer than ten, widely scattered, connected by long and expensive corridors.</p>
+
+    <p>Quadrants are named by the first registered survey team to document them. The naming conventions reflect the era of documentation — older quadrants carry names from the Founding Era's more formal register, while post-Collapse quadrants tend toward the functional shorthand that characterizes contemporary Guild naming practice. A quadrant called the Shattered Verge was named by someone who saw what they were looking at and described it. A quadrant called Guild Administrative Reach Seven was named by a committee.</p>
+
+    <div class="lore">The quadrant numbering system is sequential by registration date, which means the numbers tell you nothing useful about geography. Quadrant 1 and Quadrant 42 may be adjacent or they may be separated by thirty fold transits. Contractors who assume the numbers imply proximity have made expensive mistakes in both directions.</div>
+
+    <div class="divider"></div>
+
+    <h2>Clusters</h2>
+
+    <p>Within each quadrant, star systems are organized into clusters — groupings of two to five systems close enough to transit between using conventional drives and cluster-jump technology, without requiring fold cell expenditure. A cluster jump uses fuel and time. It does not use fold cells. This makes within-cluster movement cheap and between-cluster movement expensive, which shapes contractor economics in ways that compound over a career.</p>
+
+    <p>Clusters have names that typically derive from a prominent feature — a stellar class, a notable wreck, a geographic metaphor applied to the sensor returns. The Guild names clusters during quadrant registration. Feral settlements in Collapsed space have their own names for the same clusters, which do not appear in the Guild record and which are sometimes significantly more accurate descriptions of local conditions.</p>
+
+    <div class="divider"></div>
+
+    <h2>The Corridor Network</h2>
+
+    <p>Fold corridors are not tunnels. They are not physical structures. They are regions of spacetime where Veydrite density differentials have been precisely mapped, allowing a Fold Drive to calculate a compression geometry without generating it from scratch. A corridor is, in the most accurate technical description, a pre-solved equation — the work of calculating the fold has already been done, and a vessel with the right drive and enough cells can use that solution.</p>
+
+    <p>Three corridor types exist in the registered network. Highway corridors are the oldest and most precisely mapped — some date to the Founding Era, when survey investment was at its historical peak. Primary corridors are the standard network, documented through normal survey operations over the past century. Secondary corridors are newer, less precise, more expensive to traverse, and occasionally unreliable in ways that are difficult to predict before the fold is initiated.</p>
+
+    <div class="data-block">
+      <div class="data-title">Corridor Classification</div>
+      <div class="data-row"><span>Highway</span><span>Pre-calculated geometry — 2 cells. Oldest network. Highly stable.</span></div>
+      <div class="data-row"><span>Primary</span><span>Standard charted fold — 3 cells. Core network. Reliable.</span></div>
+      <div class="data-row"><span>Secondary</span><span>Recent documentation — 4 cells. Variable stability.</span></div>
+      <div class="data-row"><span>Uncharted</span><span>No mapping — 12 cells overdrive. Significant failure risk.</span></div>
+    </div>
+
+    <p>Every galaxy generated from a registered seed contains three to four highway corridors. Their location is not random — the highway network follows historically high-traffic routes, which follow resource-rich stellar regions, which follow Veydrite distribution patterns that derive from the underlying physics of stellar formation. Two contractors in different seed galaxies will find highways in different places, but those places will share the same underlying logic.</p>
+
+    <div class="divider"></div>
+
+    <h2>Dark Space</h2>
+
+    <p>Approximately 67% of fold corridor connections are dark at registration — known to exist from gravimetric surveys, not yet documented with sufficient precision to calculate fold geometry. Dark corridors show up on sensor sweeps as signature readings without names or destinations. They are reachable only by overdrive fold, at twelve cells and significant risk.</p>
+
+    <p>The process of converting dark corridors to charted corridors is one of the primary economic drivers of the contractor network. Every fold into an uncharted quadrant generates corridor data. Every deepscan operation detects new corridor signatures. The galaxy reveals itself incrementally, and the Guild pays for each increment.</p>
+
+    <div class="lore">There are corridors in the dark network that experienced navigators treat as known regardless of their chart status. Routes that experienced pilots fly by feel, by fuel consumption patterns, by the particular quality of the exit stress they generate. This knowledge is not in the Guild archive. It is transmitted directly between pilots who trust each other, and it dies with those who do not pass it on. The Guild considers this an information security problem. The pilots who hold this knowledge consider it a reasonable response to operating in a galaxy where the Guild charges corridor documentation fees.</div>
+  </div>
+
+  <!-- ═══ CHAPTER 3 ═══ -->
+  <div class="chapter" id="c3">
+    <div class="chapter-header">
+      <div class="chapter-num">CHAPTER 03 — COSMOLOGY</div>
+      <div class="chapter-title">Veydrite<br>and the Fold</div>
+      <div class="chapter-sub">The physics and politics of the only thing that matters</div>
+    </div>
+
+    <p>Veydrite Dust is not rare. This is the fact that the Guild does not advertise and that most people in known space do not fully understand. Veydrite occurs in trace quantities around a significant fraction of stellar bodies — it is the rare concentrations, the extractable deposits, the sites where geological and stellar processes have produced densities sufficient for commercial recovery, that are scarce. The material itself is everywhere. The useful amounts of it are not.</p>
+
+    <div class="divider"></div>
+
+    <h2>What Veydrite Is</h2>
+
+    <p>Veydrite is a crystalline compound that does not occur through any known synthetic process and does not decay under any conditions that have been reproducible in laboratory settings. Its mass is verified and consistent. Its chemical composition is documented. Its internal crystalline structure is not fully understood — Guild physicists have been studying it for two centuries and the current consensus is that the structure contains information that current measurement technology cannot read.</p>
+
+    <p>This last point is not widely published. The Guild considers it a research matter, not a public disclosure matter. The contractors who find anomalous Veydrite deposits — the ones that scan wrong, that weigh wrong, that behave unexpectedly during emergency refinement — are filing reports that go into a classification tier that most contractors do not know exists.</p>
+
+    <div class="classified">
+      <strong>GUILD ARCHIVE — RESTRICTED ACCESS</strong>
+      The following is not contractor-accessible information. It is included in this archive because this archive is itself a restricted document. Veydrite crystalline structure analysis has produced seventeen distinct structural variants since systematic study began in 2089. Fourteen of these variants have known stellar formation explanations. Three do not. The three anomalous variants share a structural property that Guild physicists describe, in internal documentation, as "intentional." This word appears in seventeen separate internal research documents. It has not been explained further in any of them.
+    </div>
+
+    <div class="divider"></div>
+
+    <h2>The Fold Drive — How It Actually Works</h2>
+
+    <p>The official explanation of Fold Drive mechanics — that it compresses spacetime geometry by exploiting Veydrite density differentials — is accurate as far as it goes. What it does not explain is why Veydrite produces the effect it produces, which is the question that has occupied Guild physicists since the first experimental fold in 2091 and which remains, in the honest assessment of current researchers, unanswered.</p>
+
+    <p>The practical understanding is sufficient for operation. Veydrite, when processed to the refined standard that fold cells represent, generates a measurable spacetime density differential when energized by a drive system. The differential can be exploited to compress the geometry between two points until those points are, for the duration of the fold, effectively adjacent. Transit occurs. Geometry releases. The vessel arrives.</p>
+
+    <p>What happens during the transit — the 12 seconds of the standard fold countdown, the 18 seconds of the overdrive — is not observable from outside the vessel. The vessel is not, strictly speaking, anywhere during that interval. The Guild's official position is that this is a navigational artifact with no meaningful physical implications. The Guild's unofficial position, which senior physicists sometimes share with each other in contexts that are not formally recorded, is that they are not certain this is true.</p>
+
+    <div class="lore">Pilots who have survived bad folds describe the experience differently from pilots who have only experienced clean folds. The clean fold is nothing — a countdown, a transition, arrival. The bad fold is something that pilots find difficult to articulate and that the Guild does not encourage them to try. The most common description, across hundreds of incident reports, is that the bad fold feels longer than 18 seconds from the inside. The second most common description is that it does not feel like nothing.</div>
+
+    <div class="divider"></div>
+
+    <h2>Emergency Refinement</h2>
+
+    <p>The emergency reserve tank on the Light Surveyor is the only system in the registered ship registry that accepts raw, unrefined Veydrite as drive fuel. This is not because the technology is unavailable for other hulls. It is because the engineers who designed the Light Surveyor made a specific decision that the other hull designers did not: they decided that a solo contractor in Collapsed space needed a last resort more than they needed the operational efficiency that comes from refusing to accept unrefined material.</p>
+
+    <p>Raw Veydrite fed into an emergency refinement system produces approximately one cell-equivalent per ten kilograms. The waste products are significant. The drive wear is real. The fold geometry produced by emergency-refined cells is measurably less precise than standard cell geometry, which is why bad fold outcomes are more likely when emergency cells are used. None of this changes the fundamental value of the system, which is that it exists when nothing else does.</p>
+
+    <div class="divider"></div>
+
+    <h2>Veydrite as Currency</h2>
+
+    <p>The decision to base the galactic economy on Veydrite Dust rather than on any synthetic currency system was made during the Founding Era and has not been seriously revisited since, primarily because every alternative proposed has had a fatal flaw that Veydrite does not: it cannot be counterfeited, cannot be inflated, cannot be issued by any authority, and does not require institutional trust to function as a store of value. You either have it or you do not. Its mass is verifiable by any scale. Its authenticity is verifiable by any Guild assessor.</p>
+
+    <p>The tension this creates — between Veydrite as a propulsion resource and Veydrite as a monetary resource — is the central economic fact of contractor life. Every kilogram sold is a kilogram that cannot be used for an emergency fold. Every kilogram kept for the tank is a kilogram that cannot pay a docking fee. The contractors who manage this tension well tend to survive. The ones who resolve it by prioritizing one resource over the other tend not to.</p>
+  </div>
+
+  <!-- ═══ CHAPTER 4 ═══ -->
+  <div class="chapter" id="c4">
+    <div class="chapter-header">
+      <div class="chapter-num">CHAPTER 04 — HISTORY</div>
+      <div class="chapter-title">The Founding Era</div>
+      <div class="chapter-sub">2041 — 2180 GSY: When the galaxy was being built</div>
+    </div>
+
+    <p>The Founding Era is the period in which the current infrastructure of known space was constructed. It is also the period against which all subsequent eras are measured and found wanting. The stations built during the Founding Era are the ones that are still operational. The corridors mapped during the Founding Era are the ones that became highways. The institutions founded during the Founding Era are the ones that still exist.</p>
+
+    <div class="divider"></div>
+
+    <h2>The Expansion</h2>
+
+    <p>The Founding Era began approximately with the first successful Fold Drive test in 2041 and ended, by most historical conventions, around 2180, when the rate of new system registration peaked and then began a long decline that has continued to the present. The intervening century and a half was characterized by an expansion rate that has not been approached before or since — new quadrants being registered at a pace that required the Guild to hire additional assessors faster than the training program could produce them.</p>
+
+    <div class="timeline">
+      <div class="timeline-entry">
+        <span class="timeline-year">2041</span>
+        <div class="timeline-content">
+          <strong>First Successful Fold Transit</strong>
+          Experimental vessel Verassi completes the first confirmed inter-system fold using prototype drive technology. Transit duration: 47 seconds. Crew: 3. Destination: correctly reached. The drive consumed 340 kg of raw Veydrite. The modern equivalent costs approximately 3 cells.
+        </div>
+      </div>
+      <div class="timeline-entry">
+        <span class="timeline-year">2051</span>
+        <div class="timeline-content">
+          <strong>Guild Foundation</strong>
+          The Assayer's Guild is chartered as a neutral monetary and cartographic authority. Founding document runs to 847 pages. The core principle — Guild neutrality as a precondition for universal acceptance — is contained in a single paragraph on page 3. The remaining 846 pages are administrative structure.
+        </div>
+      </div>
+      <div class="timeline-entry">
+        <span class="timeline-year">2067</span>
+        <div class="timeline-content">
+          <strong>The Standardization Accords</strong>
+          Pelk Logistics, the Colonial Authority, and the Guild sign the Standardization Accords, agreeing on fold cell specifications, corridor documentation protocols, and Veydrite assay standards. The Accords are the legal foundation of the current economic system. They have been amended 340 times. The core specifications have not changed.
+        </div>
+      </div>
+      <div class="timeline-entry">
+        <span class="timeline-year">2089</span>
+        <div class="timeline-content">
+          <strong>Highway Corridor Documentation</strong>
+          The Guild completes mapping of the first four highway corridors, establishing the high-efficiency fold network that still forms the backbone of inter-quadrant transit. The mapping project took eleven years and consumed more fold cells than any other single operation in recorded history.
+        </div>
+      </div>
+      <div class="timeline-entry">
+        <span class="timeline-year">2134</span>
+        <div class="timeline-content">
+          <strong>Peak Registration</strong>
+          The highest single-year rate of new system registration in Guild history. 847 systems registered in 12 months. The Guild assessor corps reaches its historical maximum of 4,200 active personnel. Current active personnel: 340.
+        </div>
+      </div>
+      <div class="timeline-entry">
+        <span class="timeline-year">2180</span>
+        <div class="timeline-content">
+          <strong>End of the Founding Era</strong>
+          Registration rates begin their sustained decline. The first Declining quadrant is officially designated. Guild economists publish the first collapse cycle projection. The projection is accurate to within 4% of current observed rates.
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <h2>What Was Built</h2>
+
+    <p>The infrastructure legacy of the Founding Era is the frame on which the current age hangs. The highway corridors. The major Guild stations at Solace Reach and three other administrative centers that remain operational. The Standardization Accords that still govern fold cell specifications. The contractor registration system. The Veydrite assay standard. None of these have been replaced or significantly improved. They have been maintained, imperfectly, against the ongoing pressure of the collapse cycle.</p>
+
+    <p>The Founding Era also produced the Light Surveyor hull — the oldest continuously manufactured ship class in the registered registry, designed for solo contractor operations in resource-constrained environments. The engineers who designed it understood what they were building it for. The era in which it would be needed most was already visible on the projection curves.</p>
+
+    <div class="lore">There is a persistent tradition among Guild archivists of referring to the Founding Era as "when people still believed it would work." This is not official terminology. It is not discouraged either. The senior archivist who first used the phrase, in an internal document in 2267, appended a note: "I do not mean this as a criticism of the founders. I mean it as an observation about the difference between building something and maintaining it. They were extraordinary builders. We are mediocre maintainers. The gap between those two things is the collapse cycle."</div>
+  </div>
+
+  <!-- ═══ CHAPTER 5 ═══ -->
+  <div class="chapter" id="c5">
+    <div class="chapter-header">
+      <div class="chapter-num">CHAPTER 05 — HISTORY</div>
+      <div class="chapter-title">The Collapse Cycles</div>
+      <div class="chapter-sub">On the recurring nature of civilizational decline</div>
+    </div>
+
+    <p>The current collapse is not the first. This fact is documented in Guild archive records, in Founding Era survey data that predates the current civilization, and in the ruins that independent contractors find in systems that should not have ruins — systems too isolated, too recent, too far from any documented historical expansion to have been settled by any civilization on record.</p>
+
+    <div class="divider"></div>
+
+    <h2>The Previous Cycles</h2>
+
+    <p>Guild archaeologists — a division so small and underfunded that it is technically a sub-department of the Survey Certification office — have documented evidence of at least two prior civilizational expansions in known space. Neither left surviving institutions. Both left infrastructure: fold corridor signatures that predate the Founding Era's mapping, construction in ruin sites that uses materials not in the current manufacturing record, and, in three documented cases, systems where the stellar bodies show evidence of deliberate modification.</p>
+
+    <p>The modification evidence is the part that the Guild does not discuss publicly. Stars do not modify themselves. Planets do not reshape themselves into configurations that optimize resource extraction. Someone did these things. The Guild's official position is that this is a subject of ongoing archaeological research. The Guild's actual position, held by the seven people who have read the full classified research file, is considerably more alarming.</p>
+
+    <div class="classified">
+      <strong>ARCHIVE NOTE — CLASSIFICATION TIER 4</strong>
+      The three systems with confirmed stellar modification evidence are designated Omega-class survey sites. They are located in Forbidden quadrants. Access requires Director-level authorization. The modification patterns in all three systems are consistent with each other. They are not consistent with any technology in the current or historically documented record. The age estimates for the modifications range from 40,000 to 400,000 years. The range is wide because the dating methods disagree with each other in ways that the archaeologists describe as "methodologically troubling."
+    </div>
+
+    <div class="divider"></div>
+
+    <h2>The Cycle Pattern</h2>
+
+    <p>What the Guild's collapse cycle models show — when the models are run against the archaeological record rather than just the current data — is a pattern. Expansion. Peak. Decline. Collapse. Recovery, partial and slow. Expansion again, but never quite to the previous peak. Each cycle slightly smaller than the last. Each collapse slightly faster. Each recovery slightly less complete.</p>
+
+    <p>The question this pattern raises — whether it is converging on something, whether there is a terminal state toward which each cycle moves — is one that Guild economists and philosophers have debated for decades without resolution. The honest answer is that the data suggests yes but cannot confirm it, and that the timescale on which a terminal state would become observable is longer than any institution currently operating expects to survive.</p>
+
+    <div class="lore">A contractor named Sela Vorn filed an astrographic survey report in 2289 that included, in the free-text notes field, the observation that three of the ruin sites she had surveyed in a single campaign showed construction techniques from three different civilizational periods and that none of the three periods matched the current era. Her report was flagged, reviewed, and the notes field was reclassified. She received a standard survey payment. She was not told why the notes were reclassified. She filed a query. The query was not answered. She stopped filing queries. She is currently operating in the outer clusters. Guild track shows she has not repeated the observation in any subsequent report.</div>
+
+    <div class="divider"></div>
+
+    <h2>The Current Cycle in Context</h2>
+
+    <p>The current collapse cycle began, by the most conservative dating, approximately 120 years ago. The rate of decline is consistent with the modeled pattern from previous cycles. The current cycle is notable for two features that distinguish it from the modeled norm: the rate of Veydrite consumption has increased significantly due to the adoption of fold drive technology as the primary transit method, which means the resource that drives economic activity is being consumed faster than in previous cycles. And something in the outer reaches of the known network — in Forbidden space, in the quadrants that appear on deep sensor sweeps but not on any chart — is generating readings that do not match any pattern in the archaeological record.</p>
+
+    <p>The Guild is aware of both features. It is managing the first through standard economic mechanisms. It is not discussing the second.</p>
+  </div>
+
+  <!-- ═══ CHAPTER 6 ═══ -->
+  <div class="chapter" id="c6">
+    <div class="chapter-header">
+      <div class="chapter-num">CHAPTER 06 — HISTORY</div>
+      <div class="chapter-title">The Current Age</div>
+      <div class="chapter-sub">Guild Standard Year 2230 — 2302: The age you are living in</div>
+    </div>
+
+    <p>The current age has no formal name because no one has agreed on when it began, and naming an era while you are inside it requires a confidence about its eventual shape that the people living through it typically do not possess. The Guild's internal designation is the Late Registered Period. Contractors call it the slow dark, when they call it anything at all.</p>
+
+    <div class="divider"></div>
+
+    <h2>The Institutional Landscape</h2>
+
+    <p>Three major institutions remain operational in 2302. The Guild, which has contracted significantly from its Founding Era size but retains its core functions. Pelk Logistics, which has grown during the collapse cycle by filling infrastructure gaps that retreating colonial authority left behind. And the Colonial Colonies Command, which is a diminished remnant of what was once a governing military authority but which still maintains patrol presence in Established and Contested space and still has the hardware to enforce that presence.</p>
+
+    <p>These three institutions do not trust each other. They have not trusted each other for decades. They cooperate because cooperation is more profitable than conflict and because each of them understands that the collapse of any one of the three would accelerate pressure on the remaining two. This is not partnership. It is mutual deterrence, practiced at the institutional level, with lawyers instead of weapons.</p>
+
+    <div class="divider"></div>
+
+    <h2>The Recent Record</h2>
+
+    <div class="timeline">
+      <div class="timeline-entry">
+        <span class="timeline-year">2230</span>
+        <div class="timeline-content">
+          <strong>The Pelk Expansion</strong>
+          Pelk Logistics begins systematic acquisition of failing independent stations across Contested and Declining space. Over the next twenty years, Pelk establishes a logistics network that rivals the Guild's in geographic reach, though not in institutional authority. The Guild registers a formal complaint. Pelk settles it with a ten-year corridor documentation contract.
+        </div>
+      </div>
+      <div class="timeline-entry">
+        <span class="timeline-year">2251</span>
+        <div class="timeline-content">
+          <strong>CCC Reorganization</strong>
+          The Colonial Colonies Command undergoes its third major reorganization, consolidating from seven regional commands to three. The eastern clusters lose patrol coverage for approximately four years. Piracy rates in those clusters increase by 340% during the gap and do not fully recover after coverage is restored.
+        </div>
+      </div>
+      <div class="timeline-entry">
+        <span class="timeline-year">2267</span>
+        <div class="timeline-content">
+          <strong>The Ash Emergence</strong>
+          First confirmed report of NPCP contamination — the Null-Phase Crystalline Phenomenon that contractors call the Ash — in an active extraction site. The Guild issues a field protocol within six months. The protocol is followed inconsistently. The Ash continues to spread in affected systems at rates that the protocol does not adequately address.
+        </div>
+      </div>
+      <div class="timeline-entry">
+        <span class="timeline-year">2289</span>
+        <div class="timeline-content">
+          <strong>Pelk-Guild Publication Collapse</strong>
+          The joint publication agreement between Pelk and the Guild that produced the ship registry and several other contractor reference documents expires and is not renewed. Both parties cite the other's breach of good faith. The underlying dispute involves corridor documentation rights in three quadrants that both institutions claim survey priority over. It has not been resolved.
+        </div>
+      </div>
+      <div class="timeline-entry">
+        <span class="timeline-year">2295</span>
+        <div class="timeline-content">
+          <strong>Forbidden Space Incidents</strong>
+          Seven contractor vessels report anomalous contacts in Forbidden quadrant surveys over an 18-month period. All seven reports are reclassified within weeks of filing. Three of the seven contractors subsequently withdraw from active registration. The remaining four continue operating. None of them have discussed the reclassification publicly.
+        </div>
+      </div>
+      <div class="timeline-entry">
+        <span class="timeline-year">2302</span>
+        <div class="timeline-content">
+          <strong>Current Year</strong>
+          42 registered quadrants. Approximately 340 active Guild assessors. Contractor registration numbers are not publicly disclosed but are estimated at several thousand active operators. The decay curve continues on its projected path. The Forbidden space anomaly count has increased for the third consecutive year.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ CHAPTER 7 ═══ -->
+  <div class="chapter" id="c7">
+    <div class="chapter-header">
+      <div class="chapter-num">CHAPTER 07 — FACTIONS</div>
+      <div class="chapter-title">The Assayer's Guild</div>
+      <div class="chapter-sub">On the institution that runs the network you depend on</div>
+    </div>
+
+    <p>The Guild is not a government. It has never claimed to be a government. It has, at various points in its history, performed functions that governments typically perform — currency certification, territorial dispute arbitration, infrastructure maintenance, record-keeping that affects the legal status of persons and vessels — but it has consistently refused the characterization. The Guild's position is that it is a service provider. The fact that no one can operate in known space without its services is, the Guild maintains, a market condition rather than a governance relationship.</p>
+
+    <div class="divider"></div>
+
+    <h2>Structure</h2>
+
+    <p>The Guild operates through a Director system — a small senior leadership group that sets policy and manages institutional relationships, supported by a larger body of Guild Assessors who handle operational functions. Assessors are the field personnel: the survey certification officers, the Veydrite assayers, the corridor documentation specialists, the contractor registration and reputation management staff.</p>
+
+    <p>The Director tier is not elected. It is not appointed by any external authority. Directors are selected by the existing Director group through a process that the Guild describes as "merit-based consensus review" and that external observers describe as "opaque." The current Director group has been in place for eleven years. No transitions have occurred in that time. The Guild considers this stability. External observers consider it stagnation. Both assessments are probably accurate.</p>
+
+    <div class="divider"></div>
+
+    <h2>The Neutrality Doctrine</h2>
+
+    <p>Guild neutrality is the institution's most valuable asset and its most carefully maintained fiction. The Guild does not take sides. It does not favor Pelk over CCC, does not favor Established quadrants over Collapsed ones, does not discriminate between contractors based on their faction standings or operational history. Every contractor is a registered operator. Every registered operator receives the same access to Guild services at the same prices, adjusted only for standing tier.</p>
+
+    <p>The fiction part is that neutrality is not the same as having no interests. The Guild has extensive interests. It has an interest in the continued flow of astrographic data, which requires contractors to survive long enough to file it. It has an interest in Veydrite remaining the economic standard, which requires Veydrite to remain scarce enough to have value but available enough to circulate. It has an interest in corridor documentation continuing, which requires the institutional capacity to process and publish corridor data. These interests shape Guild policy in ways that the neutrality doctrine does not acknowledge but that experienced contractors learn to read.</p>
+
+    <div class="lore">The most useful thing an experienced contractor can understand about the Guild is that it wants two things above all else: accurate data and institutional survival. When these two wants are in conflict — when accurate data would damage institutional survival — the Guild has, historically, chosen institutional survival. The data gets reclassified. The contractor gets paid. The archive gets a restricted tier entry. This is not corruption. It is priority ordering. Understanding which of your data falls into which category is something that the contractor manual does not cover.</div>
+
+    <div class="divider"></div>
+
+    <h2>The Contractor Relationship</h2>
+
+    <p>The Guild's relationship with independent contractors is the clearest expression of its institutional character. Contractors are not Guild employees. They are not Guild partners. They are registered service providers operating under Guild credentials, subject to Guild reputation tracking, selling products to Guild stations at Guild-posted prices. The Guild sets the terms. The Guild adjusts the prices. The Guild decides what data is worth buying and at what rate.</p>
+
+    <p>And yet the relationship persists, and persists at scale, because the alternative for contractors is operating without credentials in a galaxy where credentials matter, and the alternative for the Guild is losing the only cost-effective way to gather data from the parts of the galaxy that its own operations cannot reach. The relationship is not equal. It is mutually necessary. There is a difference, and the Guild is aware of it, and the contractors who do best are the ones who are also aware of it.</p>
+  </div>
+
+  <!-- ═══ CHAPTER 8 ═══ -->
+  <div class="chapter" id="c8">
+    <div class="chapter-header">
+      <div class="chapter-num">CHAPTER 08 — FACTIONS</div>
+      <div class="chapter-title">Pelk Logistics</div>
+      <div class="chapter-sub">On the corporation that keeps things moving</div>
+    </div>
+
+    <p>Pelk Logistics began as a freight operation. This is important to understand because it is still, fundamentally, a freight operation — one that has expanded into fuel supply, station management, weapons distribution, and contractor services, but that at its core is in the business of moving things from where they are to where they are needed, and charging for the movement.</p>
+
+    <div class="divider"></div>
+
+    <h2>The Pelk Model</h2>
+
+    <p>The characteristic Pelk approach to expansion is to wait for infrastructure to fail and then offer to replace it. This is not predatory in the conventional sense — Pelk does not cause the failures it profits from. The failures are caused by the collapse cycle, by underfunding, by the structural incentive problems that Guild economists have been documenting for decades. Pelk simply has standing offers to acquire failed stations, to buy out struggling operations, to step into logistics gaps that nobody else is filling.</p>
+
+    <p>The result is a logistics network that now covers more geographic territory than any other single institution in known space, including the Guild. Pelk stations exist in quadrant states where Guild stations do not. Pelk fuel depots operate in Declining space where CCC presence has withdrawn. Pelk contract boards post work in systems where no other faction maintains a presence. Whether this represents a public service or a monopoly-building strategy depends on who you ask. Pelk's answer is that the distinction is not operationally meaningful.</p>
+
+    <div class="divider"></div>
+
+    <h2>The Commercial Attitude</h2>
+
+    <p>Pelk's institutional culture is commercial in a way that is occasionally disorienting to contractors who expect it to mean something more complex. Pelk does not have an ideology. It has a margin. If a thing generates positive margin, Pelk will do it. If it generates negative margin, Pelk will stop doing it. The sealed cargo that Pelk does not ask questions about is sealed cargo that generates positive margin on transport. The contracts Pelk posts in contested space are contracts where the payment exceeds the risk-adjusted cost. Every Pelk policy decision traces back to the same analysis.</p>
+
+    <div class="lore">A Pelk station manager named Doron Vasht, interviewed by a Guild logistics researcher in 2297, described Pelk's operational philosophy as follows: "We're not the good guys and we're not the bad guys. We're the people who show up when the infrastructure breaks and offer to fix it, for a price that covers our costs and generates a return for our shareholders. If that makes us essential, that's a market condition, not a moral position. We don't confuse the two. The people who confuse the two tend to make bad business decisions."</div>
+
+    <div class="divider"></div>
+
+    <h2>Pelk and Contractors</h2>
+
+    <p>Pelk's relationship with independent contractors is commercially warm. Pelk stations pay competitive prices for Veydrite, stock fold cells at moderate markup, post delivery contracts that generate reliable income, and ask no questions about cargo provenance or operational history that are not strictly required for transaction processing. This warmth is not personal. It is structural — contractors generate transaction volume, and transaction volume generates margin.</p>
+
+    <p>The one area where Pelk's commercial warmth has limits is in competition with Pelk's own logistics operations. A contractor running a delivery route that competes directly with a Pelk freight line will find, over time, that Pelk stations on that route become slightly less accommodating — fuel prices slightly higher, cell stock slightly lower, docking priority slightly delayed. Nothing overt. Nothing that could be complained about formally. Just the aggregate friction of operating in infrastructure that is owned by your competitor.</p>
+  </div>
+
+  <!-- ═══ CHAPTER 9 ═══ -->
+  <div class="chapter" id="c9">
+    <div class="chapter-header">
+      <div class="chapter-num">CHAPTER 09 — FACTIONS</div>
+      <div class="chapter-title">Colonial Colonies<br>Command</div>
+      <div class="chapter-sub">On the remnant military authority and what it is trying to preserve</div>
+    </div>
+
+    <p>The Colonial Colonies Command is what is left of what was, during the Founding Era, the governing military authority of known space. The name is the first clue to its current condition — "Colonial Colonies Command" is the result of three reorganizations that each changed part of the name without addressing the redundancy created by the previous change, because the political will to rename the institution entirely has not existed since 2251 and because institutional names are, within CCC culture, considered a kind of continuity that is worth preserving even when the continuity it represents is largely fictional.</p>
+
+    <div class="divider"></div>
+
+    <h2>What CCC Is Now</h2>
+
+    <p>CCC in 2302 is a patrol and enforcement operation with residual governing authority in quadrants where it maintains continuous presence. That residual authority is real — CCC can refuse docking, can issue expulsion orders, can designate vessels as hostile and act on that designation — but it is exercised within an increasingly narrow geographic footprint. The three regional commands that survived the 2251 reorganization cover Established and Contested space reasonably well and Declining space inadequately. Collapsed space is not a CCC operational area by any realistic definition.</p>
+
+    <p>The hardware is the other significant CCC asset. The military hull line — Interceptors, Corvettes, Frigates — is manufactured under CCC specification and sold through CCC channels. The standing requirement for access to CCC military hardware is not just a commercial gate; it is an enforcement mechanism. KNOWN standing means CCC has assessed you as an operator whose possession of military hardware does not represent a threat to CCC operational interests. TRUSTED standing means CCC considers you a potential asset.</p>
+
+    <div class="divider"></div>
+
+    <h2>The Institutional Memory Problem</h2>
+
+    <p>CCC's deepest structural problem is that it was designed to govern and is now trying to patrol. Governing requires legal authority, administrative infrastructure, and the consent — however grudging — of the governed. Patrolling requires hardware, personnel, and the credible threat of force. CCC has the hardware and the personnel, in diminishing quantities. It has the legal authority, in diminishing relevance. What it has lost, and cannot recover, is the consent.</p>
+
+    <div class="lore">The question of who CCC's authority derives from is one that CCC official documents do not address directly. The Founding Era charter granted CCC authority on behalf of the colonial settlements it was organized to protect. Most of those settlements no longer exist in their original form — some are Feral now, some are independent, some are simply gone. CCC's current legal position is that its authority is self-deriving: it exists because it has always existed, and the continuity of the institution is itself the source of its legitimacy. Legal scholars who have reviewed this position describe it as "creative" and "not without precedent" and "likely to be tested eventually."</div>
+  </div>
+
+  <!-- ═══ CHAPTER 10 ═══ -->
+  <div class="chapter" id="c10">
+    <div class="chapter-header">
+      <div class="chapter-num">CHAPTER 10 — FACTIONS</div>
+      <div class="chapter-title">The Feral Question</div>
+      <div class="chapter-sub">On the settlements that opted out, and what that means</div>
+    </div>
+
+    <p>Feral is a designation, not a description. The Guild applies it to settlements that have withdrawn from or been excluded from the registered network — that do not maintain Guild station affiliation, do not operate under CCC patrol authority, and do not participate in the Veydrite-based monetary system as registered entities. What the designation does not capture is the enormous variation in what "Feral" actually means on the ground.</p>
+
+    <div class="divider"></div>
+
+    <h2>The Spectrum</h2>
+
+    <p>At one end of the Feral spectrum are communities that chose to leave the network deliberately — that assessed the costs of network participation (Guild fees, CCC oversight, Pelk pricing power) against the benefits and decided the costs were higher. These communities tend to be well-organized, locally self-sufficient, and capable of maintaining their own infrastructure. They are not hostile by default. They are simply operating outside a system they have decided does not serve them.</p>
+
+    <p>At the other end are the communities that did not choose Feral status — that had the network withdraw from them as the collapse cycle reached their quadrant, leaving them without the infrastructure they had depended on and without the institutional knowledge to replace it independently. These communities are more desperate, more volatile, and more likely to produce the raider activity that gives Feral space its reputation.</p>
+
+    <p>Most Feral settlements are somewhere in the middle — people making the best of circumstances they did not entirely choose, operating with whatever resources they could maintain or acquire, developing local economies and local social structures that the Guild has no data on because the Guild has no presence there to collect it.</p>
+
+    <div class="divider"></div>
+
+    <h2>The Data Runner Economy</h2>
+
+    <p>The intersection of Feral settlements and the registered network is the Data Runner economy — the grey market in unregistered cargo, unregistered data, and unregistered vessels that flows between Feral space and the outer edge of Established and Contested space. The Guild does not acknowledge this economy officially. Pelk participates in it unofficially, through arrangements that their accounting describes as "independent contractor transport agreements" and that everyone involved understands to be something else.</p>
+
+    <p>The Data Runner hull class — which the Guild does not officially recognize — exists specifically to service this economy. Shielded holds, fast fold, minimal profile. The extra weapon slot over the Courier is not incidental. The grey market is not always safe, and the people who run it have accepted that this is part of the operational reality.</p>
+
+    <div class="lore">A veteran Guild assessor named Hemi Talcott, who spent eight years operating in the outer clusters before taking a desk position at Solace Reach, described the Feral settlements he had encountered as follows: "They're not what people think. The ones that scare you are the ones in Collapsed space that formed after the network withdrew — they've lost the thread, they're running on what they can take rather than what they can build. But the ones in Isolated space, the ones that chose to leave? Some of those communities are the most functional human settlements I've seen anywhere. They just decided that network participation was a bad deal. I've thought about that a lot since I came back."</div>
+  </div>
+
+  <!-- ═══ CHAPTER 11 ═══ -->
+  <div class="chapter" id="c11">
+    <div class="chapter-header">
+      <div class="chapter-num">CHAPTER 11 — BELIEF & CULTURE</div>
+      <div class="chapter-title">Religion<br>and the Void</div>
+      <div class="chapter-sub">On what people believe when the galaxy offers no reassurance</div>
+    </div>
+
+    <p>The void does not care. This is the foundational theological fact of life in known space, and every belief system that has developed in the current era is, at its core, a response to that fact. Some systems deny it. Some systems accept it and find meaning in the acceptance. Some systems propose that the void's indifference is itself a kind of message, and spend considerable intellectual energy interpreting what that message might be.</p>
+
+    <div class="divider"></div>
+
+    <h2>The Drift Faiths</h2>
+
+    <p>The most widely distributed belief system in known space is not an organized religion. It is a loose collection of practices and convictions that emerged organically among long-haul pilots and have spread through the contractor and freight communities over several generations. Practitioners call it the Drift, or occasionally the Long Dark, or simply the Practice.</p>
+
+    <p>The Drift holds that consciousness persists across fold transits in a way that physics does not fully account for — that the 12 seconds of a clean fold and the longer interval of a bad fold are not experienced as nothing by the person inside the vessel, even though no instrument has ever detected what that experience consists of. The implication is that the fold reveals something about the nature of consciousness that is otherwise inaccessible. The practical expression of this belief is a set of pre-fold rituals — specific sequences of system checks, specific verbal confirmations, specific attitudes of attention — that Drift practitioners maintain regardless of whether they believe they have efficacy.</p>
+
+    <div class="lore">The Drift is not a religion in any formal sense. It has no clergy, no scripture, no institutional structure, and no agreed-upon theology. What it has is a set of practices that experienced pilots recognize in each other without needing to discuss them — the particular way of running the pre-fold checklist, the particular silence that falls in the cabin during countdown, the particular attention paid to the quality of the exit transition. Pilots who share these practices tend to trust each other more than pilots who do not. This is the most socially significant feature of the Drift: it is a recognition system disguised as a spiritual practice.</div>
+
+    <div class="divider"></div>
+
+    <h2>The Archive Cults</h2>
+
+    <p>A smaller but more formally organized set of beliefs centers on the Guild archive and on the idea that the accumulated record of known space constitutes a kind of meaning that transcends its administrative function. Archive cultists — they do not use this term, preferring "Record Keepers" or "Witnesses" — hold that the act of accurate documentation is itself sacred, that the galaxy's history is preserved in the archive against a future in which it would otherwise be lost, and that contractors who contribute to the archive are participating in something more significant than an economic transaction.</p>
+
+    <p>The Guild does not endorse or discourage Archive cult beliefs. It notes, in an internal document that is not restricted but that is also not publicized, that Archive cult contractors file more complete and more accurate survey reports than the contractor average, and that this is a statistically significant outcome that the Guild considers positive regardless of its theological underpinnings.</p>
+
+    <div class="divider"></div>
+
+    <h2>The Collapse Theology</h2>
+
+    <p>Among certain Feral communities and in scattered independent settlements, a belief has developed that the collapse cycle is not an accident of economics but a process with intention — that the galaxy is, in some sense, being emptied, and that this emptying serves a purpose that the current inhabitants are not equipped to understand. This belief is not organized. It has no single expression. But it surfaces with enough regularity in recovered logs, in the personal records of pilots who have spent time in Collapsed and Forbidden space, in the accounts of long-haul navigators who have seen more of the galaxy than most people see in a lifetime, that the Guild's psychological support division has noted it as a significant factor in contractor mental health assessments.</p>
+
+    <p>The Guild does not have a position on whether the collapse cycle has intentional causes. Its position on intentionality as a theological concept is that this is outside its operational mandate. The seven people who have read the full classified archaeological research file have various personal positions on the question. None of them have shared those positions in any document that is accessible to this archive.</p>
+  </div>
+
+  <!-- ═══ CHAPTER 12 ═══ -->
+  <div class="chapter" id="c12">
+    <div class="chapter-header">
+      <div class="chapter-num">CHAPTER 12 — BELIEF & CULTURE</div>
+      <div class="chapter-title">Contractor Culture</div>
+      <div class="chapter-sub">On the people who fly into the dark and what it makes of them</div>
+    </div>
+
+    <p>The contractor community is not a community in any conventional sense. It is a population of individuals who share an economic relationship with the Guild and, by virtue of that shared relationship, a set of practical concerns, cultural references, and social conventions that have developed organically over forty years of independent operation. There is no contractor association. There is no contractor political organization. There is a Guild record, and there are the living pilots whose names appear in it.</p>
+
+    <div class="divider"></div>
+
+    <h2>The Selection Effect</h2>
+
+    <p>Independent contracting selects for a specific kind of person. The work is solitary by default, high-risk by nature, and economically volatile in ways that are not fully capturable by any advance planning. The contractors who survive long-term are not simply lucky — they have specific qualities that the work rewards and that the work, over time, amplifies. Tolerance for isolation. Comfort with risk that is managed but never eliminated. A relationship with planning that is thorough without being rigid. An ability to assess a situation quickly and act on that assessment without waiting for certainty that may not arrive.</p>
+
+    <p>The selection effect also operates in reverse. Contractors who cannot tolerate isolation, who freeze under genuine uncertainty, who plan rigidly or not at all, who cannot act without certainty — these contractors tend to exit the profession within their first year. The ones who survive that year have demonstrated something. The ones who survive five years have demonstrated considerably more.</p>
+
+    <div class="divider"></div>
+
+    <h2>The Ship Name Tradition</h2>
+
+    <p>Every contractor vessel has a name. This is technically a registration requirement — the Guild's manifest system requires a vessel designation — but the cultural weight of the tradition goes significantly beyond the administrative function. A contractor's ship name is the most public expression of their identity and their attitude. It is chosen deliberately, maintained across hull changes if the contractor upgrades, and treated with a seriousness that outside observers sometimes find disproportionate.</p>
+
+    <p>Ship names cluster into recognizable categories that reflect the cultural range of the contractor community. Virtue names — Resolute, Endurance, Persistence — reflect the Drift-adjacent values of the older contractor tradition. Ironic names — Last Resort, Reasonable Risk, The Management's Problem Now — reflect the gallows humor that long-haul contracting tends to produce. Elegiac names — names that reference lost places, lost people, lost things — are the most personal and the least discussed.</p>
+
+    <div class="lore">The superstition around renaming ships is not universal in the contractor community but it is common enough to be notable. The argument against renaming is that the ship has been identified under its original name by whatever the void contains, and changing the name creates a false identity that the void will eventually correct. The argument for renaming is that this is aesthetically offensive as a superstition and that the void does not maintain a ship registry. Neither argument has resolved the debate. Both positions are held sincerely by people who have spent enough time in deep space to have opinions about what the void might or might not track.</div>
+
+    <div class="divider"></div>
+
+    <h2>The Graveyard Tradition</h2>
+
+    <p>The Guild Record Archive maintains a permanent record of every registered contractor who has died in active service. This record — called the Graveyard by contractors, the Permanent Archive by the Guild — is publicly accessible and contains the pilot's name, their vessel's name, their last known position, their cause of death, and their complete achievement log. Nothing is removed from the Graveyard. Nothing is edited. The record stands exactly as the data shows it.</p>
+
+    <p>The tradition among active contractors of reading the Graveyard — of spending time with the records of pilots who did not survive — is not universal but is widespread. The stated reasons vary. Some contractors read the Graveyard to understand what killed people and to avoid it. Some read it as a memorial practice. Some read it as a reminder of the stakes. The unstated reason, which most contractors who maintain the practice would acknowledge if pressed, is that the Graveyard is a community — the only contractor community that has fixed membership and guaranteed permanence. The living contractors move constantly, connect rarely, and have no institutional home. The dead ones stay in the archive. They are, in a specific and meaningful way, the most stable community that contracting produces.</p>
+  </div>
+
+  <!-- ═══ CHAPTER 13 ═══ -->
+  <div class="chapter" id="c13">
+    <div class="chapter-header">
+      <div class="chapter-num">CHAPTER 13 — BELIEF & CULTURE</div>
+      <div class="chapter-title">Language<br>and Naming</div>
+      <div class="chapter-sub">On the vocabularies that the galaxy has developed</div>
+    </div>
+
+    <p>Language in known space is not uniform. The Guild's administrative standard — the language in which this document is written, in which fold cell specifications are published, in which contractor registration is conducted — is the closest thing to a universal tongue that exists in the current era, and it is universal only in the sense that it is the language of commerce and record-keeping. The languages that people actually speak, in their settlements and their ships and their communities, are considerably more varied.</p>
+
+    <div class="divider"></div>
+
+    <h2>The Naming Systems</h2>
+
+    <p>The Guild's quadrant and system naming conventions have evolved significantly over two centuries of operation. The earliest registered names — from the Founding Era — tend toward the formal and geographic: descriptive terms applied to stellar features, classical references that the naming committees of the era considered appropriately weighty, administrative designations that prioritized consistency over character. These names persist in the highway corridor network, in the major administrative quadrants, in the systems that were registered when the Guild still had the institutional energy to argue about what names meant.</p>
+
+    <p>The later names are different. As the assessor corps shrank and the registration pace accelerated relative to the personnel available to process it, naming conventions became more practical. Systems got named for what they contained, how they looked on sensor returns, what happened when the first survey team arrived. The cluster called Cleaved Coldridge was named by a survey team that arrived to find the primary body showing catastrophic tectonic fracturing. The quadrant called the Shattered Verge was named by a pilot who looked at her sensor returns and wrote exactly what she saw. These names are more accurate and considerably less dignified than the Founding Era equivalents.</p>
+
+    <div class="divider"></div>
+
+    <h2>Contractor Vocabulary</h2>
+
+    <p>The contractor community has developed a specialized vocabulary that serves both practical and social functions. Some terms are purely practical — "folding" for inter-quadrant transit, "the dark" for uncharted space, "the tank" for the emergency reserve system. Some terms are social — ways of identifying membership in the community, of signaling experience level, of distinguishing contractors who have operated in the outer clusters from those who have stayed in Established space.</p>
+
+    <p>The most socially loaded vocabulary items are the ones that relate to death and danger. Contractors who have survived genuinely bad situations do not talk about them in the heightened terms that people who have not survived such situations might expect. The vocabulary is flat, procedural, understated. This is not emotional suppression. It is a language adapted to conditions where heightened emotional expression consumes resources — attention, decision-making capacity, the particular kind of calm that keeps you alive — that cannot be spared.</p>
+
+    <div class="lore">The phrase "came back" as a descriptor of surviving a dangerous situation is used in the contractor community in a way that is not quite metaphorical and not quite literal. Pilots who have had bad fold experiences describe themselves as having "come back from" something, in a way that implies there was a somewhere to come back from. The phrase is used consistently enough, and by pilots who have not compared notes consistently enough, that it has been flagged in three separate Guild psychological support assessments as potentially significant. The assessments do not agree on what it might be significant of.</div>
+  </div>
+
+  <!-- ═══ CHAPTER 14 ═══ -->
+  <div class="chapter" id="c14">
+    <div class="chapter-header">
+      <div class="chapter-num">CHAPTER 14 — THE UNKNOWN</div>
+      <div class="chapter-title">The Xeno Record</div>
+      <div class="chapter-sub">What the Guild knows, what it admits, and what it does not</div>
+    </div>
+
+    <p>The Guild's official position on anomalous contact reports is that they are under active review. This position has been maintained, unchanged, since the first classified anomalous contact report was filed in 2267. The review process has produced no public findings in 35 years. The Guild considers this appropriate given the preliminary nature of the data. External observers consider it a position that functions as a permanent deferral.</p>
+
+    <div class="divider"></div>
+
+    <h2>The Contact Record</h2>
+
+    <p>There are two contact records. The public record, accessible through standard Guild archive queries, contains anomalous sensor returns classified as instrument errors, navigation anomalies, and environmental interference. These classifications are not fabricated — the readings in question are genuinely ambiguous and the alternative explanations are genuinely plausible. The public record is accurate as far as it goes.</p>
+
+    <p>The restricted record contains the same reports with additional notation. The notation identifies patterns across reports that the individual classifications do not capture — the same anomalous mass signature appearing in systems separated by thirty fold transits, the same timing of contact events relative to fold arrivals, the same quality of sensor return that experienced assessors have learned to recognize even when they cannot formally categorize it. The patterns do not prove anything. They are suggestive in a way that the Guild's research division describes, in internal documents, as "requiring continued observation."</p>
+
+    <div class="classified">
+      <strong>RESTRICTED — ARCHIVE TIER 3</strong>
+      The contact pattern database currently contains 847 entries. Of these, 312 involve contractor attempts at extended engagement with the anomaly. The survival rate for extended engagement attempts is 94.6%. The psychological assessment completion rate for survivors of extended engagement is 71%. Of those who completed assessment, 23% showed measurable changes in reported perception of fold transit experience. 8% requested permanent registration suspension. The Guild does not know what extended engagement consists of from the inside. It does not ask. The contractors who have experienced it do not volunteer the information in formal assessment contexts.
+    </div>
+
+    <div class="divider"></div>
+
+    <h2>What Contractors Report</h2>
+
+    <p>The anomalous contact reports that reach the restricted record share common features that the public classifications do not capture. The contact does not resolve on sensors regardless of scan power applied. The contact does not behave according to any registered vessel or natural phenomenon profile. The contact sometimes responds to the presence of a contractor vessel in ways that passive observation cannot explain — changes in apparent mass, changes in position, changes in the quality of the sensor return that experienced pilots describe as the contact becoming "more present" or "more aware."</p>
+
+    <p>The ruin logs that contain the most useful anomalous data are the ones filed by contractors who found something they did not expect and who had enough experience and composure to document it accurately before leaving. These logs are in the restricted record. The contractors who filed them received standard payment. Some of them continued operating. Some did not.</p>
+
+    <div class="divider"></div>
+
+    <h2>The Ash Connection</h2>
+
+    <p>The Null-Phase Crystalline Phenomenon — the Ash — is classified by the Guild as an ore contamination event. This classification is operationally correct: the Ash does contaminate ore deposits, does spread between bodies, does degrade extraction yields in affected systems. The classification captures what the Ash does to extraction operations. It does not address what the Ash is.</p>
+
+    <p>Guild research physicists who have studied Ash samples note that the crystalline structure of Ash compactate shares properties with the anomalous Veydrite structural variants that have no stellar formation explanation — the three variants that the Guild's internal research documents describe as "intentional." This connection is noted in a single internal document filed in 2298. The document is in Archive Tier 4. The researcher who filed it has continued their work without further publication on this specific point.</p>
+  </div>
+
+  <!-- ═══ CHAPTER 15 ═══ -->
+  <div class="chapter" id="c15">
+    <div class="chapter-header">
+      <div class="chapter-num">CHAPTER 15 — THE UNKNOWN</div>
+      <div class="chapter-title">Forbidden Space</div>
+      <div class="chapter-sub">On the quadrants that the Guild will not discuss and cannot ignore</div>
+    </div>
+
+    <p>Forbidden space is a designation applied to quadrants where access is prohibited by Guild administrative order. The prohibition has no enforcement mechanism beyond the Guild's ability to refuse docking and registration services to vessels that violate it. This is, in practical terms, a significant deterrent for registered contractors and a negligible deterrent for Feral operators. The Guild is aware of this asymmetry.</p>
+
+    <div class="divider"></div>
+
+    <h2>Why Forbidden</h2>
+
+    <p>The official reason for Forbidden designations varies by quadrant. Some Forbidden quadrants are designated due to extreme hazard ratings — stellar environments that pose unacceptable risk to standard hull classes. Some are designated due to jurisdictional disputes with CCC that have not been resolved through the normal arbitration process. Some are designated, in the language of the administrative order, due to "ongoing research activities requiring operational exclusion."</p>
+
+    <p>The research designation is the one that contractors learn to notice. A Forbidden quadrant designated for research is a quadrant where something has been found that the Guild is studying. What that something is, the designation does not say. The astrographic data premium for Forbidden quadrants — 24 CR per unit at base rate, the highest in the system — is the Guild's way of acknowledging that contractors who enter these quadrants are taking a risk that standard risk categories do not adequately describe.</p>
+
+    <div class="divider"></div>
+
+    <h2>The Research Vessel Program</h2>
+
+    <p>The Guild's Research Vessel program — the RSV hull class, the four-utility-slot anomaly investigator platform — exists specifically for Forbidden space operations. Guild research vessels operating in Forbidden quadrants are not contractor operations. They are institutional operations, crewed by Guild assessors with specific research mandates, operating under protocols that are not published in any contractor-accessible document.</p>
+
+    <p>What the Research Vessel program has found in Forbidden space over the past twenty years is not in the public record. The program's operating budget has increased by 340% in that period. The program's personnel roster has grown from twelve to forty-seven. The senior researcher position has turned over three times. The current senior researcher, a Guild assessor named Dr. Saan Veleth, has not published any findings in four years. Her previous publications, before she took the position, were in the field of anomalous Veydrite crystalline structure analysis.</p>
+
+    <div class="classified">
+      <strong>ARCHIVE TIER 4 — DIRECTOR ACCESS ONLY</strong>
+      The following is not available through standard archive query. The Research Vessel program's current operational focus is a cluster of eleven systems in Forbidden quadrant designation FQ-7 that show evidence of deliberate stellar modification consistent with the Omega-class survey sites documented in Chapter 5. The modification patterns in FQ-7 are more recent than any previously documented site. The Guild's dating estimate for the most recent modifications is between 200 and 800 years before present. This range overlaps with the Founding Era. The implications of this overlap are under active discussion at the Director level. No conclusions have been reached.
+    </div>
+  </div>
+
+  <!-- ═══ CHAPTER 16 ═══ -->
+  <div class="chapter" id="c16">
+    <div class="chapter-header">
+      <div class="chapter-num">CHAPTER 16 — THE UNKNOWN</div>
+      <div class="chapter-title">Notable Wrecks<br>& Stations</div>
+      <div class="chapter-sub">Places that the galaxy remembers, and why</div>
+    </div>
+
+    <p>The archive of notable sites is not a tourist guide. It is a record of places that have generated enough data — through survey reports, contractor logs, beacon transmissions, recovered personal records, and the accumulated weight of things that happened there — to warrant individual documentation. Some of these places are still active. Some are ruins. Some are somewhere in between, which is where the most interesting things tend to be.</p>
+
+    <div class="divider"></div>
+
+    <h2>Solace Reach</h2>
+
+    <p>The Guild's primary administrative station and the closest thing to a capital that known space possesses. Solace Reach is an Established installation in a quadrant that has maintained its status through two collapse cycle pressure events by virtue of being too institutionally important to allow to fail. The Guild's assessor training facility is here. The Director offices are here. The primary Veydrite assay bureau is here. The archive terminal that contains the complete Guild record — not the contractor-accessible portion, the complete record — is here, in a physical medium backup that the Guild maintains because they do not trust digital-only storage across the kind of timescales the archive is designed for.</p>
+
+    <p>Solace Reach is also the site of the Guild Graveyard memorial — a physical installation in the station's central atrium where the names of every registered contractor who has died in active service are displayed in real time as the archive updates. The display is the first thing visitors see when they enter the atrium and the last thing they see when they leave. The Guild says this is intentional. It does not elaborate on what the intention is.</p>
+
+    <div class="divider"></div>
+
+    <h2>The Harrow's End</h2>
+
+    <p>A Light Freighter that disappeared in Collapsed space in 2291 with a crew of four. A distress beacon was activated on day 12 of the disappearance — "MAYDAY — vessel Harrow's End, drive failure, crew of four. Transmitting position. No response on Guild freq." The beacon transmitted for 340 days before its power cell expired. No rescue operation reached the vessel in time. The beacon's last transmission was a standard automated signal. The final manual transmission, on day 12, was the only one that contained crew voice.</p>
+
+    <p>The Harrow's End is not particularly notable by the objective metrics of contractor losses — four crew, one vessel, one system, one beacon. What makes it notable is the distress beacon itself, which has become one of the most-referenced records in the contractor community. The beacon text is included in the Guild's standard contractor training materials as an example of emergency protocol documentation. Contractors who have spent time in Collapsed space tend to have strong feelings about it. The feelings are not uniform.</p>
+
+    <div class="divider"></div>
+
+    <h2>Waystation 7-Keth</h2>
+
+    <p>A Pelk Logistics waystation decommissioned in 2291 when the quadrant it served declined below viable operational threshold. The automated beacon was set to deactivate on decommissioning. The deactivation order was not received — a procedural failure that Pelk attributes to the communication infrastructure collapse that accompanied the quadrant's decline. The beacon continued transmitting for eleven years after decommissioning, broadcasting the standard operational status of a station that was no longer operational, with no crew, no services, and no Pelk presence of any kind.</p>
+
+    <p>Contractors who arrived at Waystation 7-Keth during those eleven years expecting to find an operational Pelk depot found instead an empty station with the lights still on, the beacon still broadcasting, and a full docking manifest of vessels that had attempted to dock after decommissioning and had not been able to reach anyone to explain the situation. The manifest ran to 47 entries before the beacon finally failed in 2302. Pelk has not commented on the manifest publicly. The Guild has filed the manifest in standard archive.</p>
+
+    <div class="divider"></div>
+
+    <h2>The Installation</h2>
+
+    <p>There is a station in Forbidden space that does not appear in the Guild registry. It appears on deep sensor sweeps as a large artificial structure with active power systems and no registered transponder. Guild survey vessels have approached it three times over the past fifteen years. All three times, the approaching vessel's transponder was logged by an active system on the installation — the log entry appears in the approaching vessel's own sensor return, which means the installation scanned the approaching vessel and the scan was detectable. All three times, no other response was received.</p>
+
+    <p>The installation is not in any historical record as a constructed facility. It is not in any archaeological record as a pre-Founding structure. Its power signature is consistent with a station that is actively maintained. The Guild's classification for it is "Unknown Station — ongoing jurisdictional review." The three survey teams that approached it filed their reports. The reports are in Archive Tier 4. The survey teams have continued operating. They do not discuss the installation in contractor-accessible contexts.</p>
+
+    <div class="lore">A contractor who operates in the outer clusters and who requested anonymity for this archive entry described a sensor return she received while transiting a Forbidden-adjacent quadrant in 2301: "The Auspex returned a contact. Standard mass contact protocol. I ran a resolve sweep. It didn't resolve. I ran it again. Still nothing. I was about to log it as instrument noise and move on when it moved. It moved toward me, and then it stopped, and then it just — wasn't there anymore. No exit transit signature. No fold signature. Nothing. I logged it and I left. I filed the report. I got the standard payment. Nobody from the Guild called to ask questions. I've thought about that — nobody calling to ask questions — more than I've thought about the contact itself."</div>
+
+    <div class="divider"></div>
+
+    <div style="margin-top:60px; padding-top:32px; border-top:1px solid var(--green-dark); font-size:11px; color:var(--green-dark); letter-spacing:0.1em; line-height:2;">
+      <p style="color:var(--green-dark); font-size:11px; max-width:none;">VEYDRITE ASSAYER'S GUILD — GALACTIC ARCHIVE DIVISION</p>
+      <p style="color:var(--green-dark); font-size:11px; max-width:none;">This document is a restricted archive compilation. It is not for general contractor distribution. Sections marked Archive Tier 3 and Tier 4 are reproduced here under Director authorization for archive completeness purposes. The Guild accepts no liability for operational decisions made on the basis of restricted archive content. The galaxy is not forgiving of ignorance. Neither is the void.</p>
+      <p style="color:var(--green-dark); font-size:11px; max-width:none; margin-top:16px;">— THE ASSAYER'S GUILD</p>
+    </div>
+  </div>
+
+</main>
+
+<script>
+function showChapter(id) {
+  // Hide all chapters
+  document.querySelectorAll('.chapter').forEach(c => c.classList.remove('active'));
+  // Deactivate all nav items
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+  // Show target chapter
+  const target = document.getElementById(id);
+  if (target) {
+    target.classList.add('active');
+    // Scroll main to top
+    target.parentElement.scrollTop = 0;
+    window.scrollTo(0, 0);
+  }
+
+  // Activate nav item
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.getAttribute('onclick') && n.getAttribute('onclick').includes(id)) {
+      n.classList.add('active');
+    }
+  });
+}
+</script>
+
+</body>
+</html>
