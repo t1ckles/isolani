@@ -102,31 +102,43 @@ function trafficLevel(state, rng) {
   return Math.min(5, Math.max(0, base + Math.floor((rng.next() - 0.5) * 2)));
 }
 
-function generateSystem(rng, quadrantState, naming) {
+function generateSystem(rng, quadrantState) {
   const starClass = weightedPick(rng, STAR_CLASSES, STAR_CLASS_WEIGHT);
-  const systemName = generateSystemName(rng, naming);
   const bodyCount = 1 + Math.floor(rng.next() * 5);
   const bodies = [];
 
-const systemName = naming.starSystem
-  ? naming.starSystem(rng, 'ancient')
-  : ('System-' + Math.floor(rng.next() * 9999));
+  for (let i = 0; i < bodyCount; i++) {
+    bodies.push({
+      type: BODY_TYPES[Math.floor(rng.next() * BODY_TYPES.length)],
+      hasStation: rng.next() < stationChance(quadrantState),
+      hasRuin: rng.next() < ruinChance(quadrantState),
+      veydrite: rng.next() < veydriteChance(starClass),
+    });
+  }
 
-for (let i = 0; i < bodyCount; i++) {
-  const type = BODY_TYPES[Math.floor(rng.next() * BODY_TYPES.length)];
-  bodies.push(buildNamedBody(rng, quadrantState, starClass, naming, type, i + 1, systemName));
-}
+  const xenoChance = {
+    Collapsed: 0.14,
+    Forbidden: 0.12,
+    Isolated: 0.09,
+    Declining: 0.07,
+    Contested: 0.05,
+    Established: 0.02
+  }[quadrantState] ?? 0.06;
 
-  const xenoChance = { Collapsed: 0.14, Forbidden: 0.12,
-                       Isolated: 0.09, Declining: 0.07,
-                       Contested: 0.05, Established: 0.02 }[quadrantState] ?? 0.06;
   const xenoTainted = rng.next() < xenoChance;
-  const beaconChance = { Established: 0.04, Contested: 0.10, Declining: 0.18,
-                         Collapsed: 0.25, Isolated: 0.15, Forbidden: 0.08 }[quadrantState] ?? 0.08;
+
+  const beaconChance = {
+    Established: 0.04,
+    Contested: 0.10,
+    Declining: 0.18,
+    Collapsed: 0.25,
+    Isolated: 0.15,
+    Forbidden: 0.08
+  }[quadrantState] ?? 0.08;
+
   const hasBeacon = rng.next() < beaconChance;
 
   return {
-    name: systemName,
     starClass,
     bodies,
     jumpPoints: 1 + Math.floor(rng.next() * 3),
