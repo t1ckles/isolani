@@ -2434,78 +2434,43 @@ function cmdSystems() {
 // Tracks the current shipyard browsing session so <#> indices are stable
 // across shipyard, shipyard info, and shipyard buy commands.
 let shipyardSession = null;
- 
-/**
- * Build the shipyard session for the current station.
- * Returns null if no market is available here.
- */
+
 function buildShipyardSession() {
   if (!playerState.docked) return null;
- 
-  const loc     = playerState.location;
-  const q       = galaxy.quadrants[loc.quadrantIndex];
+
+  const loc = playerState.location;
+  const q = galaxy.quadrants[loc.quadrantIndex];
   const cluster = loc.clusterName
     ? q.clusters.find(c => c.name === loc.clusterName)
     : q.clusters[loc.clusterIndex || 0];
-  const sys     = cluster && cluster.systems.find(s => s.name === loc.systemName);
+  const sys = cluster ? cluster.systems.find(s => s.name === loc.systemName) : null;
   if (!sys) return null;
- 
+
   const body = normalizeSystemBodies(sys).find(b => b.hasStation);
   if (!body) return null;
- 
+
   const factionKey = playerState.dockedFactionKey;
-  const rep        = getRep(factionKey);
-  const tier       = rep !== null ? repTier(rep) : 'UNKNOWN';
- 
-  // Only Established and Contested stations run ship markets.
-  // Feral and Forbidden never do.
-  const noMarket = ['feral', 'forbidden'].includes(factionKey)
-    || ['Collapsed', 'Forbidden'].includes(q.state);
- 
+  const rep = getRep(factionKey);
+  const tier = rep != null ? repTier(rep) : "UNKNOWN";
+
+  const noMarket =
+    ["feral", "forbidden"].includes(factionKey) ||
+    ["Collapsed", "Forbidden"].includes(q.state);
+
   if (noMarket) return null;
- 
-  const market = (typeof getShipMarket === 'function')
+
+  const market = typeof getShipMarket === "function"
     ? getShipMarket(factionKey, q.state, tier)
     : [];
- 
+
   return {
     factionKey,
     quadrantState: q.state,
     tier,
-    market,         // [{ def, price }] sorted by price
-    stationName: playerState.dockedAt,
+    market,
+    stationName: playerState.dockedAt
   };
 }
-
-function handleShipyardCommand(cmd, args) {
-  if (playerState.pendingTx) {
-    if (cmd === "yes" || cmd === "y") {
-      const tx = playerState.pendingTx;
-      playerState.pendingTx = null;
-      return executeTrade(tx);
-    } else {
-      playerState.pendingTx = null;
-      return "SHIPYARD\n\nTransaction cancelled.";
-    }
-  }
-
-  if (cmd === "exit") {
-    playerState.inShipyard = false;
-    shipyardSession = null;
-    return [
-      "SHIPYARD",
-      "",
-      "Terminal closed."
-    ].join("\n");
-  }
-
-  if (cmd === "shipyard") return cmdShipyard(args);
-  if (cmd === "status") return cmdStatus();
-  if (cmd === "weapons") return cmdWeapons();
-  if (cmd === "systems") return cmdSystems();
-  if (cmd === "repair") return cmdRepair(args);
-  if (cmd === "trade") return cmdTrade(args);
-  if (cmd === "armory") return cmdArmory(args);
 
 function cmdShipyard(args) {
   if (!playerState.docked) return [
