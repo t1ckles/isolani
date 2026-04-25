@@ -162,23 +162,22 @@ function assignFaction(state, rng) {
 
 function generateStationName(systemName, factionKey, index, rng) {
   const prefixes = {
-    guild:       ['Assay Point', 'Survey Station', 'Guild Relay', 'Assessment Post'],
-    pelk:        ['Pelk Depot', 'Transit Hub', 'Pelk Waystation', 'Logistics Post'],
-    colonial:    ['CCC Outpost', 'Colonial Station', 'Forward Base', 'CCC Relay'],
-    feral:       ['The Hulk', 'Scratch Station', 'The Nail', 'Drift Post'],
-    independent: ['Free Berth', 'Open Dock', 'The Anchorage', 'Waypoint'],
-    forbidden:   ['Installation', 'Unknown Station', 'Sealed Platform'],
+    guild: ["Assay Point", "Survey Station", "Guild Relay", "Assessment Post"],
+    pelk: ["Pelk Depot", "Transit Hub", "Pelk Waystation", "Logistics Post"],
+    colonial: ["CCC Outpost", "Colonial Station", "Forward Base", "CCC Relay"],
+    feral: ["The Hulk", "Scratch Station", "The Nail", "Drift Post"],
+    independent: ["Free Berth", "Open Dock", "The Anchorage", "Waypoint"],
+    forbidden: ["Installation", "Unknown Station", "Sealed Platform"]
   };
 
-  const suffixes = ['Alpha', 'Beta', 'Prime', 'Secondary', 'Auxiliary',
-                    'I', 'II', 'III', 'IV', 'V'];
+  const suffixes = ["Alpha", "Beta", "Prime", "Secondary", "Auxiliary", "I", "II", "III", "IV", "V"];
+  const pool = prefixes[factionKey] || prefixes.independent;
+  const roll = rng && typeof rng.next === "number" ? rng.next : Math.random();
+  const prefix = pool[Math.floor(roll * pool.length)];
+  const tag = String(systemName || "Station").split(" ")[0];
+  const suffix = index > 0 ? suffixes[Math.min(index, suffixes.length - 1)] : "";
 
-  const pool   = prefixes[factionKey] || prefixes.independent;
-  const prefix = pool[Math.floor(rng.next() * pool.length)];
-  const tag    = systemName.split(' ')[0];
-  const suffix = index > 0 ? ' ' + suffixes[Math.min(index, suffixes.length - 1)] : '';
-
-  return prefix + ' ' + tag + suffix;
+  return [prefix, tag, suffix].filter(Boolean).join(" ");
 }
 
 // ── Ship initialization ───────────────────────
