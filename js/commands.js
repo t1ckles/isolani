@@ -373,6 +373,7 @@ let playerState = {
   dockedFactionKey: null,
   inTrade:          false,
   inArmory:         false,
+  inShipyard:       false,
   pendingTx:        null,
   pendingMenu:      false,
   currentDay:       0,
@@ -381,6 +382,7 @@ let playerState = {
   flags:            {},
   stats:            { jumps: 0, salvages: 0, daysSurvived: 0, creditsEarned: 0, contractsCompleted: 0, veydriteSold: 0 },
   achievements:     [],
+  inShipyard:       false,
   inEncounter:      false,
   encounter:        null,
   isDead:           false,
@@ -468,6 +470,7 @@ function handleCommand(raw) {
     const [cmd, ...args] = input.split(/\s+/);
     if (playerState.inTrade)     return handleTradeCommand(cmd, args);
     if (playerState.inArmory)    return handleArmoryCommand(cmd, args);
+    if (playerState.inShipyard) return handleShipyardCommand(cmd, args);
     if (playerState.inEncounter) return handleEncounterCommand(cmd, args);
     if (playerState.pendingFold) {
       if (cmd === 'yes' || cmd === 'y') {
@@ -1931,6 +1934,7 @@ function cmdUndock() {
   playerState.dockedFactionKey = null;
   playerState.inTrade          = false;
   playerState.inArmory         = false;
+  playerState.inShipyard       = false;
   playerState.bulletinContracts = [];
   if (typeof updateAuspex === 'function') updateAuspex();
   return ['', '  [UNDOCK] Departing ' + name + '.', '  Thrusters nominal. Open space.', ''].join('\n');
@@ -2472,7 +2476,43 @@ function buildShipyardSession() {
     stationName: playerState.dockedAt,
   };
 }
- 
+
+function handleShipyardCommand(cmd, args) {
+  if (playerState.pendingTx) {
+    if (cmd === "yes" || cmd === "y") {
+      const tx = playerState.pendingTx;
+      playerState.pendingTx = null;
+      return executeTrade(tx);
+    } else {
+      playerState.pendingTx = null;
+      return "SHIPYARD\n\nTransaction cancelled.";
+    }
+  }
+
+  if (cmd === "exit") {
+    playerState.inShipyard = false;
+    shipyardSession = null;
+    return [
+      "SHIPYARD",
+      "",
+      "Terminal closed."
+    ].join("\n");
+  }
+
+  if (cmd === "shipyard") return cmdShipyard(args);
+  if (cmd === "status") return cmdStatus();
+  if (cmd === "weapons") return cmdWeapons();
+  if (cmd === "systems") return cmdSystems();
+  if (cmd === "repair") return cmdRepair(args);
+  if (cmd === "trade") return cmdTrade(args);
+  if (cmd === "armory") return cmdArmory(args);
+
+  return [
+    "SHIPYARD Unknown command.",
+    "Use shipyard, shipyard info n, shipyard buy n, exit."
+  ].join("\n");
+}
+
 function cmdShipyard(args) {
   if (!playerState.docked) {
     return [
@@ -2483,11 +2523,8 @@ function cmdShipyard(args) {
   }
  
   // Refresh session on every bare 'shipyard' call so prices stay current.
-  if (!args || args.length === 0) {
-    shipyardSession = buildShipyardSession();
- 
-    if (!shipyardSession || shipyardSession.market.length === 0) {
-      return [
+    if (!args || args.length === 0) shipyardSession = buildShipyardSession();
+    if (!shipyardSession || shipyardSession.market.length === 0) return [
         '',
         '  [SHIPYARD] No hull market at this station.',
         '  Ship markets operate at Established and Contested installations.',
@@ -2495,7 +2532,9 @@ function cmdShipyard(args) {
         '',
       ].join('\n');
     }
- 
+
+    playerState.inShipyard = true;
+    
     return renderShipMarket(
       shipyardSession.factionKey,
       shipyardSession.quadrantState,
