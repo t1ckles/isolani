@@ -1807,7 +1807,7 @@ function cmdSalvage() {
 
 // ── Dock ──────────────────────────────────────
 
-function cmdDock() {
+function cmdDock(args) {
   if (playerState.docked) return '  [DOCK] Already docked at ' + playerState.dockedAt + '.';
 
   const loc     = playerState.location;
@@ -1821,19 +1821,49 @@ function cmdDock() {
   const bodies = normalizeSystemBodies(sys);
   const stationBodies = bodies.filter(b => b.hasStation);
   if (stationBodies.length === 0) {
-    return ['', '  [DOCK] No station in ' + sys.name + '.', ''].join('\n');
+    return ['', '  [DOCK] No station in ' + sys.name + '.', ''].join('\\n');
   }
 
-  const body    = stationBodies[0];
+  // NEW: Parse station name from arguments
+  let body;
+  if (args && args.length > 0) {
+    const targetName = args.join(' ').toLowerCase();
+    body = stationBodies.find(b => b.stationName.toLowerCase().includes(targetName));
+    
+    if (!body) {
+      const available = stationBodies.map(b => b.stationName).join(', ');
+      return ['', 
+        '  [DOCK] Station not found: "' + args.join(' ') + '"',
+        '  Available stations: ' + available,
+        ''
+      ].join('\\n');
+    }
+  } else {
+    // No arguments: dock at first station
+    body = stationBodies[0];
+    
+    // If multiple stations, warn the player
+    if (stationBodies.length > 1) {
+      const available = stationBodies.map(b => b.stationName).join(', ');
+      return ['',
+        '  [DOCK] Multiple stations detected.',
+        '  ' + available,
+        '  Specify station name: dock <station name>',
+        ''
+      ].join('\\n');
+    }
+  }
+
   const faction = body.faction || FACTIONS.independent;
   const fee     = dockingFee(body.factionKey);
   const ship    = getShip();
 
   const rep = getRep(body.factionKey);
   if (rep !== null && repTier(rep) === 'HOSTILE') {
-    return ['', '  [DOCK] Docking refused.', '  ' + faction.name + ' has flagged your vessel.', ''].join('\n');
+    return ['', '  [DOCK] Docking refused.', '  ' + faction.name + ' has flagged your vessel.', ''].join('\\n');
   }
 
+  // ... rest of function continues unchanged
 // ─────────────────────────────────────────────────────────────────────────────
  
   let hardshipDock = false;
