@@ -55,7 +55,7 @@ function buildNamedBody(rng, quadrantState, starClass, naming, type, ordinal) {
     faction = FACTIONS[factionKey] || FACTIONS.independent;
     
     // Generate station name
-    stationName = generateStationName(rng, factionKey, properName);
+    stationName = generateStationName(sys.name, factionKey, 0, rng);
   }
   
   return {
