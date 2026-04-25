@@ -828,6 +828,27 @@
   text-transform: uppercase;
   z-index: 2;
 }
+
+.schematic-nav {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: 1px solid var(--green-dark);
+  color: var(--green-dim);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 20px;
+  padding: 12px 18px;
+  cursor: pointer;
+  z-index: 3;
+  transition: color 0.15s, border-color 0.15s;
+}
+.schematic-nav:hover {
+  color: var(--green);
+  border-color: var(--green-mid);
+}
+#schematicPrev { left: 24px; }
+#schematicNext { right: 24px; }    
     
   </style>
 </head>
@@ -2960,8 +2981,8 @@ function openShipModal(shipId) {
   const placeholder = document.getElementById('shipModalPlaceholder');
   document.getElementById('shipModalPlaceholderDesig').textContent = data.desig;
 
-  if (data.image) {
-    img.src = data.image;
+  if (data.images && data.images.length > 0) {
+    img.src = data.images[0];
     img.alt = data.name;
     img.style.display = 'block';
     placeholder.style.display = 'none';
@@ -2999,9 +3020,9 @@ function openShipModal(shipId) {
 
 // Schematic link
   const schemEl = document.getElementById('shipModalSchematic');
-  if (data.image) {
+  if (data.images && data.images.length > 0) {
     schemEl.style.display = 'block';
-    schemEl.onclick = () => openSchematic(data.image, data.name, data.desig);
+    schemEl.onclick = () => openSchematic(data.images, data.name, data.desig, 0);
   } else {
     schemEl.style.display = 'none';
   }
@@ -3033,25 +3054,54 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 
-function openSchematic(src, name, desig) {
+let schematicImages = [];
+let schematicIndex  = 0;
+
+function openSchematic(images, name, desig, startIndex) {
+  schematicImages = images;
+  schematicIndex  = startIndex || 0;
   const so = document.getElementById('schematicOverlay');
-  document.getElementById('schematicImg').src = src;
-  document.getElementById('schematicLabel').textContent = desig + '  —  ' + name.toUpperCase() + '  —  CLICK TO CLOSE';
+  updateSchematic();
   so.classList.add('active');
+}
+
+function updateSchematic() {
+  const img   = document.getElementById('schematicImg');
+  const label = document.getElementById('schematicLabel');
+  const prev  = document.getElementById('schematicPrev');
+  const next  = document.getElementById('schematicNext');
+  img.src     = schematicImages[schematicIndex];
+  label.textContent = 'IMAGE ' + (schematicIndex + 1) + ' / ' + schematicImages.length + '  —  CLICK OUTSIDE TO CLOSE';
+  prev.style.visibility = schematicImages.length > 1 ? 'visible' : 'hidden';
+  next.style.visibility = schematicImages.length > 1 ? 'visible' : 'hidden';
 }
 
 document.addEventListener('DOMContentLoaded', function() {
   const so = document.getElementById('schematicOverlay');
   if (so) {
-    so.addEventListener('click', function() {
-      this.classList.remove('active');
+    so.addEventListener('click', function(e) {
+      if (e.target === so || e.target === document.getElementById('schematicImg')) {
+        so.classList.remove('active');
+      }
     });
   }
+  document.getElementById('schematicPrev').addEventListener('click', function(e) {
+    e.stopPropagation();
+    schematicIndex = (schematicIndex - 1 + schematicImages.length) % schematicImages.length;
+    updateSchematic();
+  });
+  document.getElementById('schematicNext').addEventListener('click', function(e) {
+    e.stopPropagation();
+    schematicIndex = (schematicIndex + 1) % schematicImages.length;
+    updateSchematic();
+  });
 });
   
 </script>
-  <div class="schematic-overlay" id="schematicOverlay">
+<div class="schematic-overlay" id="schematicOverlay">
+  <button class="schematic-nav" id="schematicPrev">&#8592;</button>
   <img id="schematicImg" src="" alt="" />
+  <button class="schematic-nav" id="schematicNext">&#8594;</button>
   <div class="schematic-label" id="schematicLabel"></div>
 </div>
 </body>
