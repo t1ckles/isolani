@@ -241,7 +241,7 @@ const ACHIEVEMENT_DEFS = {
   faction_allied_guild: {
     category: 'Standing',
     title:    'Guild: Allied',
-    detail:   'Standing with the Assayer\\'s Guild elevated to ALLIED. Priority access granted.',
+    detail:   'Standing with the Assayer\'s Guild elevated to ALLIED. Priority access granted.',
   },
   faction_allied_pelk: {
     category: 'Standing',
