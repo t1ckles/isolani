@@ -188,6 +188,7 @@ function generateStationName(systemName, factionKey, index, rng) {
   
   return result;
 }
+
 // ── Ship initialization ───────────────────────
 
 function createStartingShip(shipName) {
