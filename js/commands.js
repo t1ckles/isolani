@@ -509,7 +509,7 @@ function handleCommand(raw) {
     case 'move':      return cmdMove(args);
     case 'area':       return cmdArea();
     case 'system':    return cmdSystem();
-    case 'dock':      return cmdDock();
+    case 'dock':      return cmdDock(args);
     case 'undock':    return cmdUndock();
     case 'trade':     return cmdTrade(args);
     case 'sell':      return cmdSell(args);
