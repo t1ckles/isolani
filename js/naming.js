@@ -1,5 +1,5 @@
 // ============================================
-//  APHELION — Naming System
+//  Isolani — Naming System
 //  naming.js
 //
 //  Generates all names in the galaxy.
@@ -699,7 +699,7 @@ const NAMES = {
     'Public Faith','Steady Course','Due Course','Fair Dealing','Civic Duty',
     'Earnest Hand','Faithful Watch','Loyal Service','Bound Oath','Just Measure',
 
-    // Single-word virtues — harder, more Aphelion-appropriate
+    // Single-word virtues — harder, more Isolani-appropriate
     'Clarity','Candor','Sincerity','Probity','Rectitude',
     'Temperance','Moderation','Prudence','Sagacity','Discernment',
     'Acuity','Vigilance','Wariness','Scrutiny','Exactitude',
@@ -793,7 +793,7 @@ const NAMES = {
     'Deep Sector','Far Sector','Hard Frontier','Open Reach','Closed Zone',
   ],
   corp_domain: [
-    // What a corp actually does in Aphelion's universe
+    // What a corp actually does in Isolani's universe
     'Systems','Traders','Colonies','Commerce','Resource','Transit',
     'Defense','Operations','Frontier','Orbital','Planetary','Stellar',
     'Interstellar','Regional','Logistics','Freight','Shipping','Transport',
@@ -837,7 +837,7 @@ const NAMES = {
   ],
 
   corp_authority: [
-    // What governing bodies actually call themselves in Aphelion
+    // What governing bodies actually call themselves in Isolani
     'Command','Authority','League','Union','Compact','Assembly','Bureau',
     'Commission','Council','Board','Institute','Foundation','Corporation',
     'Syndicate','Consortium','Cooperative','Agency','Directorate','Secretariat',
@@ -924,7 +924,7 @@ const NAMES = {
     'The Trusted','Known Quantity','Reputation Bar','The Guild Rate',
     'Scrip & Bone','Veydrite & Void','Iron & Ash','Salt & Cinder',
     'The Drift Bar','Corridor Nine','The Known','The Dark Side',
-    'The Aphelion','The Perihelion','Between Burns','The Transit Window',
+    'The Isolani','The Perihelion','Between Burns','The Transit Window',
     'The Long Fold','Short Corridor','The Highway','Primary Bar',
     'Secondary Pass','The Blindfold','The Overdrive','Twelve Cells',
     'The Reserve','Emergency Rations','The Last Ten Kilos',

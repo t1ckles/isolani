@@ -1,5 +1,5 @@
 // ============================================
-//  APHELION — Weapons & Combat Engine
+//  Isolani — Weapons & Combat Engine
 //  weapons.js
 //  System B: Kinetic Combat, Power, Subsystems
 // ============================================

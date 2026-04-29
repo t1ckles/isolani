@@ -1,13 +1,13 @@
 // ============================================
-//  APHELION — Save / Load System
+//  Isolani — Save / Load System
 //  save.js
 //  Stage 10 + System B: Full ship object
 // ============================================
 
-const SAVE_KEY     = 'aphelion_save';
+const SAVE_KEY     = 'Isolani_save';
 const SAVE_VERSION = 4;
 
-function slotKey(slot) { return 'aphelion_save_' + slot; }
+function slotKey(slot) { return 'Isolani_save_' + slot; }
 
 function saveGameToSlot(slot, playerState, reputationData, contractData) {
   const result = saveGame(playerState, reputationData, contractData);

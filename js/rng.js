@@ -1,8 +1,8 @@
 // ============================================
-//  APHELION — Seeded Random Number Generator
+//  Isolani — Seeded Random Number Generator
 //  rng.js
 //
-//  Everything in Aphelion is deterministic.
+//  Everything in Isolani is deterministic.
 //  Same seed = same galaxy, every time.
 //  This is the foundation all other systems
 //  are built on.
@@ -32,7 +32,7 @@ class RNG {
   }
 
   // ── Public methods ───────────────────────────────
-  // These are what the rest of Aphelion uses.
+  // These are what the rest of Isolani uses.
   // The internal engine above never gets called directly.
 
   // Returns a float between 0 and 1.

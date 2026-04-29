@@ -1,5 +1,5 @@
 // =============================================================================
-// APHELION — ships.js
+// Isolani — ships.js
 // Ship Registry: all 18 hull classes, compartment definitions, helper utilities
 // =============================================================================
 

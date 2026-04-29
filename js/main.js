@@ -1,5 +1,5 @@
 // ============================================
-//  APHELION — Main Terminal Controller
+//  Isolani — Main Terminal Controller
 //  main.js
 //  Stage 10: Save/Load + Main Menu
 // ============================================
@@ -795,7 +795,7 @@ function startContinue(save) {
   dismissMenu();
 
   setTimeout(() => {
-    queue('INITIALIZING — APHELION DEEP SURVEY TERMINAL', 'output-bright', 80);
+    queue('INITIALIZING — Isolani DEEP SURVEY TERMINAL', 'output-bright', 80);
     queue('INITIALIZING GALAXY ENGINE...', 'output-dim', 120);
     queueBlank(80);
     queue('> Loading galaxy data...', 'output-dim', 200);
@@ -889,7 +889,7 @@ function startNewGame(slot) {
   deleteSlotSave(slot);
 
   setTimeout(() => {
-    queue('APHELION — NEW PILOT REGISTRATION', 'output-bright', 80);
+    queue('Isolani — NEW PILOT REGISTRATION', 'output-bright', 80);
     queue('SLOT ' + slot, 'output-dim', 80);
     queueDivider(60);
     queueBlank(80);
@@ -930,7 +930,7 @@ function startNewGame(slot) {
             print('  Seed confirmed: ' + chosenSeed, 'output-dim');
             print('');
 
-            queue('INITIALIZING — APHELION DEEP SURVEY TERMINAL', 'output-bright', 80);
+            queue('INITIALIZING — Isolani DEEP SURVEY TERMINAL', 'output-bright', 80);
             queue('UNIVERSE SEED: ' + chosenSeed, 'output-dim', 120);
             queueBlank(80);
             queue('> Loading naming systems...', 'output-dim', 200);

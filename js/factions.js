@@ -1,5 +1,5 @@
 // ============================================
-//  APHELION — Faction & Reputation Engine
+//  Isolani — Faction & Reputation Engine
 //  factions.js
 //  Stage 7: Memory, Contracts, Standing
 // ============================================

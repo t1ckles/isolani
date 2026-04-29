@@ -1,5 +1,5 @@
 // ============================================
-//  APHELION — Command Parser
+//  Isolani — Command Parser
 //  commands.js
 //  System B: Ship object, weapons, power
 // ============================================
@@ -4747,7 +4747,7 @@ function xenoFlavor(sys, state) {
 }
 
 // =============================================================================
-// APHELION — commands.js PATCH
+// Isolani — commands.js PATCH
 // Compartment movement system — additions only.
 // Apply these three changes to your existing commands.js.
 // =============================================================================

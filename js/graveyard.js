@@ -1,10 +1,10 @@
 // ============================================
-//  APHELION — Graveyard
+//  Isolani — Graveyard
 //  graveyard.js
 //  Records pilot deaths for future use
 // ============================================
 
-const GRAVEYARD_KEY = 'aphelion_graveyard';
+const GRAVEYARD_KEY = 'Isolani_graveyard';
 
 function recordDeath(playerState, cause) {
   try {

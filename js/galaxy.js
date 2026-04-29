@@ -1,6 +1,6 @@
 // js/galaxy.js
 // Galaxy Hierarchy Generator — Stage 3
-// Aphelion v0.3.0-dev
+// Isolani v0.3.0-dev
 // 42 quadrants, connectivity graph, fold corridors, state propagation
 
 const CIVILIZATION_STATES = [

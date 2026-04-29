@@ -1,5 +1,5 @@
 // ============================================
-//  APHELION — Economy Engine
+//  Isolani — Economy Engine
 //  economy.js
 //  Stage 5 + System B: Veydrite, Trade,
 //  Salvage, Fuel, Ship-aware damage
@@ -792,7 +792,7 @@ function oreMarketPrice(oreKey, quadrantState) {
 
 // Phase 1 hierarchy note: resource assignment functions should treat system.bodies as a flattened body index when present.
 // =============================================================================
-// APHELION — economy.js PATCH
+// Isolani — economy.js PATCH
 // Ship purchase system — append this entire block to the bottom of economy.js.
 // Depends on: ships.js (SHIP_DEFS, FACTION, STANDING, FOLD_EFFICIENCY)
 // =============================================================================
