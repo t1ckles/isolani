@@ -1843,10 +1843,12 @@ function cmdDock(args) {
     ].join('\n');
   }
 
-  let body;
-  if (args && args.length > 0) {
-    const targetName = args.join(' ').toLowerCase();
-    body = stationBodies.find(b =>
+    let body;
+    if (args && args.length > 0) {
+      const targetName = args.join(' ').toLowerCase();
+      console.log('DOCK DEBUG targetName:', targetName);
+      console.log('DOCK DEBUG stations:', stationBodies.map(b => b.stationName));
+      body = stationBodies.find(b =>
       b.stationName && b.stationName.toLowerCase().includes(targetName)
     );
 
