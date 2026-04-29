@@ -1823,16 +1823,7 @@ function cmdDock(args) {
 
   const allStationBodies = bodies.filter(b => b.hasStation);
 
-  const localStationBodies = currentBody
-    ? allStationBodies.filter(b =>
-        b.id === currentBody.id ||
-        b.parentId === currentBody.id ||
-        b.id === currentBody.parentId ||
-        (b.parentId && currentBody.parentId && b.parentId === currentBody.parentId)
-      )
-    : allStationBodies;
-
-  const stationBodies = localStationBodies;
+  const stationBodies = allStationBodies;
 
   if (stationBodies.length === 0) {
     return [
